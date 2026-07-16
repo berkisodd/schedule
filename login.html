@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schedule 2.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0B1120;
+    --ink-2:#0F1729;
+    --panel:#121B30;
+    --line:#232E47;
+    --text:#F2EFE9;
+    --text-dim:#9AA4BC;
+    --slate:#3D4A66;
+    --amber:#E8823C;
+    --amber-dim:#E8823C33;
+    --error:#E85D5D;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    font-family:'Inter',sans-serif;
+    background:var(--ink);
+    color:var(--text);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    overflow:hidden;
+    padding:24px;
+  }
+
+  /* ambient rail: the signature motif, a thin line of "time" always moving */
+  .rail{
+    position:fixed;
+    top:0; left:0; right:0;
+    height:3px;
+    background:var(--line);
+    z-index:5;
+  }
+  .rail-fill{
+    height:100%;
+    width:38%;
+    background:linear-gradient(90deg, var(--amber), #F2A65A);
+    box-shadow:0 0 12px var(--amber);
+    animation:railmove 1.2s ease-out;
+  }
+  @keyframes railmove{
+    from{width:0%;}
+  }
+  .rail-marker{
+    position:absolute;
+    top:-3px;
+    left:38%;
+    width:2px;
+    height:9px;
+    background:var(--amber);
+  }
+
+  .backdrop-grid{
+    position:fixed;
+    inset:0;
+    background-image:
+      linear-gradient(var(--ink-2) 1px, transparent 1px),
+      linear-gradient(90deg, var(--ink-2) 1px, transparent 1px);
+    background-size:64px 64px;
+    mask-image:radial-gradient(ellipse 60% 50% at 50% 40%, black, transparent);
+    opacity:0.5;
+    pointer-events:none;
+  }
+
+  .wrap{
+    width:100%;
+    max-width:400px;
+    position:relative;
+    z-index:2;
+    animation:rise 0.7s cubic-bezier(.16,1,.3,1);
+  }
+  @keyframes rise{
+    from{opacity:0; transform:translateY(18px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--amber);
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:10px;
+  }
+  .eyebrow::before{
+    content:'';
+    width:6px;height:6px;
+    background:var(--amber);
+    border-radius:50%;
+    box-shadow:0 0 8px var(--amber);
+  }
+
+  h1{
+    font-family:'Inter',sans-serif;
+    font-weight:800;
+    font-size:2.1rem;
+    letter-spacing:-0.02em;
+    margin-bottom:6px;
+  }
+  .sub{
+    color:var(--text-dim);
+    font-size:0.95rem;
+    margin-bottom:32px;
+  }
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:28px;
+    position:relative;
+  }
+
+  .tabs{
+    display:flex;
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:3px;
+    margin-bottom:24px;
+    position:relative;
+  }
+  .tab{
+    flex:1;
+    text-align:center;
+    padding:9px 0;
+    font-size:0.85rem;
+    font-weight:600;
+    color:var(--text-dim);
+    cursor:pointer;
+    border-radius:8px;
+    z-index:1;
+    transition:color 0.25s ease;
+    user-select:none;
+  }
+  .tab.active{ color:var(--ink); }
+  .tab-slider{
+    position:absolute;
+    top:3px; left:3px;
+    width:calc(50% - 3px);
+    height:calc(100% - 6px);
+    background:var(--text);
+    border-radius:8px;
+    transition:transform 0.32s cubic-bezier(.16,1,.3,1);
+  }
+  .tab-slider.right{ transform:translateX(100%); }
+
+  .field{ margin-bottom:16px; }
+  .field label{
+    display:block;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.7rem;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    margin-bottom:7px;
+  }
+  .field input{
+    width:100%;
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:12px 14px;
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    font-size:0.95rem;
+    outline:none;
+    transition:border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .field input::placeholder{ color:#5A6584; }
+  .field input:focus{
+    border-color:var(--amber);
+    box-shadow:0 0 0 3px var(--amber-dim);
+  }
+  .field input.err{ border-color:var(--error); }
+
+  .name-row{
+    display:none;
+    gap:12px;
+  }
+  .name-row.show{ display:flex; }
+  .name-row .field{ flex:1; }
+
+  .msg{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.78rem;
+    color:var(--error);
+    min-height:18px;
+    margin:-4px 0 14px;
+    display:none;
+  }
+  .msg.show{ display:block; }
+
+  button.submit{
+    width:100%;
+    background:var(--amber);
+    color:#1A0F04;
+    border:none;
+    border-radius:9px;
+    padding:13px 0;
+    font-family:'Inter',sans-serif;
+    font-weight:700;
+    font-size:0.95rem;
+    cursor:pointer;
+    transition:transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+    position:relative;
+    overflow:hidden;
+  }
+  button.submit:hover{ background:#F2954F; box-shadow:0 6px 20px var(--amber-dim); }
+  button.submit:active{ transform:scale(0.98); }
+  button.submit:disabled{ opacity:0.6; cursor:default; transform:none; }
+
+  .spinner{
+    display:none;
+    width:16px; height:16px;
+    border:2px solid #1A0F0455;
+    border-top-color:#1A0F04;
+    border-radius:50%;
+    animation:spin 0.7s linear infinite;
+    margin:0 auto;
+  }
+  button.submit.loading .label{ display:none; }
+  button.submit.loading .spinner{ display:block; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .foot{
+    text-align:center;
+    margin-top:20px;
+    font-size:0.82rem;
+    color:var(--text-dim);
+  }
+  .foot a{
+    color:var(--amber);
+    text-decoration:none;
+    font-weight:600;
+  }
+  .foot a:hover{ text-decoration:underline; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="rail"><div class="rail-fill"><div class="rail-marker"></div></div></div>
+<div class="backdrop-grid"></div>
+
+<div class="wrap">
+  <div class="eyebrow">Period 3 of 7 · Live</div>
+  <h1>Schedule 2.0</h1>
+  <div class="sub">Remember that old schedule app Berk made? Here's the new one.</div>
+
+  <div class="panel">
+    <div class="tabs">
+      <div class="tab active" id="tabLogin" onclick="setMode('login')">Log in</div>
+      <div class="tab" id="tabSignup" onclick="setMode('signup')">Sign up</div>
+      <div class="tab-slider" id="tabSlider"></div>
+    </div>
+
+    <form id="authForm" novalidate>
+      <div class="name-row" id="nameRow">
+        <div class="field">
+          <label for="firstName">First name</label>
+          <input type="text" id="firstName" placeholder="John" autocomplete="given-name">
+        </div>
+        <div class="field">
+          <label for="lastName">Last name</label>
+          <input type="text" id="lastName" placeholder="Doe" autocomplete="family-name">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="you@school.edu" autocomplete="email">
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+
+      <div class="msg" id="authMsg"></div>
+
+      <button type="submit" class="submit" id="submitBtn">
+        <span class="label" id="submitLabel">Log in</span>
+        <span class="spinner"></span>
+      </button>
+    </form>
+
+    <div class="foot" id="footNote">
+      No account yet? <a href="#" onclick="setMode('signup');return false;">Sign up</a>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import {
+    getAuth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    updateProfile,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+  import {
+    getFirestore,
+    doc,
+    setDoc
+  } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBmD7gtaHTmrIE4Pl9q1746s-zoWvx6XAI",
+    authDomain: "schedule2-a453d.firebaseapp.com",
+    projectId: "schedule2-a453d",
+    storageBucket: "schedule2-a453d.firebasestorage.app",
+    messagingSenderId: "649246836060",
+    appId: "1:649246836060:web:e6abd24d924e16b1206d99"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // If already logged in, skip straight to the schedule.
+  onAuthStateChanged(auth, (user) => {
+    if (user) window.location.href = "schedule.html";
+  });
+
+  let mode = 'login';
+
+  window.setMode = function(next){
+    mode = next;
+    const isSignup = mode === 'signup';
+    document.getElementById('tabLogin').classList.toggle('active', !isSignup);
+    document.getElementById('tabSignup').classList.toggle('active', isSignup);
+    document.getElementById('tabSlider').classList.toggle('right', isSignup);
+    document.getElementById('nameRow').classList.toggle('show', isSignup);
+    document.getElementById('submitLabel').textContent = isSignup ? 'Create account' : 'Log in';
+    document.getElementById('password').autocomplete = isSignup ? 'new-password' : 'current-password';
+    document.getElementById('footNote').innerHTML = isSignup
+      ? 'Already have an account? <a href="#" onclick="setMode(\'login\');return false;">Log in</a>'
+      : 'No account yet? <a href="#" onclick="setMode(\'signup\');return false;">Sign up</a>';
+    hideMsg();
+  }
+
+  function showMsg(text){
+    const m = document.getElementById('authMsg');
+    m.textContent = text;
+    m.classList.add('show');
+  }
+  function hideMsg(){
+    const m = document.getElementById('authMsg');
+    m.classList.remove('show');
+    m.textContent = '';
+  }
+
+  // Turns Firebase's error codes into plain, friendly messages.
+  function friendlyError(err){
+    const code = err.code || '';
+    if(code.includes('email-already-in-use')) return 'That email already has an account. Try logging in.';
+    if(code.includes('invalid-email')) return 'That email address doesn\'t look right.';
+    if(code.includes('weak-password')) return 'Password must be at least 6 characters.';
+    if(code.includes('user-not-found') || code.includes('wrong-password') || code.includes('invalid-credential')) return 'Incorrect email or password.';
+    if(code.includes('too-many-requests')) return 'Too many attempts. Wait a bit and try again.';
+    if(code.includes('network-request-failed')) return 'Network error. Check your connection.';
+    return 'Something went wrong. Try again.';
+  }
+
+  document.getElementById('authForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    hideMsg();
+
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const first = document.getElementById('firstName').value.trim();
+    const last = document.getElementById('lastName').value.trim();
+
+    if(!email || !password){
+      showMsg('Enter your email and password.');
+      return;
+    }
+    if(mode === 'signup' && (!first || !last)){
+      showMsg('Enter your first and last name.');
+      return;
+    }
+    if(password.length < 6){
+      showMsg('Password must be at least 6 characters.');
+      return;
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    const finish = () => {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    };
+
+    if (mode === 'signup') {
+      createUserWithEmailAndPassword(auth, email, password)
+        .then((cred) => {
+          return updateProfile(cred.user, { displayName: `${first} ${last}` })
+            .then(() => setDoc(doc(db, "users", cred.user.uid), {
+              firstName: first,
+              lastName: last,
+              email: email,
+              createdAt: new Date().toISOString()
+            }));
+        })
+        .then(() => {
+          window.location.href = "schedule.html";
+        })
+        .catch((err) => {
+          finish();
+          showMsg(friendlyError(err));
+        });
+    } else {
+      signInWithEmailAndPassword(auth, email, password)
+        .then(() => {
+          window.location.href = "schedule.html";
+        })
+        .catch((err) => {
+          finish();
+          showMsg(friendlyError(err));
+        });
+    }
+  });
+</script>
+
+</body>
+</html>
