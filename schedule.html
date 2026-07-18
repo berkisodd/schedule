@@ -325,7 +325,7 @@
   }
   .stepdot.active{ background:var(--amber); width:22px; border-radius:99px; }
 
-  .stepstage{ position:relative; height:172px; overflow:hidden; }
+  .stepstage{ position:relative; height:340px; overflow:hidden; }
   .step{
     position:absolute; inset:0; text-align:center; padding:0 10px;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -343,6 +343,73 @@
   .step-icon{ font-size:2.4rem; margin-bottom:10px; line-height:1; }
   .step-title{ font-weight:800; font-size:1.15rem; margin-bottom:8px; }
   .step-text{ color:var(--text-dim); font-size:0.9rem; line-height:1.5; max-width:360px; }
+  .demo-caption{ margin-bottom:14px; }
+
+  /* fake chatbot demo */
+  .chatdemo{
+    width:100%; max-width:380px; background:var(--ink-2);
+    border:1px solid var(--line); border-radius:12px; overflow:hidden;
+    position:relative; text-align:left;
+  }
+  .chatdemo-bar{
+    display:flex; align-items:center; gap:6px;
+    padding:9px 12px; background:var(--panel); border-bottom:1px solid var(--line);
+  }
+  .chatdemo-dot{ width:8px; height:8px; border-radius:50%; background:var(--slate); }
+  .chatdemo-name{
+    font-family:'JetBrains Mono', monospace; font-size:0.68rem;
+    color:var(--text-dim); margin-left:6px;
+  }
+  .chatdemo-body{
+    padding:12px; min-height:150px; max-height:150px; overflow:hidden;
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .chat-msg{ display:flex; flex-direction:column; gap:4px; opacity:0; transition:opacity 0.3s ease; }
+  .chat-msg.show{ opacity:1; }
+  .chat-msg.user{ align-items:flex-end; }
+  .chat-msg.bot{ align-items:flex-start; }
+  .chat-photo{
+    font-size:0.66rem; color:var(--text-dim); background:var(--panel);
+    border:1px solid var(--line); border-radius:7px; padding:4px 8px;
+    font-family:'JetBrains Mono', monospace;
+  }
+  .chat-bubble{
+    max-width:80%; padding:8px 11px; border-radius:11px; font-size:0.72rem;
+    line-height:1.4; white-space:pre-wrap; word-break:break-word;
+    font-family:'JetBrains Mono', monospace;
+  }
+  .chat-msg.user .chat-bubble{ background:var(--amber); color:#1A0F04; border-bottom-right-radius:3px; }
+  .bot-bubble{ background:var(--panel); border:1px solid var(--line); color:var(--text); border-bottom-left-radius:3px; }
+  .chatdemo-input{
+    display:flex; align-items:center; gap:8px; padding:9px 12px;
+    border-top:1px solid var(--line); background:var(--panel);
+  }
+  .chatdemo-field{
+    flex:1; background:var(--ink-2); border:1px solid var(--line); border-radius:8px;
+    padding:8px 10px; font-family:'JetBrains Mono', monospace; font-size:0.68rem;
+    color:var(--text-dim); min-height:32px; display:flex; align-items:center;
+    white-space:nowrap; overflow:hidden;
+  }
+  .chatdemo-field.active{ border-color:var(--amber); }
+  .caret{
+    display:inline-block; width:1.5px; height:12px; background:var(--amber);
+    margin-left:1px; opacity:0;
+  }
+  .caret.blink{ animation:caretBlink 0.8s step-end infinite; }
+  @keyframes caretBlink{ 50%{ opacity:0; } 0%,100%{ opacity:1; } }
+  .chatdemo-send{
+    width:30px; height:30px; border-radius:8px; background:var(--slate);
+    color:var(--text-dim); display:flex; align-items:center; justify-content:center;
+    font-size:0.8rem; transition:background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+  }
+  .chatdemo-send.hot{ background:var(--amber); color:#1A0F04; }
+  .chatdemo-send.pressed{ transform:scale(0.85); }
+  .fake-cursor{
+    position:absolute; left:50%; top:60%; font-size:1rem; color:#fff;
+    text-shadow:0 1px 3px rgba(0,0,0,0.6); pointer-events:none; opacity:0;
+    transform:rotate(-20deg); transition:opacity 0.3s ease;
+    z-index:3; will-change:left, top;
+  }
 
   .step-nav{ display:flex; gap:10px; margin-top:18px; }
   .step-nav .btn-ghost, .step-nav .btn-primary{ flex:1; padding:11px 0; }
@@ -478,9 +545,28 @@
         </div>
         <div class="step" data-step="1">
           <div class="step-num">2</div>
-          <div class="step-icon">🤖</div>
           <div class="step-title">Paste it into your chatbot</div>
-          <div class="step-text">Open ChatGPT, Claude, or any chatbot. Paste the prompt, attach a photo of your schedule, and send.</div>
+          <div class="step-text demo-caption">Open any chatbot, paste the prompt with a photo of your schedule, and it hands you back the code.</div>
+          <div class="chatdemo" id="chatDemo">
+            <div class="chatdemo-bar">
+              <span class="chatdemo-dot"></span><span class="chatdemo-dot"></span><span class="chatdemo-dot"></span>
+              <span class="chatdemo-name">AI Chat</span>
+            </div>
+            <div class="chatdemo-body" id="chatBody">
+              <div class="chat-msg user" id="demoUserMsg">
+                <div class="chat-photo">🖼️ schedule.jpg</div>
+                <div class="chat-bubble" id="demoUserBubble"></div>
+              </div>
+              <div class="chat-msg bot" id="demoBotMsg">
+                <div class="chat-bubble bot-bubble" id="demoBotBubble"></div>
+              </div>
+            </div>
+            <div class="chatdemo-input">
+              <div class="chatdemo-field" id="demoField"><span id="demoFieldText"></span><span class="caret" id="demoCaret"></span></div>
+              <div class="chatdemo-send" id="demoSend">➤</div>
+            </div>
+            <div class="fake-cursor" id="fakeCursor">▲</div>
+          </div>
         </div>
         <div class="step" data-step="2">
           <div class="step-num">3</div>
@@ -573,11 +659,14 @@
     await loadSchedule();
   });
 
+  let introSeen = false;
+
   async function loadSchedule(){
     try{
       const snap = await getDoc(doc(db, "schedules", currentUser.uid));
       if (snap.exists()){
         const data = snap.data();
+        introSeen = data.introSeen === true;
         if (data.week && typeof data.week === 'object'){
           // new weekly format
           week = normalizeWeek(data.week);
@@ -599,6 +688,22 @@
     renderPeriods();
     tick();
     if (!tickStarted){ tickStarted = true; setInterval(tick, 1000); }
+
+    // First visit: auto-open the import walkthrough once.
+    if (!introSeen){
+      setTimeout(() => { openModal(); markIntroSeen(); }, 600);
+    }
+  }
+
+  async function markIntroSeen(){
+    introSeen = true;
+    if (!currentUser) return;
+    try{
+      // merge the flag without clobbering the schedule
+      await setDoc(doc(db, "schedules", currentUser.uid), { introSeen: true }, { merge: true });
+    } catch (err){
+      console.error('Could not save intro flag:', err);
+    }
   }
 
   function normalizeWeek(w){
@@ -619,6 +724,7 @@
     if(!currentUser) return;
     await setDoc(doc(db, "schedules", currentUser.uid), {
       week,
+      introSeen: introSeen === true,
       updatedAt: new Date().toISOString()
     });
     setDirty(false);
@@ -951,6 +1057,10 @@ Rules:
     stepDots.forEach((d, i) => d.classList.toggle('active', i === stepIndex));
     stepBack.disabled = stepIndex === 0;
     stepNext.textContent = stepIndex === 2 ? 'Got it' : 'Next';
+
+    // Auto-play the chatbot demo when step 2 (index 1) is reached; reset otherwise.
+    if (stepIndex === 1) playChatDemo();
+    else stopChatDemo();
   }
 
   stepBack.addEventListener('click', () => showStep(stepIndex - 1));
@@ -974,7 +1084,118 @@ Rules:
   function closeModal(){
     importModal.classList.remove('show');
     document.body.style.overflow = '';
+    stopChatDemo();
   }
+
+  // ══ Fake chatbot demo (auto-plays on step 2) ══════════════════
+  const chatDemoEls = {
+    cursor: document.getElementById('fakeCursor'),
+    field: document.getElementById('demoField'),
+    fieldText: document.getElementById('demoFieldText'),
+    caret: document.getElementById('demoCaret'),
+    send: document.getElementById('demoSend'),
+    userMsg: document.getElementById('demoUserMsg'),
+    userBubble: document.getElementById('demoUserBubble'),
+    botMsg: document.getElementById('demoBotMsg'),
+    botBubble: document.getElementById('demoBotBubble'),
+    body: document.getElementById('chatBody')
+  };
+  const DEMO_PROMPT_SHORT = 'Convert my schedule photo to SCHEDULE2.0 code';
+  const DEMO_BOT_REPLY =
+`SCHEDULE2.0
+Mon: 09:00-10:00 AP Chem (214)
+Tue: 10:15-11:15 English Lit
+Wed: OFF
+...`;
+  let demoTimers = [];
+  let demoRunning = false;
+
+  function demoWait(ms){
+    return new Promise(res => { const t = setTimeout(res, ms); demoTimers.push(t); });
+  }
+  function stopChatDemo(){
+    demoRunning = false;
+    demoTimers.forEach(clearTimeout);
+    demoTimers = [];
+    // reset visuals
+    const e = chatDemoEls;
+    if (!e.cursor) return;
+    e.cursor.style.opacity = '0';
+    e.fieldText.textContent = '';
+    e.caret.classList.remove('blink');
+    e.field.classList.remove('active');
+    e.send.classList.remove('hot','pressed');
+    e.userMsg.classList.remove('show');
+    e.botMsg.classList.remove('show');
+    e.userBubble.textContent = '';
+    e.botBubble.textContent = '';
+  }
+
+  function moveCursor(xPct, yPct){
+    chatDemoEls.cursor.style.left = xPct + '%';
+    chatDemoEls.cursor.style.top = yPct + '%';
+  }
+
+  async function playChatDemo(){
+    const e = chatDemoEls;
+    if (!e.cursor) return;
+    stopChatDemo();
+    demoRunning = true;
+    const mine = {}; // token to detect restart
+    playChatDemo._token = mine;
+    const alive = () => demoRunning && playChatDemo._token === mine;
+
+    // start: cursor drifts in toward the input field
+    e.cursor.style.transition = 'left 0.7s cubic-bezier(.4,0,.2,1), top 0.7s cubic-bezier(.4,0,.2,1), opacity 0.3s ease';
+    moveCursor(80, 88);
+    await demoWait(150); if(!alive()) return;
+    e.cursor.style.opacity = '1';
+    moveCursor(40, 82);
+    await demoWait(800); if(!alive()) return;
+
+    // click into field
+    e.field.classList.add('active');
+    e.caret.classList.add('blink');
+    e.send.classList.remove('hot');
+    await demoWait(400); if(!alive()) return;
+
+    // "paste" the prompt (appears instantly, like a paste, then a beat)
+    e.fieldText.textContent = DEMO_PROMPT_SHORT;
+    await demoWait(700); if(!alive()) return;
+
+    // move cursor to send button
+    moveCursor(92, 82);
+    e.send.classList.add('hot');
+    await demoWait(650); if(!alive()) return;
+
+    // press send
+    e.send.classList.add('pressed');
+    await demoWait(160); if(!alive()) return;
+    e.send.classList.remove('pressed');
+
+    // user message appears, field clears
+    e.fieldText.textContent = '';
+    e.caret.classList.remove('blink');
+    e.field.classList.remove('active');
+    e.userBubble.textContent = DEMO_PROMPT_SHORT;
+    e.userMsg.classList.add('show');
+    e.cursor.style.opacity = '0';
+    await demoWait(700); if(!alive()) return;
+
+    // bot "types" the reply line by line
+    e.botMsg.classList.add('show');
+    const lines = DEMO_BOT_REPLY.split('\n');
+    for (let i = 0; i < lines.length; i++){
+      if(!alive()) return;
+      e.botBubble.textContent = lines.slice(0, i+1).join('\n');
+      await demoWait(360);
+    }
+    await demoWait(1400); if(!alive()) return;
+
+    // loop the demo softly so it always shows something in motion
+    if (alive() && stepIndex === 1) playChatDemo();
+  }
+
   openImport.addEventListener('click', openModal);
   closeImport.addEventListener('click', closeModal);
   importModal.addEventListener('click', (e) => { if (e.target === importModal) closeModal(); });
