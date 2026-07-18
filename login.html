@@ -4,7 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Schedule 2.0</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%230B1120'/><circle cx='32' cy='32' r='28' fill='none' stroke='%23E8823C' stroke-width='2'/><circle cx='32' cy='32' r='4' fill='%23E8823C'/><line x1='32' y1='12' x2='32' y2='22' stroke='%23E8823C' stroke-width='2' stroke-linecap='round'/><line x1='32' y1='32' x2='44' y2='32' stroke='%23E8823C' stroke-width='2' stroke-linecap='round'/></svg>">
+<meta name="theme-color" content="#0A0A0B">
+
+<!-- PWA -->
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Schedule">
+
+<link rel="icon" type="image/png" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script>
@@ -47,6 +57,7 @@
     --shadow-lift:0 4px 16px rgba(0,0,0,0.07);
   }
   html{ background:var(--ink); }
+
   *{margin:0;padding:0;box-sizing:border-box;}
   html,body{height:100%;}
   body{
@@ -401,14 +412,33 @@
   <div class="changelog">
     <button class="changelog-head" id="changelogToggle">
       <span class="changelog-title">What's new</span>
-      <span class="changelog-version">v2.7</span>
+      <span class="changelog-version">v2.9</span>
       <span class="changelog-arrow" id="changelogArrow">▾</span>
     </button>
     <div class="changelog-body" id="changelogBody">
       <div class="cl-entry">
         <div class="cl-ver">
-          <span class="cl-num">2.7</span>
+          <span class="cl-num">2.9</span>
           <span class="cl-tag new">Latest</span>
+        </div>
+        <ul class="cl-list">
+          <li>Add Schedule to your home screen and run it fullscreen</li>
+          <li>Walkthrough in Settings that shows you how</li>
+          <li>New app icon</li>
+          <li>Works offline once installed</li>
+        </ul>
+      </div>
+      <div class="cl-entry">
+        <div class="cl-ver">
+          <span class="cl-num">2.8</span>
+        </div>
+        <ul class="cl-list">
+          <li>Something is coming September 10 at noon</li>
+        </ul>
+      </div>
+      <div class="cl-entry">
+        <div class="cl-ver">
+          <span class="cl-num">2.7</span>
         </div>
         <ul class="cl-list">
           <li>Countdown now renders as a real dot matrix display</li>
@@ -642,6 +672,15 @@
         });
     }
   });
+
+  // Register the service worker so the app works offline once installed.
+  if ('serviceWorker' in navigator){
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js').catch(() => {
+        // Not fatal. The app still works, it just won't run offline.
+      });
+    });
+  }
 </script>
 
 </body>
