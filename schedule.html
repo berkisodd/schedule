@@ -272,6 +272,10 @@
   }
   .daychip.on{ background:var(--amber-dim); border-color:var(--amber-line); color:var(--amber); }
   .addpanel-actions{ display:flex; gap:10px; margin-top:4px; }
+  .addpanel-msg{
+    font-family:'JetBrains Mono', monospace; font-size:0.76rem;
+    color:var(--error); min-height:16px; margin-bottom:10px;
+  }
   .btn-primary, .btn-ghost{
     flex:1; padding:11px 0; border-radius:8px;
     font-family:'Inter',sans-serif; font-weight:700; font-size:0.88rem;
@@ -536,6 +540,7 @@
       <div class="applydays-label">Add to which days?</div>
       <div class="daychips" id="dayChips"></div>
     </div>
+    <div class="addpanel-msg" id="addMsg"></div>
     <div class="addpanel-actions">
       <button class="btn-ghost" id="cancelAdd">Cancel</button>
       <button class="btn-primary" id="confirmAdd">Add period</button>
@@ -776,7 +781,6 @@
   }
 
   window.handleLogout = function(){
-    if (dirty && !confirm('You have unsaved changes. Log out anyway?')) return;
     signOut(auth);
   };
 
@@ -863,15 +867,19 @@
     return h*60+m;
   }
 
+  const addMsg = document.getElementById('addMsg');
+  function showAddMsg(t){ addMsg.textContent = t; }
+
   confirmAdd.addEventListener('click', () => {
     const name = document.getElementById('pName').value.trim();
     const start = document.getElementById('pStart').value;
     const end = document.getElementById('pEnd').value;
     const room = document.getElementById('pRoom').value.trim();
 
-    if(!name || !start || !end){ alert('Add a class name, start time, and end time.'); return; }
-    if(toMinutes(end) <= toMinutes(start)){ alert('End time must be after start time.'); return; }
-    if(applyDays.size === 0){ alert('Pick at least one day to add this to.'); return; }
+    if(!name || !start || !end){ showAddMsg('Add a class name, start time, and end time.'); return; }
+    if(toMinutes(end) <= toMinutes(start)){ showAddMsg('End time must be after start time.'); return; }
+    if(applyDays.size === 0){ showAddMsg('Pick at least one day to add this to.'); return; }
+    showAddMsg('');
 
     applyDays.forEach(d => {
       week[d].push({ id: freshId(), name, start, end, room });
@@ -886,12 +894,15 @@
   });
 
   clearAll.addEventListener('click', () => {
-    if(week[viewingDay].length && confirm(`Clear all periods from ${DAY_FULL[viewingDay]}?`)){
-      week[viewingDay] = [];
-      setDirty(true);
-      renderDayTabs();
-      renderPeriods();
-    }
+    if(!week[viewingDay].length) return;
+    week[viewingDay] = [];
+    setDirty(true);
+    renderDayTabs();
+    renderPeriods();
+    saveMsg.textContent = `Cleared ${DAY_FULL[viewingDay]}. Not saved yet.`;
+    saveMsg.style.color = 'var(--text-dim)';
+    saveMsg.classList.add('show');
+    setTimeout(() => saveMsg.classList.remove('show'), 3000);
   });
 
   window.removePeriod = function(id){
@@ -901,19 +912,30 @@
     renderPeriods();
   };
 
-  // copy another day's periods into the currently-viewed (empty) day
+  // copy the nearest filled day's periods into the currently-viewed (empty) day
   window.copyFromDay = function(){
     const options = DAYS.filter(d => d !== viewingDay && week[d].length);
-    if (!options.length){ alert('No other day has periods to copy yet.'); return; }
-    const choice = prompt('Copy periods from which day? ' + options.join(', '));
-    if (!choice) return;
-    const key = DAYS.find(d => d.toLowerCase() === choice.trim().toLowerCase());
-    if (!key || !week[key]){ alert('That day was not recognized.'); return; }
+    if (!options.length){
+      flashSave('No other day has periods to copy yet.', 'var(--text-dim)');
+      return;
+    }
+    // pick the closest filled day by position in the week
+    const vi = DAYS.indexOf(viewingDay);
+    options.sort((a,b) => Math.abs(DAYS.indexOf(a)-vi) - Math.abs(DAYS.indexOf(b)-vi));
+    const key = options[0];
     week[viewingDay] = week[key].map(p => ({...p, id: freshId()}));
     setDirty(true);
     renderDayTabs();
     renderPeriods();
+    flashSave(`Copied ${DAY_FULL[key]} into ${DAY_FULL[viewingDay]}.`, 'var(--good)');
   };
+
+  function flashSave(text, color){
+    saveMsg.textContent = text;
+    saveMsg.style.color = color || 'var(--good)';
+    saveMsg.classList.add('show');
+    setTimeout(() => saveMsg.classList.remove('show'), 3000);
+  }
 
   function fmtTime(hhmm){
     const [h,m] = hhmm.split(':').map(Number);
@@ -1393,24 +1415,25 @@ Wed: OFF
       importMsg.classList.add('err');
       return;
     }
-    const replace = confirm(`Found ${total} classes across the week. This will replace your current schedule. Continue?`);
-    if (!replace) return;
 
-    // stop the demo so nothing animates behind the import, then show a brief loader
+    // Apply immediately (no blocking confirm dialog — those are unreliable in
+    // in-app browsers). Stop the demo, show a brief loader, then fill.
     stopChatDemo();
     showLoading('Filling your schedule…');
 
-    // defer the heavy DOM work one frame so the loader actually paints
     setTimeout(() => {
       week = parsed;
       setDirty(true);
       renderDayTabs();
       renderChips();
       renderPeriods();
-      closeModal();
       hideLoading();
-      importMsg.textContent = `Imported ${total} classes. Review and hit Save.`;
-      importMsg.className = 'io-msg ok';
+      closeModal();
+      // surface a confirmation on the main screen via the save message
+      saveMsg.textContent = `Imported ${total} ${total===1?'class':'classes'}. Hit Save to keep it.`;
+      saveMsg.style.color = 'var(--good)';
+      saveMsg.classList.add('show');
+      setTimeout(() => saveMsg.classList.remove('show'), 4000);
     }, 300);
   });
 
