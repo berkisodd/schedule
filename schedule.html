@@ -11,7 +11,6 @@
     --ink:#0B1120;
     --ink-2:#0F1729;
     --panel:#121B30;
-    --panel-2:#0F1729;
     --line:#232E47;
     --text:#F2EFE9;
     --text-dim:#9AA4BC;
@@ -29,168 +28,138 @@
     background:var(--ink);
     color:var(--text);
     min-height:100vh;
-    padding-bottom:64px;
+    padding-bottom:90px;
   }
 
-  /* ── Top rail: the whole day as one line ─────────────────────── */
+  /* ── Top rail ─────────────────────────────────────────── */
   .daytrack{
-    position:sticky;
-    top:0;
-    z-index:20;
+    position:sticky; top:0; z-index:20;
     background:var(--ink);
     border-bottom:1px solid var(--line);
     padding:14px 20px 12px;
   }
   .daytrack-head{
-    display:flex;
-    justify-content:space-between;
-    align-items:baseline;
-    max-width:820px;
-    margin:0 auto 10px;
+    display:flex; justify-content:space-between; align-items:baseline;
+    max-width:820px; margin:0 auto 10px;
   }
   .daytrack-title{
     font-family:'JetBrains Mono', monospace;
-    font-size:0.7rem;
-    letter-spacing:0.14em;
-    text-transform:uppercase;
+    font-size:0.7rem; letter-spacing:0.14em; text-transform:uppercase;
     color:var(--text-dim);
   }
+  .daytrack-right{ display:flex; align-items:center; gap:14px; }
   .daytrack-now{
     font-family:'JetBrains Mono', monospace;
-    font-size:0.78rem;
-    color:var(--amber);
-    font-weight:600;
-  }
-  .daytrack-right{
-    display:flex;
-    align-items:center;
-    gap:14px;
+    font-size:0.78rem; color:var(--amber); font-weight:600;
   }
   .logout-btn{
-    background:none;
-    border:1px solid var(--line);
-    color:var(--text-dim);
-    font-family:'Inter',sans-serif;
-    font-size:0.78rem;
-    font-weight:600;
-    padding:6px 12px;
-    border-radius:7px;
-    cursor:pointer;
+    background:none; border:1px solid var(--line); color:var(--text-dim);
+    font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:600;
+    padding:6px 12px; border-radius:7px; cursor:pointer;
     transition:border-color 0.2s ease, color 0.2s ease;
   }
   .logout-btn:hover{ border-color:var(--error); color:var(--error); }
   .rail-outer{
-    max-width:820px;
-    margin:0 auto;
-    height:6px;
-    background:var(--panel);
-    border-radius:99px;
-    position:relative;
-    overflow:visible;
+    max-width:820px; margin:0 auto; height:6px;
+    background:var(--panel); border-radius:99px; position:relative;
   }
   .rail-fill{
-    height:100%;
-    width:0%;
+    height:100%; width:0%;
     background:linear-gradient(90deg, var(--amber), #F2A65A);
-    border-radius:99px;
-    transition:width 1s linear;
+    border-radius:99px; transition:width 1s linear;
   }
   .rail-dot{
-    position:absolute;
-    top:50%;
-    left:0%;
-    width:12px;height:12px;
-    background:var(--amber);
-    border:2px solid var(--ink);
-    border-radius:50%;
-    transform:translate(-50%,-50%);
-    box-shadow:0 0 0 4px var(--amber-dim);
+    position:absolute; top:50%; left:0%;
+    width:12px;height:12px; background:var(--amber);
+    border:2px solid var(--ink); border-radius:50%;
+    transform:translate(-50%,-50%); box-shadow:0 0 0 4px var(--amber-dim);
     transition:left 1s linear;
   }
 
-  /* ── Hero countdown ──────────────────────────────────────────── */
-  .hero{
-    max-width:820px;
-    margin:36px auto 28px;
-    padding:0 20px;
-    text-align:center;
-  }
+  /* ── Hero ─────────────────────────────────────────────── */
+  .hero{ max-width:820px; margin:32px auto 24px; padding:0 20px; text-align:center; }
   .hero-label{
     font-family:'JetBrains Mono', monospace;
-    font-size:0.75rem;
-    letter-spacing:0.16em;
-    text-transform:uppercase;
-    color:var(--text-dim);
-    margin-bottom:10px;
+    font-size:0.75rem; letter-spacing:0.16em; text-transform:uppercase;
+    color:var(--text-dim); margin-bottom:10px;
   }
   .hero-label .accent{ color:var(--amber); }
   .hero-clock{
-    font-family:'JetBrains Mono', monospace;
-    font-weight:700;
-    font-size:clamp(3rem, 12vw, 5.5rem);
-    letter-spacing:-0.02em;
-    line-height:1;
-    font-variant-numeric:tabular-nums;
-    color:var(--text);
+    font-family:'JetBrains Mono', monospace; font-weight:700;
+    font-size:clamp(3rem, 12vw, 5.5rem); letter-spacing:-0.02em;
+    line-height:1; font-variant-numeric:tabular-nums;
   }
-  .hero-sub{
-    margin-top:12px;
-    font-size:1rem;
-    color:var(--text-dim);
-  }
+  .hero-sub{ margin-top:12px; font-size:1rem; color:var(--text-dim); }
   .hero-sub strong{ color:var(--text); font-weight:700; }
 
-  /* ── Schedule list ────────────────────────────────────────────── */
-  .section{
-    max-width:820px;
-    margin:0 auto;
-    padding:0 20px;
+  /* ── Day tabs ─────────────────────────────────────────── */
+  .daytabs{
+    max-width:820px; margin:0 auto 22px; padding:0 20px;
+    display:flex; gap:8px; overflow-x:auto; scrollbar-width:none;
   }
+  .daytabs::-webkit-scrollbar{ display:none; }
+  .daytab{
+    flex:1 0 auto; min-width:64px;
+    text-align:center; padding:10px 6px;
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:10px; cursor:pointer; user-select:none;
+    transition:border-color 0.2s ease, background 0.2s ease, transform 0.12s ease;
+  }
+  .daytab:hover{ border-color:var(--slate); }
+  .daytab:active{ transform:scale(0.97); }
+  .daytab.active{ background:var(--amber); border-color:var(--amber); }
+  .daytab.active .daytab-abbr, .daytab.active .daytab-count{ color:#1A0F04; }
+  .daytab-abbr{
+    font-weight:700; font-size:0.9rem; color:var(--text);
+    display:block;
+  }
+  .daytab-count{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.66rem; color:var(--text-dim); margin-top:3px; display:block;
+  }
+  .daytab.today .daytab-abbr::after{
+    content:'•'; color:var(--amber); margin-left:4px;
+  }
+  .daytab.active.today .daytab-abbr::after{ color:#1A0F04; }
+
+  /* ── Schedule list ────────────────────────────────────── */
+  .section{ max-width:820px; margin:0 auto; padding:0 20px; }
   .section-head{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
+    display:flex; justify-content:space-between; align-items:center;
     margin-bottom:14px;
   }
-  .section-head h2{
-    font-size:1.1rem;
-    font-weight:700;
+  .section-head h2{ font-size:1.1rem; font-weight:700; }
+  .section-head .viewing{
+    font-family:'JetBrains Mono', monospace; font-size:0.72rem;
+    color:var(--text-dim); font-weight:400;
   }
   .btn-add{
-    display:flex;
-    align-items:center;
-    gap:6px;
-    background:var(--panel);
-    border:1px solid var(--line);
-    color:var(--text);
-    font-family:'Inter',sans-serif;
-    font-size:0.85rem;
-    font-weight:600;
-    padding:9px 14px;
-    border-radius:9px;
-    cursor:pointer;
+    display:flex; align-items:center; gap:6px;
+    background:var(--panel); border:1px solid var(--line); color:var(--text);
+    font-family:'Inter',sans-serif; font-size:0.85rem; font-weight:600;
+    padding:9px 14px; border-radius:9px; cursor:pointer;
     transition:border-color 0.2s ease, transform 0.15s ease;
   }
   .btn-add:hover{ border-color:var(--amber); }
   .btn-add:active{ transform:scale(0.97); }
-
-  .periods{
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-    margin-bottom:36px;
+  .head-actions{ display:flex; gap:8px; }
+  .btn-import{
+    display:flex; align-items:center; gap:6px;
+    background:var(--amber-dim); border:1px solid var(--amber-line); color:var(--amber);
+    font-family:'Inter',sans-serif; font-size:0.85rem; font-weight:700;
+    padding:9px 14px; border-radius:9px; cursor:pointer;
+    transition:background 0.2s ease, transform 0.15s ease;
   }
+  .btn-import:hover{ background:#E8823C33; }
+  .btn-import:active{ transform:scale(0.97); }
+
+  .periods{ display:flex; flex-direction:column; gap:10px; margin-bottom:24px; }
 
   .period{
-    display:flex;
-    align-items:center;
-    gap:16px;
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-left:3px solid transparent;
-    border-radius:10px;
-    padding:14px 16px;
-    position:relative;
+    display:flex; align-items:center; gap:16px;
+    background:var(--panel); border:1px solid var(--line);
+    border-left:3px solid transparent; border-radius:10px;
+    padding:14px 16px; position:relative;
     transition:border-left-color 0.4s ease, background 0.4s ease;
   }
   .period.current{
@@ -198,147 +167,96 @@
     background:linear-gradient(90deg, var(--amber-dim), var(--panel) 30%);
   }
   .period.past{ opacity:0.45; }
-
   .period-time{
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.82rem;
-    color:var(--text-dim);
-    width:128px;
-    flex-shrink:0;
+    font-family:'JetBrains Mono', monospace; font-size:0.82rem;
+    color:var(--text-dim); width:128px; flex-shrink:0;
     font-variant-numeric:tabular-nums;
   }
   .period.current .period-time{ color:var(--amber); font-weight:600; }
-
   .period-num{
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.7rem;
-    color:var(--slate);
-    width:22px;
-    flex-shrink:0;
+    font-family:'JetBrains Mono', monospace; font-size:0.7rem;
+    color:var(--slate); width:22px; flex-shrink:0;
   }
-
   .period-info{ flex:1; min-width:0; }
   .period-name{
-    font-weight:700;
-    font-size:0.98rem;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
+    font-weight:700; font-size:0.98rem;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
-  .period-room{
-    font-size:0.82rem;
-    color:var(--text-dim);
-    margin-top:2px;
-  }
-
+  .period-room{ font-size:0.82rem; color:var(--text-dim); margin-top:2px; }
   .period-tag{
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.68rem;
-    letter-spacing:0.06em;
-    text-transform:uppercase;
-    color:var(--amber);
-    background:var(--amber-dim);
-    border:1px solid var(--amber-line);
-    padding:4px 8px;
-    border-radius:6px;
-    flex-shrink:0;
+    font-family:'JetBrains Mono', monospace; font-size:0.68rem;
+    letter-spacing:0.06em; text-transform:uppercase; color:var(--amber);
+    background:var(--amber-dim); border:1px solid var(--amber-line);
+    padding:4px 8px; border-radius:6px; flex-shrink:0;
   }
-
   .period-del{
-    background:none;
-    border:none;
-    color:var(--text-dim);
-    cursor:pointer;
-    font-size:1.1rem;
-    padding:4px 8px;
-    border-radius:6px;
+    background:none; border:none; color:var(--text-dim); cursor:pointer;
+    font-size:1.1rem; padding:4px 8px; border-radius:6px; flex-shrink:0;
     transition:color 0.2s ease, background 0.2s ease;
-    flex-shrink:0;
   }
   .period-del:hover{ color:var(--error); background:#E85D5D18; }
 
   .empty{
-    text-align:center;
-    padding:40px 20px;
-    border:1px dashed var(--line);
-    border-radius:12px;
+    text-align:center; padding:40px 20px;
+    border:1px dashed var(--line); border-radius:12px;
   }
-  .empty-title{
-    font-weight:700;
-    font-size:1rem;
-    color:var(--text);
-    margin-bottom:6px;
+  .empty-title{ font-weight:700; font-size:1rem; color:var(--text); margin-bottom:6px; }
+  .empty-sub{ color:var(--text-dim); font-size:0.88rem; }
+  .empty-copy{
+    margin-top:14px; background:var(--panel); border:1px solid var(--line);
+    color:var(--text); font-family:'Inter',sans-serif; font-size:0.8rem;
+    font-weight:600; padding:8px 14px; border-radius:8px; cursor:pointer;
+    transition:border-color 0.2s ease;
   }
-  .empty-sub{
-    color:var(--text-dim);
-    font-size:0.88rem;
-  }
+  .empty-copy:hover{ border-color:var(--amber); }
+  .empty-copy:disabled{ opacity:0.4; cursor:default; }
 
-  /* ── Add period form (modal-ish inline panel) ───────────────────── */
+  /* ── Add period panel ─────────────────────────────────── */
   .addpanel{
-    background:var(--panel);
-    border:1px solid var(--amber-line);
-    border-radius:12px;
-    padding:20px;
-    margin-bottom:36px;
-    display:none;
+    background:var(--panel); border:1px solid var(--amber-line);
+    border-radius:12px; padding:20px; margin-bottom:24px; display:none;
     animation:slidein 0.3s cubic-bezier(.16,1,.3,1);
   }
   .addpanel.show{ display:block; }
-  @keyframes slidein{
-    from{opacity:0; transform:translateY(-8px);}
-    to{opacity:1; transform:translateY(0);}
-  }
+  @keyframes slidein{ from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);} }
   .addpanel-title{
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.72rem;
-    letter-spacing:0.1em;
-    text-transform:uppercase;
-    color:var(--amber);
+    font-family:'JetBrains Mono', monospace; font-size:0.72rem;
+    letter-spacing:0.1em; text-transform:uppercase; color:var(--amber);
     margin-bottom:16px;
   }
   .row2{ display:flex; gap:12px; }
   .field{ margin-bottom:14px; flex:1; }
   .field label{
-    display:block;
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.68rem;
-    letter-spacing:0.06em;
-    text-transform:uppercase;
-    color:var(--text-dim);
+    display:block; font-family:'JetBrains Mono', monospace; font-size:0.68rem;
+    letter-spacing:0.06em; text-transform:uppercase; color:var(--text-dim);
     margin-bottom:6px;
   }
   .field input{
-    width:100%;
-    background:var(--ink-2);
-    border:1px solid var(--line);
-    border-radius:8px;
-    padding:10px 12px;
-    color:var(--text);
-    font-family:'Inter',sans-serif;
-    font-size:0.9rem;
-    outline:none;
+    width:100%; background:var(--ink-2); border:1px solid var(--line);
+    border-radius:8px; padding:10px 12px; color:var(--text);
+    font-family:'Inter',sans-serif; font-size:0.9rem; outline:none;
     transition:border-color 0.2s ease, box-shadow 0.2s ease;
   }
-  .field input:focus{
-    border-color:var(--amber);
-    box-shadow:0 0 0 3px var(--amber-dim);
+  .field input:focus{ border-color:var(--amber); box-shadow:0 0 0 3px var(--amber-dim); }
+  .applydays{ margin-bottom:16px; }
+  .applydays-label{
+    font-family:'JetBrains Mono', monospace; font-size:0.68rem;
+    letter-spacing:0.06em; text-transform:uppercase; color:var(--text-dim);
+    margin-bottom:8px;
   }
-  .addpanel-actions{
-    display:flex;
-    gap:10px;
-    margin-top:4px;
+  .daychips{ display:flex; gap:6px; flex-wrap:wrap; }
+  .daychip{
+    font-family:'JetBrains Mono', monospace; font-size:0.74rem; font-weight:600;
+    padding:7px 11px; border-radius:7px; cursor:pointer; user-select:none;
+    background:var(--ink-2); border:1px solid var(--line); color:var(--text-dim);
+    transition:all 0.15s ease;
   }
+  .daychip.on{ background:var(--amber-dim); border-color:var(--amber-line); color:var(--amber); }
+  .addpanel-actions{ display:flex; gap:10px; margin-top:4px; }
   .btn-primary, .btn-ghost{
-    flex:1;
-    padding:11px 0;
-    border-radius:8px;
-    font-family:'Inter',sans-serif;
-    font-weight:700;
-    font-size:0.88rem;
-    cursor:pointer;
-    border:none;
-    transition:transform 0.15s ease, background 0.2s ease;
+    flex:1; padding:11px 0; border-radius:8px;
+    font-family:'Inter',sans-serif; font-weight:700; font-size:0.88rem;
+    cursor:pointer; border:none; transition:transform 0.15s ease, background 0.2s ease;
   }
   .btn-primary{ background:var(--amber); color:#1A0F04; }
   .btn-primary:hover{ background:#F2954F; }
@@ -346,30 +264,122 @@
   .btn-ghost{ background:transparent; border:1px solid var(--line); color:var(--text-dim); }
   .btn-ghost:hover{ border-color:var(--text-dim); color:var(--text); }
 
+  /* ── Save bar ─────────────────────────────────────────── */
   .savebar{
-    max-width:820px;
-    margin:0 auto;
-    padding:0 20px;
-    display:flex;
-    justify-content:flex-end;
-    gap:10px;
+    position:fixed; bottom:0; left:0; right:0;
+    background:var(--ink-2); border-top:1px solid var(--line);
+    padding:14px 20px; display:flex; justify-content:center; gap:10px;
+    align-items:center; z-index:15;
+  }
+  .savebar-inner{
+    max-width:820px; width:100%; display:flex; justify-content:flex-end;
+    gap:10px; align-items:center;
   }
   .savebar .btn-primary{ flex:none; padding:12px 24px; }
   .savebar .btn-ghost{ flex:none; padding:12px 20px; }
   .save-msg{
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.78rem;
-    color:var(--good);
-    align-self:center;
-    opacity:0;
-    transition:opacity 0.3s ease;
+    font-family:'JetBrains Mono', monospace; font-size:0.78rem;
+    color:var(--good); margin-right:auto; opacity:0; transition:opacity 0.3s ease;
   }
   .save-msg.show{ opacity:1; }
+  .unsaved-dot{
+    width:8px; height:8px; border-radius:50%; background:var(--amber);
+    margin-right:auto; opacity:0; transition:opacity 0.2s ease;
+  }
+  .unsaved-dot.show{ opacity:1; }
 
   @media (max-width:520px){
     .period-time{ width:94px; font-size:0.72rem; }
     .row2{ flex-direction:column; gap:0; }
+    .hero-clock{ font-size:3rem; }
   }
+
+  /* ── Import modal ─────────────────────────────────────── */
+  .modal-overlay{
+    position:fixed; inset:0; z-index:50;
+    background:rgba(4,8,18,0.72); backdrop-filter:blur(4px);
+    display:none; align-items:flex-start; justify-content:center;
+    padding:24px 16px; overflow-y:auto;
+  }
+  .modal-overlay.show{ display:flex; animation:fadeIn 0.25s ease; }
+  @keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
+  .modal{
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:16px; width:100%; max-width:520px; position:relative;
+    margin:auto; animation:modalRise 0.3s cubic-bezier(.16,1,.3,1);
+  }
+  @keyframes modalRise{ from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:translateY(0);} }
+  .modal-close{
+    position:absolute; top:14px; right:14px; z-index:2;
+    background:var(--ink-2); border:1px solid var(--line); color:var(--text-dim);
+    width:30px; height:30px; border-radius:8px; cursor:pointer; font-size:0.9rem;
+    transition:color 0.2s ease, border-color 0.2s ease;
+  }
+  .modal-close:hover{ color:var(--error); border-color:var(--error); }
+
+  .modal-steps{ padding:28px 24px 20px; border-bottom:1px solid var(--line); }
+  .stepdots{ display:flex; gap:7px; justify-content:center; margin-bottom:20px; }
+  .stepdot{
+    width:7px; height:7px; border-radius:50%; background:var(--line);
+    transition:background 0.3s ease, width 0.3s ease;
+  }
+  .stepdot.active{ background:var(--amber); width:22px; border-radius:99px; }
+
+  .stepstage{ position:relative; height:172px; overflow:hidden; }
+  .step{
+    position:absolute; inset:0; text-align:center; padding:0 10px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    opacity:0; transform:translateX(40px); pointer-events:none;
+    transition:opacity 0.35s ease, transform 0.35s cubic-bezier(.16,1,.3,1);
+  }
+  .step.active{ opacity:1; transform:translateX(0); pointer-events:auto; }
+  .step.left{ transform:translateX(-40px); }
+  .step-num{
+    font-family:'JetBrains Mono', monospace; font-size:0.7rem; font-weight:700;
+    color:var(--amber); border:1px solid var(--amber-line); background:var(--amber-dim);
+    width:26px; height:26px; border-radius:50%; display:flex; align-items:center;
+    justify-content:center; margin-bottom:12px;
+  }
+  .step-icon{ font-size:2.4rem; margin-bottom:10px; line-height:1; }
+  .step-title{ font-weight:800; font-size:1.15rem; margin-bottom:8px; }
+  .step-text{ color:var(--text-dim); font-size:0.9rem; line-height:1.5; max-width:360px; }
+
+  .step-nav{ display:flex; gap:10px; margin-top:18px; }
+  .step-nav .btn-ghost, .step-nav .btn-primary{ flex:1; padding:11px 0; }
+  .step-back:disabled{ opacity:0.35; cursor:default; }
+
+  .modal-body{ padding:22px 24px 26px; display:flex; flex-direction:column; gap:22px; }
+  .io-block{ display:flex; flex-direction:column; gap:9px; }
+  .io-label{
+    display:flex; justify-content:space-between; align-items:center;
+    font-family:'JetBrains Mono', monospace; font-size:0.72rem;
+    letter-spacing:0.06em; text-transform:uppercase; color:var(--text-dim);
+  }
+  .io-copy{
+    background:var(--ink-2); border:1px solid var(--line); color:var(--text);
+    font-family:'Inter',sans-serif; font-size:0.75rem; font-weight:600;
+    padding:6px 11px; border-radius:7px; cursor:pointer; text-transform:none; letter-spacing:0;
+    transition:border-color 0.2s ease, color 0.2s ease;
+  }
+  .io-copy:hover{ border-color:var(--amber); color:var(--amber); }
+  .io-copy.done{ border-color:var(--good); color:var(--good); }
+  .io-pre{
+    background:var(--ink-2); border:1px solid var(--line); border-radius:10px;
+    padding:14px; font-family:'JetBrains Mono', monospace; font-size:0.76rem;
+    line-height:1.55; color:var(--text-dim); white-space:pre-wrap; word-break:break-word;
+    max-height:200px; overflow-y:auto;
+  }
+  .io-textarea{
+    background:var(--ink-2); border:1px solid var(--line); border-radius:10px;
+    padding:14px; font-family:'JetBrains Mono', monospace; font-size:0.82rem;
+    color:var(--text); min-height:120px; resize:vertical; outline:none;
+    transition:border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .io-textarea:focus{ border-color:var(--amber); box-shadow:0 0 0 3px var(--amber-dim); }
+  .io-msg{ font-family:'JetBrains Mono', monospace; font-size:0.78rem; min-height:18px; }
+  .io-msg.ok{ color:var(--good); }
+  .io-msg.err{ color:var(--error); }
+  .import-apply{ padding:12px 0; }
 
   @media (prefers-reduced-motion: reduce){
     *{ animation:none !important; transition:none !important; }
@@ -398,10 +408,15 @@
   <div class="hero-sub" id="heroSub">Nothing yet. Add a schedule to get started.</div>
 </div>
 
+<div class="daytabs" id="dayTabs"></div>
+
 <div class="section">
   <div class="section-head">
-    <h2>Schedule</h2>
-    <button class="btn-add" id="toggleAdd">+ Add period</button>
+    <h2>Schedule <span class="viewing" id="viewingLabel"></span></h2>
+    <div class="head-actions">
+      <button class="btn-import" id="openImport">⚡ Import</button>
+      <button class="btn-add" id="toggleAdd">+ Add period</button>
+    </div>
   </div>
 
   <div class="addpanel" id="addPanel">
@@ -424,24 +439,92 @@
       <label for="pRoom">Room (optional)</label>
       <input type="text" id="pRoom" placeholder="Room 214">
     </div>
+    <div class="applydays">
+      <div class="applydays-label">Add to which days?</div>
+      <div class="daychips" id="dayChips"></div>
+    </div>
     <div class="addpanel-actions">
       <button class="btn-ghost" id="cancelAdd">Cancel</button>
-      <button class="btn-primary" id="confirmAdd">Add to schedule</button>
+      <button class="btn-primary" id="confirmAdd">Add period</button>
     </div>
   </div>
 
   <div class="periods" id="periodsList">
     <div class="empty" id="emptyState">
       <div class="empty-title">Nothing yet</div>
-      <div class="empty-sub">Add a schedule to get started.</div>
+      <div class="empty-sub">Add a period to build this day.</div>
+      <button class="empty-copy" id="copyPrevDay">Copy from another day</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="importModal">
+  <div class="modal">
+    <button class="modal-close" id="closeImport" aria-label="Close">✕</button>
+
+    <div class="modal-steps" id="modalSteps">
+      <div class="stepdots">
+        <span class="stepdot active" data-step="0"></span>
+        <span class="stepdot" data-step="1"></span>
+        <span class="stepdot" data-step="2"></span>
+      </div>
+
+      <div class="stepstage" id="stepStage">
+        <div class="step" data-step="0">
+          <div class="step-num">1</div>
+          <div class="step-icon">📋</div>
+          <div class="step-title">Copy the prompt</div>
+          <div class="step-text">Grab the ready made prompt below. It tells your chatbot exactly how to read your schedule.</div>
+        </div>
+        <div class="step" data-step="1">
+          <div class="step-num">2</div>
+          <div class="step-icon">🤖</div>
+          <div class="step-title">Paste it into your chatbot</div>
+          <div class="step-text">Open ChatGPT, Claude, or any chatbot. Paste the prompt, attach a photo of your schedule, and send.</div>
+        </div>
+        <div class="step" data-step="2">
+          <div class="step-num">3</div>
+          <div class="step-icon">✨</div>
+          <div class="step-title">Paste the code back here</div>
+          <div class="step-text">Copy the code it gives you, drop it in the box below, and your whole week fills in automatically.</div>
+        </div>
+      </div>
+
+      <div class="step-nav">
+        <button class="btn-ghost step-back" id="stepBack">Back</button>
+        <button class="btn-primary step-next" id="stepNext">Next</button>
+      </div>
+    </div>
+
+    <div class="modal-body">
+      <div class="io-block">
+        <div class="io-label">
+          <span>The prompt</span>
+          <button class="io-copy" id="copyPrompt">Copy prompt</button>
+        </div>
+        <pre class="io-pre" id="promptText"></pre>
+      </div>
+
+      <div class="io-block">
+        <div class="io-label">
+          <span>Paste your schedule code</span>
+          <button class="io-copy" id="exportCode">Export current week</button>
+        </div>
+        <textarea class="io-textarea" id="codeInput" placeholder="Paste the SCHEDULE2.0 code your chatbot gave you here..."></textarea>
+        <div class="io-msg" id="importMsg"></div>
+        <button class="btn-primary import-apply" id="applyCode">Fill my schedule</button>
+      </div>
     </div>
   </div>
 </div>
 
 <div class="savebar">
-  <span class="save-msg" id="saveMsg">Saved ✓</span>
-  <button class="btn-ghost" id="clearAll">Clear all</button>
-  <button class="btn-primary" id="saveSchedule">Save schedule</button>
+  <div class="savebar-inner">
+    <span class="save-msg" id="saveMsg">Saved ✓</span>
+    <span class="unsaved-dot" id="unsavedDot" title="Unsaved changes"></span>
+    <button class="btn-ghost" id="clearAll">Clear day</button>
+    <button class="btn-primary" id="saveSchedule">Save</button>
+  </div>
 </div>
 
 <script type="module">
@@ -464,15 +547,28 @@
 
   let currentUser = null;
   let tickStarted = false;
+  let dirty = false;
 
-  // ── State ──────────────────────────────────────────────────────
-  let periods = []; // {id, name, start:"HH:MM", end:"HH:MM", room}
+  // ── Data model: week = { Mon:[], Tue:[], ... } ─────────────
+  const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const DAY_FULL = { Mon:'Monday', Tue:'Tuesday', Wed:'Wednesday', Thu:'Thursday', Fri:'Friday', Sat:'Saturday', Sun:'Sunday' };
+  const JS_DAY_TO_KEY = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; // getDay() index
+
+  let week = emptyWeek();
+  let viewingDay = todayKey();      // which tab is open
+  let applyDays = new Set();        // which days a new period gets added to
+
+  function emptyWeek(){
+    const w = {};
+    DAYS.forEach(d => w[d] = []);
+    return w;
+  }
+  function todayKey(){
+    return JS_DAY_TO_KEY[new Date().getDay()];
+  }
 
   onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      window.location.href = "login.html";
-      return;
-    }
+    if (!user) { window.location.href = "login.html"; return; }
     currentUser = user;
     await loadSchedule();
   });
@@ -480,33 +576,60 @@
   async function loadSchedule(){
     try{
       const snap = await getDoc(doc(db, "schedules", currentUser.uid));
-      if (snap.exists() && Array.isArray(snap.data().periods)) {
-        periods = snap.data().periods;
+      if (snap.exists()){
+        const data = snap.data();
+        if (data.week && typeof data.week === 'object'){
+          // new weekly format
+          week = normalizeWeek(data.week);
+        } else if (Array.isArray(data.periods)){
+          // migrate old single-day format into every weekday
+          week = emptyWeek();
+          ['Mon','Tue','Wed','Thu','Fri'].forEach(d => {
+            week[d] = data.periods.map(p => ({...p, id: freshId()}));
+          });
+        }
       }
     } catch (err){
       console.error('Failed to load schedule:', err);
     }
+    // default the add-to-days to whatever day you're viewing
+    applyDays = new Set([viewingDay]);
+    renderDayTabs();
+    renderChips();
     renderPeriods();
     tick();
-    if (!tickStarted) {
-      tickStarted = true;
-      setInterval(tick, 1000);
-    }
+    if (!tickStarted){ tickStarted = true; setInterval(tick, 1000); }
+  }
+
+  function normalizeWeek(w){
+    const out = emptyWeek();
+    DAYS.forEach(d => {
+      if (Array.isArray(w[d])) out[d] = w[d].map(p => ({
+        id: p.id || freshId(),
+        name: p.name || '',
+        start: p.start || '',
+        end: p.end || '',
+        room: p.room || ''
+      }));
+    });
+    return out;
   }
 
   async function persistSchedule(){
     if(!currentUser) return;
     await setDoc(doc(db, "schedules", currentUser.uid), {
-      periods,
+      week,
       updatedAt: new Date().toISOString()
     });
+    setDirty(false);
   }
 
   window.handleLogout = function(){
+    if (dirty && !confirm('You have unsaved changes. Log out anyway?')) return;
     signOut(auth);
   };
 
-
+  // ── DOM refs ────────────────────────────────────────────
   const toggleAdd = document.getElementById('toggleAdd');
   const addPanel = document.getElementById('addPanel');
   const cancelAdd = document.getElementById('cancelAdd');
@@ -516,15 +639,65 @@
   const saveSchedule = document.getElementById('saveSchedule');
   const saveMsg = document.getElementById('saveMsg');
   const clearAll = document.getElementById('clearAll');
+  const dayTabs = document.getElementById('dayTabs');
+  const dayChips = document.getElementById('dayChips');
+  const viewingLabel = document.getElementById('viewingLabel');
+  const unsavedDot = document.getElementById('unsavedDot');
+
+  function freshId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+  function setDirty(v){
+    dirty = v;
+    unsavedDot.classList.toggle('show', v);
+  }
+
+  // ── Day tabs ────────────────────────────────────────────
+  function renderDayTabs(){
+    dayTabs.innerHTML = '';
+    const tk = todayKey();
+    DAYS.forEach(d => {
+      const tab = document.createElement('div');
+      tab.className = 'daytab' + (d === viewingDay ? ' active' : '') + (d === tk ? ' today' : '');
+      const count = week[d].length;
+      tab.innerHTML = `
+        <span class="daytab-abbr">${d}</span>
+        <span class="daytab-count">${count ? count + (count===1?' class':' classes') : 'empty'}</span>
+      `;
+      tab.addEventListener('click', () => {
+        viewingDay = d;
+        renderDayTabs();
+        renderPeriods();
+      });
+      dayTabs.appendChild(tab);
+    });
+    viewingLabel.textContent = '· ' + DAY_FULL[viewingDay];
+  }
+
+  // ── Apply-to-day chips in the add panel ─────────────────
+  function renderChips(){
+    dayChips.innerHTML = '';
+    DAYS.forEach(d => {
+      const chip = document.createElement('div');
+      chip.className = 'daychip' + (applyDays.has(d) ? ' on' : '');
+      chip.textContent = d;
+      chip.addEventListener('click', () => {
+        if (applyDays.has(d)) applyDays.delete(d);
+        else applyDays.add(d);
+        renderChips();
+      });
+      dayChips.appendChild(chip);
+    });
+  }
 
   toggleAdd.addEventListener('click', () => {
     addPanel.classList.toggle('show');
-    if(addPanel.classList.contains('show')) document.getElementById('pName').focus();
+    if(addPanel.classList.contains('show')){
+      applyDays = new Set([viewingDay]);
+      renderChips();
+      document.getElementById('pName').focus();
+    }
   });
-  cancelAdd.addEventListener('click', () => {
-    addPanel.classList.remove('show');
-    clearForm();
-  });
+  cancelAdd.addEventListener('click', () => { addPanel.classList.remove('show'); clearForm(); });
 
   function clearForm(){
     document.getElementById('pName').value='';
@@ -545,58 +718,77 @@
     const end = document.getElementById('pEnd').value;
     const room = document.getElementById('pRoom').value.trim();
 
-    if(!name || !start || !end){
-      alert('Add a class name, start time, and end time.');
-      return;
-    }
-    if(toMinutes(end) <= toMinutes(start)){
-      alert('End time must be after start time.');
-      return;
-    }
+    if(!name || !start || !end){ alert('Add a class name, start time, and end time.'); return; }
+    if(toMinutes(end) <= toMinutes(start)){ alert('End time must be after start time.'); return; }
+    if(applyDays.size === 0){ alert('Pick at least one day to add this to.'); return; }
 
-    periods.push({
-      id: Date.now().toString(36),
-      name, start, end, room
+    applyDays.forEach(d => {
+      week[d].push({ id: freshId(), name, start, end, room });
+      week[d].sort((a,b) => toMinutes(a.start) - toMinutes(b.start));
     });
-    periods.sort((a,b) => toMinutes(a.start) - toMinutes(b.start));
 
+    setDirty(true);
     clearForm();
     addPanel.classList.remove('show');
+    renderDayTabs();
     renderPeriods();
   });
 
   clearAll.addEventListener('click', () => {
-    if(periods.length && confirm('Remove all periods from today\'s schedule?')){
-      periods = [];
+    if(week[viewingDay].length && confirm(`Clear all periods from ${DAY_FULL[viewingDay]}?`)){
+      week[viewingDay] = [];
+      setDirty(true);
+      renderDayTabs();
       renderPeriods();
     }
   });
 
   window.removePeriod = function(id){
-    periods = periods.filter(p => p.id !== id);
+    week[viewingDay] = week[viewingDay].filter(p => p.id !== id);
+    setDirty(true);
+    renderDayTabs();
     renderPeriods();
-  }
+  };
+
+  // copy another day's periods into the currently-viewed (empty) day
+  window.copyFromDay = function(){
+    const options = DAYS.filter(d => d !== viewingDay && week[d].length);
+    if (!options.length){ alert('No other day has periods to copy yet.'); return; }
+    const choice = prompt('Copy periods from which day? ' + options.join(', '));
+    if (!choice) return;
+    const key = DAYS.find(d => d.toLowerCase() === choice.trim().toLowerCase());
+    if (!key || !week[key]){ alert('That day was not recognized.'); return; }
+    week[viewingDay] = week[key].map(p => ({...p, id: freshId()}));
+    setDirty(true);
+    renderDayTabs();
+    renderPeriods();
+  };
 
   function fmtTime(hhmm){
     const [h,m] = hhmm.split(':').map(Number);
-    const period = h >= 12 ? 'PM' : 'AM';
+    const suffix = h >= 12 ? 'PM' : 'AM';
     const h12 = h % 12 === 0 ? 12 : h % 12;
-    return `${h12}:${String(m).padStart(2,'0')} ${period}`;
+    return `${h12}:${String(m).padStart(2,'0')} ${suffix}`;
   }
 
   function renderPeriods(){
     periodsList.innerHTML = '';
-    if(periods.length === 0){
+    const list = week[viewingDay];
+    if(list.length === 0){
+      // wire the copy button then show empty state
+      const copyBtn = emptyState.querySelector('#copyPrevDay');
+      if (copyBtn) copyBtn.onclick = () => window.copyFromDay();
       periodsList.appendChild(emptyState);
       return;
     }
+    const isToday = viewingDay === todayKey();
     const nowMin = new Date().getHours()*60 + new Date().getMinutes();
 
-    periods.forEach((p, i) => {
+    list.forEach((p, i) => {
       const startMin = toMinutes(p.start);
       const endMin = toMinutes(p.end);
-      const isCurrent = nowMin >= startMin && nowMin < endMin;
-      const isPast = nowMin >= endMin;
+      const isCurrent = isToday && nowMin >= startMin && nowMin < endMin;
+      const isPast = isToday && nowMin >= endMin;
 
       const row = document.createElement('div');
       row.className = 'period' + (isCurrent ? ' current' : '') + (isPast ? ' past' : '');
@@ -625,6 +817,7 @@
     try{
       await persistSchedule();
       saveMsg.textContent = 'Saved ✓';
+      saveMsg.style.color = 'var(--good)';
       saveMsg.classList.add('show');
     } catch(err){
       console.error('Save failed:', err);
@@ -633,23 +826,23 @@
       saveMsg.classList.add('show');
     }
     saveSchedule.disabled = false;
-    setTimeout(() => saveMsg.classList.remove('show'), 1800);
+    setTimeout(() => saveMsg.classList.remove('show'), 2000);
   });
 
-  // ── Live clock + rail + hero countdown ──────────────────────────
+  // ── Live clock + hero countdown (always keyed to real today) ──
   function pad(n){ return String(n).padStart(2,'0'); }
 
   function tick(){
     const now = new Date();
     const nowMin = now.getHours()*60 + now.getMinutes() + now.getSeconds()/60;
-
     document.getElementById('clockNow').textContent =
       `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 
-    // day rail: from first period start to last period end
-    if(periods.length){
-      const dayStart = toMinutes(periods[0].start);
-      const dayEnd = toMinutes(periods[periods.length-1].end);
+    const todays = week[todayKey()] || [];
+
+    if(todays.length){
+      const dayStart = toMinutes(todays[0].start);
+      const dayEnd = toMinutes(todays[todays.length-1].end);
       const span = Math.max(dayEnd - dayStart, 1);
       const pct = Math.min(Math.max((nowMin - dayStart) / span, 0), 1) * 100;
       document.getElementById('railFill').style.width = pct + '%';
@@ -659,60 +852,283 @@
       document.getElementById('railDot').style.left = '0%';
     }
 
-    // find current / next period
     let current = null, next = null;
-    for(const p of periods){
+    for(const p of todays){
       const s = toMinutes(p.start), e = toMinutes(p.end);
       if(nowMin >= s && nowMin < e){ current = p; break; }
     }
-    if(!current){
-      next = periods.find(p => toMinutes(p.start) > nowMin) || null;
-    }
+    if(!current) next = todays.find(p => toMinutes(p.start) > nowMin) || null;
 
     const heroState = document.getElementById('heroState');
     const heroClock = document.getElementById('heroClock');
     const heroSub = document.getElementById('heroSub');
 
     if(current){
-      const endMin = toMinutes(current.end);
-      const secsLeft = Math.max(Math.round((endMin - nowMin) * 60), 0);
+      const secsLeft = Math.max(Math.round((toMinutes(current.end) - nowMin) * 60), 0);
       heroState.textContent = `${current.name} ends in`;
       heroClock.textContent = secsToClock(secsLeft);
-      heroSub.innerHTML = `Then: <strong>${next ? escapeHtml(getNextAfter(current)?.name || 'Free period') : 'Day complete'}</strong>`;
+      const after = getNextAfter(todays, current);
+      heroSub.innerHTML = `Then: <strong>${after ? escapeHtml(after.name) : 'Done for today'}</strong>`;
     } else if(next){
-      const startMin = toMinutes(next.start);
-      const secsLeft = Math.max(Math.round((startMin - nowMin) * 60), 0);
+      const secsLeft = Math.max(Math.round((toMinutes(next.start) - nowMin) * 60), 0);
       heroState.textContent = `${next.name} starts in`;
       heroClock.textContent = secsToClock(secsLeft);
       heroSub.innerHTML = next.room ? `In <strong>${escapeHtml(next.room)}</strong>` : 'Get ready.';
-    } else if(periods.length){
-      heroState.textContent = 'Schedule complete';
+    } else if(todays.length){
+      heroState.textContent = 'All done today';
       heroClock.textContent = '--:--:--';
       heroSub.textContent = 'No more periods today. Nice work.';
     } else {
-      heroState.textContent = 'Next period in';
+      heroState.textContent = 'Nothing scheduled today';
       heroClock.textContent = '--:--:--';
-      heroSub.textContent = "Nothing yet. Add a schedule to get started.";
+      heroSub.textContent = `It's ${DAY_FULL[todayKey()]}. Add periods to this day to start the countdown.`;
     }
 
-    renderPeriods();
+    // keep the "Now" highlight fresh if you're viewing today
+    if (viewingDay === todayKey()) renderPeriods();
   }
 
-  function getNextAfter(period){
-    const idx = periods.findIndex(p => p.id === period.id);
-    return periods[idx+1] || null;
+  function getNextAfter(list, period){
+    const idx = list.findIndex(p => p.id === period.id);
+    return list[idx+1] || null;
   }
-
   function secsToClock(totalSecs){
     const h = Math.floor(totalSecs/3600);
     const m = Math.floor((totalSecs%3600)/60);
     const s = totalSecs%60;
-    return h > 0
-      ? `${pad(h)}:${pad(m)}:${pad(s)}`
-      : `${pad(m)}:${pad(s)}`;
+    return h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
   }
 
-  // tick() interval is started once inside loadSchedule(), after auth resolves.
+  // ══ Import / Export via SCHEDULE2.0 code ═══════════════════════
+  const PROMPT_TEXT =
+`I have a weekly school schedule. Here is a photo of it.
+
+Convert it into this exact format, and give me ONLY the code block, nothing else:
+
+SCHEDULE2.0
+Mon: 9:00-10:00 Class Name (Room), 10:15-11:15 Another Class
+Tue: 9:00-10:00 Class Name (Room)
+Wed: OFF
+Thu: 9:00-10:00 Class Name
+Fri: 9:00-10:00 Class Name
+Sat: OFF
+Sun: OFF
+
+Rules:
+- Each line starts with the 3 letter day (Mon, Tue, Wed, Thu, Fri, Sat, Sun).
+- Time format is START-END using HH:MM, 24 hour clock (e.g. 13:30 for 1:30 PM).
+- After the time comes the class name.
+- If there is a room, put it in parentheses right after the name.
+- Separate multiple classes on the same day with commas.
+- Write OFF for any day with no classes.
+- Keep class names exactly as written on the schedule.`;
+
+  const importModal = document.getElementById('importModal');
+  const openImport = document.getElementById('openImport');
+  const closeImport = document.getElementById('closeImport');
+  const promptText = document.getElementById('promptText');
+  const copyPrompt = document.getElementById('copyPrompt');
+  const exportCode = document.getElementById('exportCode');
+  const codeInput = document.getElementById('codeInput');
+  const applyCode = document.getElementById('applyCode');
+  const importMsg = document.getElementById('importMsg');
+  const stepStage = document.getElementById('stepStage');
+  const stepBack = document.getElementById('stepBack');
+  const stepNext = document.getElementById('stepNext');
+  const stepDots = Array.from(document.querySelectorAll('.stepdot'));
+  const steps = Array.from(document.querySelectorAll('.step'));
+
+  promptText.textContent = PROMPT_TEXT;
+
+  let stepIndex = 0;
+  function showStep(n){
+    stepIndex = Math.max(0, Math.min(2, n));
+    steps.forEach((s, i) => {
+      s.classList.remove('active','left');
+      if (i === stepIndex) s.classList.add('active');
+      else if (i < stepIndex) s.classList.add('left');
+    });
+    stepDots.forEach((d, i) => d.classList.toggle('active', i === stepIndex));
+    stepBack.disabled = stepIndex === 0;
+    stepNext.textContent = stepIndex === 2 ? 'Got it' : 'Next';
+  }
+
+  stepBack.addEventListener('click', () => showStep(stepIndex - 1));
+  stepNext.addEventListener('click', () => {
+    if (stepIndex === 2){
+      // scroll down to the paste box on the final step
+      codeInput.scrollIntoView({ behavior:'smooth', block:'center' });
+      codeInput.focus();
+    } else {
+      showStep(stepIndex + 1);
+    }
+  });
+
+  function openModal(){
+    importModal.classList.add('show');
+    showStep(0);
+    importMsg.textContent = '';
+    importMsg.className = 'io-msg';
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal(){
+    importModal.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+  openImport.addEventListener('click', openModal);
+  closeImport.addEventListener('click', closeModal);
+  importModal.addEventListener('click', (e) => { if (e.target === importModal) closeModal(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && importModal.classList.contains('show')) closeModal();
+  });
+
+  // Copy prompt to clipboard (with fallback for non-secure contexts)
+  async function copyToClipboard(text){
+    try{
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      try{
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+        document.body.appendChild(ta); ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+      } catch { return false; }
+    }
+  }
+
+  copyPrompt.addEventListener('click', async () => {
+    const ok = await copyToClipboard(PROMPT_TEXT);
+    copyPrompt.textContent = ok ? 'Copied ✓' : 'Copy failed';
+    copyPrompt.classList.toggle('done', ok);
+    setTimeout(() => { copyPrompt.textContent = 'Copy prompt'; copyPrompt.classList.remove('done'); }, 1800);
+  });
+
+  // Export current week to SCHEDULE2.0 code
+  function weekToCode(){
+    let out = 'SCHEDULE2.0\n';
+    DAYS.forEach(d => {
+      const list = week[d];
+      if (!list.length){ out += `${d}: OFF\n`; return; }
+      const parts = list
+        .slice()
+        .sort((a,b) => toMinutes(a.start) - toMinutes(b.start))
+        .map(p => `${p.start}-${p.end} ${p.name}${p.room ? ` (${p.room})` : ''}`);
+      out += `${d}: ${parts.join(', ')}\n`;
+    });
+    return out.trim();
+  }
+
+  exportCode.addEventListener('click', async () => {
+    const code = weekToCode();
+    const ok = await copyToClipboard(code);
+    exportCode.textContent = ok ? 'Copied ✓' : 'Copy failed';
+    exportCode.classList.toggle('done', ok);
+    codeInput.value = code;
+    setTimeout(() => { exportCode.textContent = 'Export current week'; exportCode.classList.remove('done'); }, 1800);
+  });
+
+  // Parse SCHEDULE2.0 code back into the week model
+  function parseCode(raw){
+    const text = raw.trim();
+    if (!text) throw new Error('Paste some code first.');
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    // drop the header line if present
+    if (lines[0] && lines[0].toUpperCase().startsWith('SCHEDULE2.0')) lines.shift();
+    if (!lines.length) throw new Error('No day lines found.');
+
+    const dayMap = { mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat', sun:'Sun' };
+    const parsed = emptyWeek();
+    let matchedAnyDay = false;
+
+    for (const line of lines){
+      const colon = line.indexOf(':');
+      if (colon === -1) continue;
+      const dayRaw = line.slice(0, colon).trim().toLowerCase().slice(0,3);
+      const dayKey = dayMap[dayRaw];
+      if (!dayKey) continue;
+      matchedAnyDay = true;
+
+      const rest = line.slice(colon + 1).trim();
+      if (!rest || rest.toUpperCase() === 'OFF') continue;
+
+      // Split into classes by finding each "HH:MM-HH:MM ..." segment.
+      // This is more robust than splitting on commas, since class names
+      // themselves can contain commas (e.g. "Reading, Writing (A1)").
+      const classRegex = /(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})\s*([^]*?)(?=(?:,\s*)?\d{1,2}:\d{2}\s*[-–]\s*\d{1,2}:\d{2}|$)/g;
+      let m, foundAny = false;
+      while ((m = classRegex.exec(rest)) !== null){
+        foundAny = true;
+        let [, start, end, remainder] = m;
+        remainder = remainder.replace(/,\s*$/, '').trim();
+
+        // pull room out of trailing parentheses if present
+        let room = '';
+        const roomMatch = remainder.match(/\(([^)]*)\)\s*$/);
+        if (roomMatch){
+          room = roomMatch[1].trim();
+          remainder = remainder.slice(0, roomMatch.index).trim();
+        }
+        const name = remainder || 'Untitled';
+        parsed[dayKey].push({
+          id: freshId(),
+          name,
+          start: normalizeTime(start),
+          end: normalizeTime(end),
+          room
+        });
+      }
+      if (!foundAny) throw new Error(`Could not read any class times in: "${rest}"`);
+      parsed[dayKey].sort((a,b) => toMinutes(a.start) - toMinutes(b.start));
+    }
+
+    if (!matchedAnyDay) throw new Error('No valid day lines (Mon, Tue, ...) found.');
+    return parsed;
+  }
+
+  function normalizeTime(t){
+    let [h,m] = t.split(':').map(Number);
+    if (isNaN(h) || isNaN(m)) return '00:00';
+    h = Math.max(0, Math.min(23, h));
+    m = Math.max(0, Math.min(59, m));
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  }
+
+  applyCode.addEventListener('click', () => {
+    importMsg.className = 'io-msg';
+    let parsed;
+    try{
+      parsed = parseCode(codeInput.value);
+    } catch (err){
+      importMsg.textContent = err.message;
+      importMsg.classList.add('err');
+      return;
+    }
+    const total = DAYS.reduce((n,d) => n + parsed[d].length, 0);
+    if (total === 0){
+      importMsg.textContent = 'That code had no classes in it.';
+      importMsg.classList.add('err');
+      return;
+    }
+    const replace = confirm(`Found ${total} classes across the week. This will replace your current schedule. Continue?`);
+    if (!replace) return;
+
+    week = parsed;
+    setDirty(true);
+    renderDayTabs();
+    renderChips();
+    renderPeriods();
+    importMsg.textContent = `Imported ${total} classes. Review and hit Save.`;
+    importMsg.classList.add('ok');
+    setTimeout(closeModal, 1200);
+  });
+
+  // warn before closing with unsaved changes
+  window.addEventListener('beforeunload', (e) => {
+    if (dirty){ e.preventDefault(); e.returnValue = ''; }
+  });
 </script>
 
 </body>
