@@ -142,7 +142,8 @@
   .daytab.active.today .daytab-abbr::after{ color:#1A0F04; }
 
   /* ── Schedule list ────────────────────────────────────── */
-  .section{ max-width:820px; margin:0 auto; padding:0 20px; }
+  .section{ max-width:820px; margin:0 auto; padding:0 20px; transition:max-width 0.3s ease; }
+  body.weekview .section{ max-width:1200px; }
   .section-head{
     display:flex; justify-content:space-between; align-items:center;
     margin-bottom:14px;
@@ -161,7 +162,11 @@
   }
   .btn-add:hover{ border-color:var(--amber); }
   .btn-add:active{ transform:scale(0.97); }
-  .head-actions{ display:flex; gap:8px; }
+  .head-actions{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+  @media (max-width:560px){
+    .section-head{ flex-direction:column; align-items:flex-start; gap:12px; }
+    .head-actions{ width:100%; justify-content:flex-start; }
+  }
   .btn-import{
     display:flex; align-items:center; gap:6px;
     background:var(--amber-dim); border:1px solid var(--amber-line); color:var(--amber);
@@ -310,6 +315,86 @@
     margin-right:auto; opacity:0; transition:opacity 0.2s ease;
   }
   .unsaved-dot.show{ opacity:1; }
+
+  /* ── View toggle ──────────────────────────────────────── */
+  .viewtoggle{
+    display:flex; background:var(--ink-2); border:1px solid var(--line);
+    border-radius:9px; padding:3px; gap:2px;
+  }
+  .vt-btn{
+    background:none; border:none; color:var(--text-dim); cursor:pointer;
+    font-family:'Inter',sans-serif; font-size:0.82rem; font-weight:600;
+    padding:7px 14px; border-radius:7px; transition:color 0.2s ease, background 0.2s ease;
+  }
+  .vt-btn.active{ background:var(--amber); color:#1A0F04; }
+
+  /* ── Week grid (dashboard) ────────────────────────────── */
+  .weekgrid{
+    display:none;
+    grid-template-columns:repeat(7, minmax(0, 1fr));
+    gap:12px; margin-bottom:24px;
+  }
+  .weekgrid.show{ display:grid; }
+  .wg-day{
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:12px; padding:12px; display:flex; flex-direction:column;
+    min-height:120px;
+  }
+  .wg-day.today{ border-color:var(--amber-line); box-shadow:0 0 0 1px var(--amber-line); }
+  .wg-day-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--line);
+  }
+  .wg-day-name{ font-weight:700; font-size:0.9rem; }
+  .wg-day.today .wg-day-name{ color:var(--amber); }
+  .wg-day-count{
+    font-family:'JetBrains Mono', monospace; font-size:0.64rem; color:var(--text-dim);
+  }
+  .wg-classes{ display:flex; flex-direction:column; gap:7px; flex:1; }
+  .wg-class{
+    background:var(--ink-2); border:1px solid var(--line);
+    border-left:2px solid var(--slate); border-radius:7px; padding:7px 9px;
+    transition:border-left-color 0.3s ease;
+  }
+  .wg-class.now{ border-left-color:var(--amber); background:var(--amber-dim); }
+  .wg-class-time{
+    font-family:'JetBrains Mono', monospace; font-size:0.62rem;
+    color:var(--text-dim); font-variant-numeric:tabular-nums;
+  }
+  .wg-class.now .wg-class-time{ color:var(--amber); }
+  .wg-class-name{
+    font-size:0.76rem; font-weight:600; margin-top:2px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .wg-class-room{ font-size:0.66rem; color:var(--text-dim); margin-top:1px; }
+  .wg-empty{
+    color:var(--slate); font-size:0.72rem; text-align:center;
+    margin:auto 0; font-family:'JetBrains Mono', monospace;
+  }
+  .wg-day-add{
+    margin-top:8px; background:none; border:1px dashed var(--line);
+    color:var(--text-dim); border-radius:7px; padding:6px; cursor:pointer;
+    font-size:0.72rem; font-family:'Inter',sans-serif; font-weight:600;
+    transition:border-color 0.2s ease, color 0.2s ease;
+  }
+  .wg-day-add:hover{ border-color:var(--amber); color:var(--amber); }
+
+  /* iPad / tablet: wrap into fewer columns */
+  @media (max-width:1000px){
+    .weekgrid{ grid-template-columns:repeat(4, minmax(0,1fr)); }
+  }
+  @media (max-width:760px){
+    .weekgrid{ grid-template-columns:repeat(3, minmax(0,1fr)); }
+  }
+  @media (max-width:560px){
+    .weekgrid{ grid-template-columns:repeat(2, minmax(0,1fr)); gap:9px; }
+    .wg-day{ min-height:100px; }
+  }
+  /* narrow phones: single stacked column */
+  @media (max-width:400px){
+    .weekgrid{ grid-template-columns:1fr; }
+    .wg-day{ min-height:0; }
+  }
 
   @media (max-width:520px){
     .period-time{ width:94px; font-size:0.72rem; }
@@ -511,6 +596,10 @@
   <div class="section-head">
     <h2>Schedule <span class="viewing" id="viewingLabel"></span></h2>
     <div class="head-actions">
+      <div class="viewtoggle" id="viewToggle">
+        <button class="vt-btn active" id="vtDay" data-view="day">Day</button>
+        <button class="vt-btn" id="vtWeek" data-view="week">Week</button>
+      </div>
       <button class="btn-import" id="openImport">⚡ Import</button>
       <button class="btn-add" id="toggleAdd">+ Add period</button>
     </div>
@@ -554,6 +643,8 @@
       <button class="empty-copy" id="copyPrevDay">Copy from another day</button>
     </div>
   </div>
+
+  <div class="weekgrid" id="weekGrid"></div>
 </div>
 
 <div class="modal-overlay" id="importModal">
@@ -798,6 +889,11 @@
   const dayChips = document.getElementById('dayChips');
   const viewingLabel = document.getElementById('viewingLabel');
   const unsavedDot = document.getElementById('unsavedDot');
+  const weekGrid = document.getElementById('weekGrid');
+  const vtDay = document.getElementById('vtDay');
+  const vtWeek = document.getElementById('vtWeek');
+
+  let currentView = 'day'; // 'day' | 'week'
 
   function freshId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
@@ -985,6 +1081,77 @@
     return d.innerHTML;
   }
 
+  // ── View switching (Day <-> Week dashboard) ─────────────
+  function setView(view){
+    currentView = view;
+    const isWeek = view === 'week';
+    document.body.classList.toggle('weekview', isWeek);
+    vtDay.classList.toggle('active', !isWeek);
+    vtWeek.classList.toggle('active', isWeek);
+
+    // Day-only UI hides in week mode
+    dayTabs.style.display = isWeek ? 'none' : '';
+    periodsList.style.display = isWeek ? 'none' : '';
+    weekGrid.classList.toggle('show', isWeek);
+    viewingLabel.style.display = isWeek ? 'none' : '';
+    // the add panel belongs to day view; close it when switching to week
+    if (isWeek) addPanel.classList.remove('show');
+
+    if (isWeek) renderWeekGrid();
+    else renderPeriods();
+  }
+
+  vtDay.addEventListener('click', () => setView('day'));
+  vtWeek.addEventListener('click', () => setView('week'));
+
+  function renderWeekGrid(){
+    weekGrid.innerHTML = '';
+    const tk = todayKey();
+    const nowMin = new Date().getHours()*60 + new Date().getMinutes();
+
+    DAYS.forEach(d => {
+      const list = week[d];
+      const isToday = d === tk;
+      const col = document.createElement('div');
+      col.className = 'wg-day' + (isToday ? ' today' : '');
+
+      let classesHtml = '';
+      if (list.length === 0){
+        classesHtml = '<div class="wg-empty">—</div>';
+      } else {
+        classesHtml = '<div class="wg-classes">' + list.map(p => {
+          const isNow = isToday && nowMin >= toMinutes(p.start) && nowMin < toMinutes(p.end);
+          return `
+            <div class="wg-class${isNow ? ' now' : ''}">
+              <div class="wg-class-time">${fmtTime(p.start)}–${fmtTime(p.end)}</div>
+              <div class="wg-class-name">${escapeHtml(p.name)}</div>
+              ${p.room ? `<div class="wg-class-room">${escapeHtml(p.room)}</div>` : ''}
+            </div>`;
+        }).join('') + '</div>';
+      }
+
+      col.innerHTML = `
+        <div class="wg-day-head">
+          <span class="wg-day-name">${DAY_FULL[d]}</span>
+          <span class="wg-day-count">${list.length || ''}</span>
+        </div>
+        ${classesHtml}
+        <button class="wg-day-add" data-day="${d}">+ Add</button>
+      `;
+      // tapping a day's + Add jumps to that day in day-view with the add panel open
+      col.querySelector('.wg-day-add').addEventListener('click', () => {
+        viewingDay = d;
+        setView('day');
+        renderDayTabs();
+        applyDays = new Set([d]);
+        renderChips();
+        addPanel.classList.add('show');
+        document.getElementById('pName').focus();
+      });
+      weekGrid.appendChild(col);
+    });
+  }
+
   saveSchedule.addEventListener('click', async () => {
     saveSchedule.disabled = true;
     try{
@@ -1057,8 +1224,9 @@
       heroSub.textContent = `It's ${DAY_FULL[todayKey()]}. Add periods to this day to start the countdown.`;
     }
 
-    // keep the "Now" highlight fresh if you're viewing today
-    if (viewingDay === todayKey()) renderPeriods();
+    // keep the "Now" highlight fresh in whichever view is open
+    if (currentView === 'week') renderWeekGrid();
+    else if (viewingDay === todayKey()) renderPeriods();
   }
 
   function getNextAfter(list, period){
@@ -1427,6 +1595,7 @@ Wed: OFF
       renderDayTabs();
       renderChips();
       renderPeriods();
+      if (currentView === 'week') renderWeekGrid();
       hideLoading();
       closeModal();
       // surface a confirmation on the main screen via the save message
