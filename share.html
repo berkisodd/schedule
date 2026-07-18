@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schedule 2.0</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%230B1120'/><circle cx='32' cy='32' r='28' fill='none' stroke='%23E8823C' stroke-width='2'/><circle cx='32' cy='32' r='4' fill='%23E8823C'/><line x1='32' y1='12' x2='32' y2='22' stroke='%23E8823C' stroke-width='2' stroke-linecap='round'/><line x1='32' y1='32' x2='44' y2='32' stroke='%23E8823C' stroke-width='2' stroke-linecap='round'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0B1120; --ink-2:#0F1729; --panel:#121B30; --line:#232E47;
+    --text:#F2EFE9; --text-dim:#9AA4BC; --slate:#3D4A66;
+    --amber:#E8823C; --amber-dim:#E8823C22; --amber-line:#E8823C55;
+    --error:#E85D5D; --good:#5FC79E;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    font-family:'Inter',sans-serif; background:var(--ink); color:var(--text);
+    min-height:100vh; padding-bottom:60px;
+  }
+
+  .topbar{
+    position:sticky; top:0; z-index:20; background:var(--ink);
+    border-bottom:1px solid var(--line); padding:14px 20px;
+  }
+  .topbar-inner{
+    max-width:1200px; margin:0 auto; display:flex;
+    justify-content:space-between; align-items:center; gap:12px;
+  }
+  .brand{ display:flex; align-items:center; gap:9px; }
+  .brand-dot{
+    width:9px; height:9px; border-radius:50%; background:var(--amber);
+    box-shadow:0 0 8px var(--amber);
+  }
+  .brand-name{ font-weight:800; font-size:0.98rem; }
+  .readonly-tag{
+    font-family:'JetBrains Mono', monospace; font-size:0.68rem;
+    letter-spacing:0.08em; text-transform:uppercase; color:var(--text-dim);
+    border:1px solid var(--line); padding:5px 10px; border-radius:7px;
+  }
+  .clock-now{
+    font-family:'JetBrains Mono', monospace; font-size:0.78rem;
+    color:var(--amber); font-weight:600;
+  }
+
+  .hero{ max-width:1200px; margin:32px auto 8px; padding:0 20px; text-align:center; }
+  .hero-owner{
+    font-family:'JetBrains Mono', monospace; font-size:0.74rem;
+    letter-spacing:0.14em; text-transform:uppercase; color:var(--text-dim);
+    margin-bottom:10px;
+  }
+  .hero-label{
+    font-family:'JetBrains Mono', monospace; font-size:0.75rem;
+    letter-spacing:0.16em; text-transform:uppercase; color:var(--amber);
+    margin-bottom:10px;
+  }
+  .hero-clock{
+    font-family:'JetBrains Mono', monospace; font-weight:700;
+    font-size:clamp(2.6rem, 11vw, 4.6rem); letter-spacing:-0.02em;
+    line-height:1; font-variant-numeric:tabular-nums;
+  }
+  .hero-sub{ margin-top:12px; font-size:0.98rem; color:var(--text-dim); }
+  .hero-sub strong{ color:var(--text); font-weight:700; }
+
+  .section{ max-width:1200px; margin:28px auto 0; padding:0 20px; }
+  .section h2{ font-size:1.05rem; font-weight:700; margin-bottom:14px; }
+
+  .weekgrid{
+    display:grid; grid-template-columns:repeat(7, minmax(0,1fr));
+    gap:12px; margin-bottom:24px;
+  }
+  .wg-day{
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:12px; display:flex; flex-direction:column; min-height:120px;
+  }
+  .wg-day.today{ border-color:var(--amber-line); box-shadow:0 0 0 1px var(--amber-line); }
+  .wg-day-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--line);
+  }
+  .wg-day-name{ font-weight:700; font-size:0.9rem; }
+  .wg-day.today .wg-day-name{ color:var(--amber); }
+  .wg-day-count{ font-family:'JetBrains Mono', monospace; font-size:0.64rem; color:var(--text-dim); }
+  .wg-classes{ display:flex; flex-direction:column; gap:7px; flex:1; }
+  .wg-class{
+    background:var(--ink-2); border:1px solid var(--line);
+    border-left:2px solid var(--slate); border-radius:7px; padding:7px 9px;
+  }
+  .wg-class.now{ border-left-color:var(--amber); background:var(--amber-dim); }
+  .wg-class-time{
+    font-family:'JetBrains Mono', monospace; font-size:0.62rem;
+    color:var(--text-dim); font-variant-numeric:tabular-nums;
+  }
+  .wg-class.now .wg-class-time{ color:var(--amber); }
+  .wg-class-name{
+    font-size:0.76rem; font-weight:600; margin-top:2px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .wg-class-room{ font-size:0.66rem; color:var(--text-dim); margin-top:1px; }
+  .wg-empty{
+    color:var(--slate); font-size:0.72rem; text-align:center;
+    margin:auto 0; font-family:'JetBrains Mono', monospace;
+  }
+
+  .state-msg{
+    max-width:520px; margin:80px auto; padding:0 20px; text-align:center;
+  }
+  .state-title{ font-weight:800; font-size:1.3rem; margin-bottom:10px; }
+  .state-sub{ color:var(--text-dim); font-size:0.95rem; line-height:1.6; }
+  .state-cta{
+    display:inline-block; margin-top:20px; background:var(--amber); color:#1A0F04;
+    font-weight:700; font-size:0.9rem; padding:11px 20px; border-radius:9px;
+    text-decoration:none;
+  }
+
+  .loading-screen{
+    position:fixed; inset:0; z-index:60; background:var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    transition:opacity 0.35s ease, visibility 0.35s ease;
+  }
+  .loading-screen.hide{ opacity:0; visibility:hidden; }
+  .loading-inner{ display:flex; flex-direction:column; align-items:center; gap:18px; }
+  .loading-ring{
+    width:42px; height:42px; border-radius:50%;
+    border:3px solid var(--line); border-top-color:var(--amber);
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .loading-text{
+    font-family:'JetBrains Mono', monospace; font-size:0.8rem;
+    letter-spacing:0.08em; color:var(--text-dim);
+  }
+
+  .footer-note{
+    max-width:1200px; margin:0 auto; padding:0 20px; text-align:center;
+    color:var(--slate); font-size:0.78rem;
+  }
+  .footer-note a{ color:var(--text-dim); text-decoration:none; }
+  .footer-note a:hover{ color:var(--amber); }
+
+  @media (max-width:1000px){ .weekgrid{ grid-template-columns:repeat(4, minmax(0,1fr)); } }
+  @media (max-width:760px){ .weekgrid{ grid-template-columns:repeat(3, minmax(0,1fr)); } }
+  @media (max-width:560px){ .weekgrid{ grid-template-columns:repeat(2, minmax(0,1fr)); gap:9px; } }
+  @media (max-width:400px){ .weekgrid{ grid-template-columns:1fr; } .wg-day{ min-height:0; } }
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-inner">
+    <div class="loading-ring"></div>
+    <div class="loading-text">Loading schedule...</div>
+  </div>
+</div>
+
+<div class="topbar" id="topbar" style="display:none;">
+  <div class="topbar-inner">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <span class="brand-name">Schedule 2.0</span>
+      <span class="readonly-tag">View only</span>
+    </div>
+    <div class="clock-now" id="clockNow">--:--</div>
+  </div>
+</div>
+
+<div id="content" style="display:none;">
+  <div class="hero">
+    <div class="hero-owner" id="heroOwner"></div>
+    <div class="hero-label" id="heroState">Next period in</div>
+    <div class="hero-clock" id="heroClock">--:--:--</div>
+    <div class="hero-sub" id="heroSub"></div>
+  </div>
+
+  <div class="section">
+    <h2>The week</h2>
+    <div class="weekgrid" id="weekGrid"></div>
+  </div>
+
+  <div class="footer-note">
+    This is a shared, view only schedule. <a href="login.html">Make your own</a>
+  </div>
+</div>
+
+<div class="state-msg" id="stateMsg" style="display:none;">
+  <div class="state-title" id="stateTitle">Schedule not found</div>
+  <div class="state-sub" id="stateSub">This link may have been turned off, or it was typed in wrong.</div>
+  <a class="state-cta" href="login.html">Make your own schedule</a>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBmD7gtaHTmrIE4Pl9q1746s-zoWvx6XAI",
+    authDomain: "schedule2-a453d.firebaseapp.com",
+    projectId: "schedule2-a453d",
+    storageBucket: "schedule2-a453d.firebasestorage.app",
+    messagingSenderId: "649246836060",
+    appId: "1:649246836060:web:e6abd24d924e16b1206d99"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const DAY_FULL = { Mon:'Monday', Tue:'Tuesday', Wed:'Wednesday', Thu:'Thursday', Fri:'Friday', Sat:'Saturday', Sun:'Sunday' };
+  const JS_DAY_TO_KEY = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  let week = emptyWeek();
+  let ownerName = '';
+  let tickStarted = false;
+
+  function emptyWeek(){ const w = {}; DAYS.forEach(d => w[d] = []); return w; }
+  function todayKey(){ return JS_DAY_TO_KEY[new Date().getDay()]; }
+  function toMinutes(hhmm){
+    if(!hhmm) return null;
+    const [h,m] = hhmm.split(':').map(Number);
+    return h*60+m;
+  }
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+  function fmtTime(hhmm){
+    const [h,m] = hhmm.split(':').map(Number);
+    const suffix = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return `${h12}:${pad(m)} ${suffix}`;
+  }
+  function normalizeWeek(w){
+    const out = emptyWeek();
+    DAYS.forEach(d => {
+      if (Array.isArray(w[d])) out[d] = w[d].map(p => ({
+        name: p.name || '', start: p.start || '', end: p.end || '', room: p.room || ''
+      })).filter(p => p.start && p.end);
+    });
+    return out;
+  }
+
+  function hideLoading(){ document.getElementById('loadingScreen').classList.add('hide'); }
+  function showNotFound(title, sub){
+    hideLoading();
+    document.getElementById('stateMsg').style.display = '';
+    if (title) document.getElementById('stateTitle').textContent = title;
+    if (sub) document.getElementById('stateSub').textContent = sub;
+  }
+
+  // safety: never hang on the loader
+  setTimeout(() => {
+    const ls = document.getElementById('loadingScreen');
+    if (ls && !ls.classList.contains('hide')){
+      showNotFound('Taking too long', 'The schedule could not be loaded. Check the link and try again.');
+    }
+  }, 8000);
+
+  async function load(){
+    const params = new URLSearchParams(window.location.search);
+    const id = (params.get('id') || '').trim();
+    if (!id){
+      showNotFound('No schedule link', 'This page needs a share link to show a schedule.');
+      return;
+    }
+    try{
+      const snap = await getDoc(doc(db, "sharedSchedules", id));
+      if (!snap.exists()){
+        showNotFound();
+        return;
+      }
+      const data = snap.data();
+      week = normalizeWeek(data.week || {});
+      ownerName = data.ownerName || '';
+    } catch (err){
+      console.error('Could not load shared schedule:', err);
+      showNotFound('Could not load', 'Something went wrong reading this schedule.');
+      return;
+    }
+
+    document.getElementById('topbar').style.display = '';
+    document.getElementById('content').style.display = '';
+    document.getElementById('heroOwner').textContent = ownerName ? ownerName + "'s week" : 'Shared week';
+    renderWeekGrid();
+    tick();
+    if (!tickStarted){ tickStarted = true; setInterval(tick, 1000); }
+    hideLoading();
+  }
+
+  function renderWeekGrid(){
+    const grid = document.getElementById('weekGrid');
+    grid.innerHTML = '';
+    const tk = todayKey();
+    const nowMin = new Date().getHours()*60 + new Date().getMinutes();
+
+    DAYS.forEach(d => {
+      const list = week[d];
+      const isToday = d === tk;
+      const col = document.createElement('div');
+      col.className = 'wg-day' + (isToday ? ' today' : '');
+
+      let inner = '';
+      if (list.length === 0){
+        inner = '<div class="wg-empty">Free</div>';
+      } else {
+        inner = '<div class="wg-classes">' + list.map(p => {
+          const isNow = isToday && nowMin >= toMinutes(p.start) && nowMin < toMinutes(p.end);
+          return `
+            <div class="wg-class${isNow ? ' now' : ''}">
+              <div class="wg-class-time">${fmtTime(p.start)} to ${fmtTime(p.end)}</div>
+              <div class="wg-class-name">${escapeHtml(p.name)}</div>
+              ${p.room ? `<div class="wg-class-room">${escapeHtml(p.room)}</div>` : ''}
+            </div>`;
+        }).join('') + '</div>';
+      }
+
+      col.innerHTML = `
+        <div class="wg-day-head">
+          <span class="wg-day-name">${DAY_FULL[d]}</span>
+          <span class="wg-day-count">${list.length || ''}</span>
+        </div>
+        ${inner}
+      `;
+      grid.appendChild(col);
+    });
+  }
+
+  function secsToClock(totalSecs){
+    const h = Math.floor(totalSecs/3600);
+    const m = Math.floor((totalSecs%3600)/60);
+    const s = totalSecs%60;
+    return h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+  }
+
+  function tick(){
+    const now = new Date();
+    const nowMin = now.getHours()*60 + now.getMinutes() + now.getSeconds()/60;
+    document.getElementById('clockNow').textContent =
+      `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+    const todays = week[todayKey()] || [];
+    let current = null, next = null;
+    for (const p of todays){
+      const s = toMinutes(p.start), e = toMinutes(p.end);
+      if (nowMin >= s && nowMin < e){ current = p; break; }
+    }
+    if (!current) next = todays.find(p => toMinutes(p.start) > nowMin) || null;
+
+    const heroState = document.getElementById('heroState');
+    const heroClock = document.getElementById('heroClock');
+    const heroSub = document.getElementById('heroSub');
+
+    if (current){
+      const secsLeft = Math.max(Math.round((toMinutes(current.end) - nowMin) * 60), 0);
+      heroState.textContent = `${current.name} ends in`;
+      heroClock.textContent = secsToClock(secsLeft);
+      const idx = todays.indexOf(current);
+      const after = todays[idx+1] || null;
+      heroSub.innerHTML = `Then: <strong>${after ? escapeHtml(after.name) : 'Done for today'}</strong>`;
+    } else if (next){
+      const secsLeft = Math.max(Math.round((toMinutes(next.start) - nowMin) * 60), 0);
+      heroState.textContent = `${next.name} starts in`;
+      heroClock.textContent = secsToClock(secsLeft);
+      heroSub.innerHTML = next.room ? `In <strong>${escapeHtml(next.room)}</strong>` : 'Coming up next.';
+    } else if (todays.length){
+      heroState.textContent = 'All done today';
+      heroClock.textContent = '--:--:--';
+      heroSub.textContent = 'No more periods today.';
+    } else {
+      heroState.textContent = 'Nothing scheduled today';
+      heroClock.textContent = '--:--:--';
+      heroSub.textContent = `It is ${DAY_FULL[todayKey()]}.`;
+    }
+
+    renderWeekGrid();
+  }
+
+  load();
+</script>
+
+</body>
+</html>
