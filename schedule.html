@@ -7,6 +7,19 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%230B1120'/><circle cx='32' cy='32' r='28' fill='none' stroke='%23E8823C' stroke-width='2'/><circle cx='32' cy='32' r='4' fill='%23E8823C'/><line x1='32' y1='12' x2='32' y2='22' stroke='%23E8823C' stroke-width='2' stroke-linecap='round'/><line x1='32' y1='32' x2='44' y2='32' stroke='%23E8823C' stroke-width='2' stroke-linecap='round'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script>
+  // Apply saved theme before first paint so there is no flash of the wrong theme.
+  (function(){
+    try{
+      var pref = localStorage.getItem('s2_theme') || 'system';
+      var dark = pref === 'dark' || (pref === 'system' &&
+        window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    } catch(e){
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  })();
+</script>
 <style>
   :root{
     --ink:#0B1120;
@@ -21,7 +34,28 @@
     --amber-line:#E8823C55;
     --error:#E85D5D;
     --good:#5FC79E;
+    --avatar-bg:#000000;
+    --avatar-stroke:#FFFFFF;
+    --on-amber:#1A0F04;
   }
+  html[data-theme="light"]{
+    --ink:#F7F5F1;
+    --ink-2:#FFFFFF;
+    --panel:#FFFFFF;
+    --line:#E2DDD4;
+    --text:#16202E;
+    --text-dim:#6B7488;
+    --slate:#A8B0C0;
+    --amber:#C96A22;
+    --amber-dim:#C96A2218;
+    --amber-line:#C96A2255;
+    --error:#C4453F;
+    --good:#2E8F68;
+    --avatar-bg:#16202E;
+    --avatar-stroke:#F7F5F1;
+    --on-amber:#FFFFFF;
+  }
+  html{ background:var(--ink); }
   *{margin:0;padding:0;box-sizing:border-box;}
   html,body{height:100%;}
   body{
@@ -128,7 +162,7 @@
   .daytab:hover{ border-color:var(--slate); }
   .daytab:active{ transform:scale(0.97); }
   .daytab.active{ background:var(--amber); border-color:var(--amber); }
-  .daytab.active .daytab-abbr, .daytab.active .daytab-count{ color:#1A0F04; }
+  .daytab.active .daytab-abbr, .daytab.active .daytab-count{ color:var(--on-amber); }
   .daytab-abbr{
     font-weight:700; font-size:0.9rem; color:var(--text);
     display:block;
@@ -140,7 +174,7 @@
   .daytab.today .daytab-abbr::after{
     content:'•'; color:var(--amber); margin-left:4px;
   }
-  .daytab.active.today .daytab-abbr::after{ color:#1A0F04; }
+  .daytab.active.today .daytab-abbr::after{ color:var(--on-amber); }
 
   /* ── Schedule list ────────────────────────────────────── */
   .section{ max-width:820px; margin:0 auto; padding:0 20px; transition:max-width 0.3s ease; }
@@ -185,6 +219,203 @@
   }
   .btn-share:hover{ border-color:var(--good); color:var(--good); }
   .btn-share:active{ transform:scale(0.97); }
+
+  /* settings modal */
+  .settings-modal{ max-width:480px; }
+  .set-head{ padding:28px 24px 16px; border-bottom:1px solid var(--line); }
+  .set-title{ font-weight:800; font-size:1.25rem; margin-bottom:6px; }
+  .set-sub{ color:var(--text-dim); font-size:0.85rem; }
+  .set-body{ padding:20px 24px 26px; display:flex; flex-direction:column; gap:20px; }
+  .set-section{ display:flex; flex-direction:column; }
+  .set-label{
+    font-family:'JetBrains Mono', monospace; font-size:0.7rem;
+    letter-spacing:0.08em; text-transform:uppercase; color:var(--text-dim);
+    margin-bottom:9px;
+  }
+  .danger-label{ color:var(--error); }
+  .set-hint{
+    color:var(--text-dim); font-size:0.78rem; line-height:1.5; margin-top:8px;
+  }
+  .set-input, .set-textarea{
+    width:100%; background:var(--ink-2); border:1px solid var(--line);
+    border-radius:9px; padding:11px 13px; color:var(--text);
+    font-family:'Inter',sans-serif; font-size:0.92rem; outline:none;
+    transition:border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .set-textarea{ min-height:80px; resize:vertical; line-height:1.5; }
+  .set-input:focus, .set-textarea:focus{
+    border-color:var(--amber); box-shadow:0 0 0 3px var(--amber-dim);
+  }
+  .char-count{
+    font-family:'JetBrains Mono', monospace; font-size:0.68rem;
+    color:var(--text-dim); text-align:right; margin-top:5px;
+  }
+  .set-row{ display:flex; align-items:center; justify-content:space-between; gap:16px; }
+
+  /* avatar picker */
+  .avatar-picker{ display:flex; gap:12px; flex-wrap:wrap; }
+  .avatar-opt{
+    width:74px; height:74px; border-radius:50%; cursor:pointer;
+    background:var(--avatar-bg); border:2px solid var(--line);
+    display:flex; align-items:center; justify-content:center; padding:0;
+    transition:border-color 0.2s ease, transform 0.15s ease;
+    position:relative; overflow:hidden;
+  }
+  .avatar-opt:hover{ transform:scale(1.05); }
+  .avatar-opt.selected{ border-color:var(--amber); box-shadow:0 0 0 3px var(--amber-dim); }
+  .avatar-opt svg{ width:100%; height:100%; display:block; }
+  .avatar-soon{
+    width:74px; height:74px; border-radius:50%;
+    border:2px dashed var(--line); display:flex; align-items:center;
+    justify-content:center; text-align:center; padding:8px;
+    font-family:'JetBrains Mono', monospace; font-size:0.6rem;
+    color:var(--slate); line-height:1.3;
+  }
+  .avatar-name{
+    font-family:'JetBrains Mono', monospace; font-size:0.66rem;
+    color:var(--text-dim); text-align:center; margin-top:6px;
+  }
+  .avatar-wrap{ display:flex; flex-direction:column; align-items:center; }
+
+  /* toggle switch */
+  .switch{
+    width:46px; height:26px; border-radius:99px; flex-shrink:0;
+    background:var(--slate); border:none; cursor:pointer; padding:3px;
+    display:flex; align-items:center; transition:background 0.25s ease;
+  }
+  .switch.on{ background:var(--good); }
+  .switch-knob{
+    width:20px; height:20px; border-radius:50%; background:#fff;
+    transition:transform 0.25s cubic-bezier(.16,1,.3,1);
+  }
+  .switch.on .switch-knob{ transform:translateX(20px); }
+
+  /* theme picker */
+  .theme-picker{ display:flex; gap:8px; }
+  .theme-opt{
+    flex:1; background:var(--ink-2); border:1px solid var(--line);
+    color:var(--text-dim); font-family:'Inter',sans-serif; font-size:0.84rem;
+    font-weight:600; padding:10px 0; border-radius:9px; cursor:pointer;
+    transition:all 0.2s ease;
+  }
+  .theme-opt:hover{ border-color:var(--text-dim); color:var(--text); }
+  .theme-opt.active{
+    background:var(--amber); border-color:var(--amber); color:var(--on-amber);
+  }
+
+  .set-msg{
+    font-family:'JetBrains Mono', monospace; font-size:0.78rem; min-height:18px;
+  }
+  .set-msg.ok{ color:var(--good); }
+  .set-msg.err{ color:var(--error); }
+  .set-save{ padding:13px 0; }
+
+  /* danger zone */
+  .danger-zone{
+    border:1px solid var(--error); border-radius:12px; padding:18px;
+    margin-top:6px; background:#E85D5D0D;
+  }
+  .btn-danger{
+    width:100%; background:transparent; border:1px solid var(--error);
+    color:var(--error); font-family:'Inter',sans-serif; font-weight:700;
+    font-size:0.88rem; padding:11px 0; border-radius:9px; cursor:pointer;
+    margin-top:12px; transition:background 0.2s ease, color 0.2s ease;
+  }
+  .btn-danger:hover{ background:var(--error); color:#fff; }
+  .delete-confirm{ display:none; margin-top:14px; }
+  .delete-confirm.show{ display:block; }
+  .delete-actions{ display:flex; gap:9px; margin-top:10px; }
+  .delete-actions button{ flex:1; margin-top:0; padding:10px 0; }
+
+  /* people list */
+  .people-modal{ max-width:460px; }
+  .people-body{ padding:20px 24px 26px; display:flex; flex-direction:column; gap:14px; }
+  .people-search{ margin-bottom:2px; }
+  .people-list{ display:flex; flex-direction:column; gap:9px; max-height:400px; overflow-y:auto; }
+  .person{
+    display:flex; align-items:center; gap:12px; padding:11px 13px;
+    background:var(--ink-2); border:1px solid var(--line); border-radius:11px;
+    cursor:pointer; transition:border-color 0.2s ease, transform 0.12s ease;
+    text-align:left; width:100%; font-family:'Inter',sans-serif;
+  }
+  .person:hover{ border-color:var(--amber); }
+  .person:active{ transform:scale(0.99); }
+  .person-av{
+    width:42px; height:42px; border-radius:50%; flex-shrink:0;
+    background:var(--avatar-bg); overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .person-av svg{ width:100%; height:100%; display:block; }
+  .person-info{ flex:1; min-width:0; }
+  .person-name{
+    font-weight:700; font-size:0.92rem; color:var(--text);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .person-status{
+    font-size:0.78rem; color:var(--text-dim); margin-top:2px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .person-tag{
+    font-family:'JetBrains Mono', monospace; font-size:0.62rem;
+    letter-spacing:0.05em; text-transform:uppercase; color:var(--text-dim);
+    border:1px solid var(--line); padding:3px 7px; border-radius:5px; flex-shrink:0;
+  }
+  .people-empty{
+    text-align:center; padding:30px 10px; color:var(--text-dim);
+    font-size:0.86rem;
+  }
+
+  /* profile view */
+  .profile-modal{ max-width:400px; }
+  .profile-view{ padding:34px 24px 28px; text-align:center; }
+  .pv-av{
+    width:96px; height:96px; border-radius:50%; margin:0 auto 16px;
+    background:var(--avatar-bg); overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+    border:2px solid var(--line);
+  }
+  .pv-av svg{ width:100%; height:100%; display:block; }
+  .pv-name{ font-weight:800; font-size:1.3rem; margin-bottom:6px; }
+  .pv-status{
+    display:inline-block; font-size:0.84rem; color:var(--amber);
+    background:var(--amber-dim); border:1px solid var(--amber-line);
+    padding:5px 12px; border-radius:99px; margin-bottom:14px;
+  }
+  .pv-bio{
+    color:var(--text-dim); font-size:0.9rem; line-height:1.6;
+    margin-bottom:14px; white-space:pre-wrap; word-break:break-word;
+  }
+  .pv-meta{
+    font-family:'JetBrains Mono', monospace; font-size:0.72rem;
+    color:var(--text-dim);
+  }
+  .pv-private{
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+    padding:16px 0 4px;
+  }
+  .pv-lock{ font-size:1.8rem; }
+  .pv-private-title{ font-weight:700; font-size:1rem; }
+  .pv-private-sub{ color:var(--text-dim); font-size:0.86rem; line-height:1.5; }
+
+  /* header buttons */
+  .btn-people, .btn-settings{
+    background:var(--panel); border:1px solid var(--line); color:var(--text);
+    font-family:'Inter',sans-serif; font-size:0.85rem; font-weight:600;
+    padding:9px 14px; border-radius:9px; cursor:pointer;
+    transition:border-color 0.2s ease, transform 0.15s ease;
+  }
+  .btn-people:hover, .btn-settings:hover{ border-color:var(--amber); }
+  .btn-people:active, .btn-settings:active{ transform:scale(0.97); }
+
+  /* topbar avatar button */
+  .topbar-av{
+    width:32px; height:32px; border-radius:50%; padding:0; flex-shrink:0;
+    background:var(--avatar-bg); border:1px solid var(--line); cursor:pointer;
+    overflow:hidden; display:flex; align-items:center; justify-content:center;
+    transition:border-color 0.2s ease;
+  }
+  .topbar-av:hover{ border-color:var(--amber); }
+  .topbar-av svg{ width:100%; height:100%; display:block; }
 
   /* share modal */
   .share-modal{ max-width:460px; }
@@ -317,7 +548,7 @@
     font-family:'Inter',sans-serif; font-weight:700; font-size:0.88rem;
     cursor:pointer; border:none; transition:transform 0.15s ease, background 0.2s ease;
   }
-  .btn-primary{ background:var(--amber); color:#1A0F04; }
+  .btn-primary{ background:var(--amber); color:var(--on-amber); }
   .btn-primary:hover{ background:#F2954F; }
   .btn-primary:active{ transform:scale(0.98); }
   .btn-ghost{ background:transparent; border:1px solid var(--line); color:var(--text-dim); }
@@ -357,7 +588,7 @@
     font-family:'Inter',sans-serif; font-size:0.82rem; font-weight:600;
     padding:7px 14px; border-radius:7px; transition:color 0.2s ease, background 0.2s ease;
   }
-  .vt-btn.active{ background:var(--amber); color:#1A0F04; }
+  .vt-btn.active{ background:var(--amber); color:var(--on-amber); }
 
   /* ── Week grid (dashboard) ────────────────────────────── */
   .weekgrid{
@@ -517,7 +748,7 @@
     line-height:1.4; white-space:pre-wrap; word-break:break-word;
     font-family:'JetBrains Mono', monospace;
   }
-  .chat-msg.user .chat-bubble{ background:var(--amber); color:#1A0F04; border-bottom-right-radius:3px; }
+  .chat-msg.user .chat-bubble{ background:var(--amber); color:var(--on-amber); border-bottom-right-radius:3px; }
   .bot-bubble{ background:var(--panel); border:1px solid var(--line); color:var(--text); border-bottom-left-radius:3px; }
   .chatdemo-input{
     display:flex; align-items:center; gap:8px; padding:9px 12px;
@@ -541,7 +772,7 @@
     color:var(--text-dim); display:flex; align-items:center; justify-content:center;
     font-size:0.8rem; transition:background 0.2s ease, color 0.2s ease, transform 0.15s ease;
   }
-  .chatdemo-send.hot{ background:var(--amber); color:#1A0F04; }
+  .chatdemo-send.hot{ background:var(--amber); color:var(--on-amber); }
   .chatdemo-send.pressed{ transform:scale(0.85); }
   .fake-cursor{
     position:absolute; left:50%; top:60%; font-size:1rem; color:#fff;
@@ -606,6 +837,7 @@
     <div class="daytrack-title">Today's progress</div>
     <div class="daytrack-right">
       <div class="daytrack-now" id="clockNow">--:--</div>
+      <button class="topbar-av" id="topbarAvatar" aria-label="Settings"></button>
       <button class="logout-btn" onclick="handleLogout()">Log out</button>
     </div>
   </div>
@@ -632,6 +864,8 @@
         <button class="vt-btn" id="vtWeek" data-view="week">Week</button>
       </div>
       <button class="btn-import" id="openImport">⚡ Import</button>
+      <button class="btn-people" id="openPeople">People</button>
+      <button class="btn-settings" id="openSettings">Settings</button>
       <button class="btn-share" id="openShare">Share</button>
       <button class="btn-add" id="toggleAdd">+ Add period</button>
     </div>
@@ -677,6 +911,113 @@
   </div>
 
   <div class="weekgrid" id="weekGrid"></div>
+</div>
+
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal settings-modal">
+    <button class="modal-close" id="closeSettings" aria-label="Close">✕</button>
+
+    <div class="set-head">
+      <div class="set-title">Settings</div>
+      <div class="set-sub" id="setEmail"></div>
+    </div>
+
+    <div class="set-body">
+
+      <div class="set-section">
+        <div class="set-label">Profile picture</div>
+        <div class="avatar-picker" id="avatarPicker"></div>
+        <div class="set-hint">More avatars and custom uploads coming soon.</div>
+      </div>
+
+      <div class="set-section">
+        <div class="set-label">Display name</div>
+        <input type="text" class="set-input" id="setName" maxlength="40" placeholder="Your name">
+      </div>
+
+      <div class="set-section">
+        <div class="set-label">Status</div>
+        <input type="text" class="set-input" id="setStatus" maxlength="60" placeholder="In class, at lunch, free today">
+        <div class="char-count"><span id="statusCount">0</span> of 60</div>
+      </div>
+
+      <div class="set-section">
+        <div class="set-label">Bio</div>
+        <textarea class="set-textarea" id="setBio" maxlength="200" placeholder="A little about you"></textarea>
+        <div class="char-count"><span id="bioCount">0</span> of 200</div>
+      </div>
+
+      <div class="set-section">
+        <div class="set-label">Gender</div>
+        <select class="set-input" id="setGender">
+          <option value="">Prefer not to say</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
+      <div class="set-section">
+        <div class="set-row">
+          <div>
+            <div class="set-label" style="margin-bottom:4px;">Public account</div>
+            <div class="set-hint" style="margin:0;">When off, others only see your name and a private label.</div>
+          </div>
+          <button class="switch" id="publicToggle" role="switch" aria-checked="false">
+            <span class="switch-knob"></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="set-section">
+        <div class="set-label">Theme</div>
+        <div class="theme-picker" id="themePicker">
+          <button class="theme-opt" data-theme-pref="light">Light</button>
+          <button class="theme-opt" data-theme-pref="dark">Dark</button>
+          <button class="theme-opt" data-theme-pref="system">System</button>
+        </div>
+      </div>
+
+      <div class="set-msg" id="setMsg"></div>
+      <button class="btn-primary set-save" id="saveSettings">Save profile</button>
+
+      <div class="danger-zone">
+        <div class="set-label danger-label">Danger zone</div>
+        <div class="set-hint">Deleting your account removes your schedule, profile, and any share links. This cannot be undone.</div>
+        <button class="btn-danger" id="deleteAccountBtn">Delete my account</button>
+        <div class="delete-confirm" id="deleteConfirm">
+          <div class="set-hint" style="margin-bottom:8px;">Type <strong>DELETE</strong> to confirm.</div>
+          <input type="text" class="set-input" id="deleteInput" placeholder="DELETE">
+          <div class="delete-actions">
+            <button class="btn-ghost" id="cancelDelete">Cancel</button>
+            <button class="btn-danger" id="confirmDelete">Delete forever</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="peopleModal">
+  <div class="modal people-modal">
+    <button class="modal-close" id="closePeople" aria-label="Close">✕</button>
+    <div class="set-head">
+      <div class="set-title">People</div>
+      <div class="set-sub">Everyone using Schedule 2.0.</div>
+    </div>
+    <div class="people-body">
+      <input type="text" class="set-input people-search" id="peopleSearch" placeholder="Search by name">
+      <div class="people-list" id="peopleList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="profileModal">
+  <div class="modal profile-modal">
+    <button class="modal-close" id="closeProfile" aria-label="Close">✕</button>
+    <div class="profile-view" id="profileView"></div>
+  </div>
 </div>
 
 <div class="modal-overlay" id="shareModal">
@@ -796,8 +1137,8 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  import { getAuth, onAuthStateChanged, signOut, deleteUser, updateProfile } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBmD7gtaHTmrIE4Pl9q1746s-zoWvx6XAI",
@@ -820,6 +1161,34 @@
 
   let currentUser = null;
   let shareId = null;
+
+  // ── Avatars (drawn as SVG so they cost zero storage) ───────
+  const AVATARS = {
+    gary: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100" height="100" fill="var(--avatar-bg)"/>
+      <circle cx="50" cy="38" r="27" fill="none" stroke="var(--avatar-stroke)" stroke-width="2.5"/>
+      <circle cx="38" cy="35" r="1.5" fill="var(--avatar-stroke)"/>
+      <circle cx="58" cy="28" r="1.5" fill="var(--avatar-stroke)"/>
+      <path d="M 43 47 Q 52 45 62 36" fill="none" stroke="var(--avatar-stroke)" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M 20 100 Q 28 68 50 66 Q 70 68 74 100" fill="none" stroke="var(--avatar-stroke)" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>`,
+    larry: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100" height="100" fill="var(--avatar-bg)"/>
+      <circle cx="50" cy="40" r="28" fill="none" stroke="var(--avatar-stroke)" stroke-width="2.5"/>
+      <line x1="39" y1="33" x2="39" y2="40" stroke="var(--avatar-stroke)" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="62" y1="33" x2="62" y2="40" stroke="var(--avatar-stroke)" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M 36 52 Q 50 50.5 65 52" fill="none" stroke="var(--avatar-stroke)" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M 33 100 Q 38 74 50 73 Q 62 74 67 100" fill="none" stroke="var(--avatar-stroke)" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>`
+  };
+  const AVATAR_NAMES = { gary:'Gary', larry:'Larry' };
+  function avatarSvg(key){ return AVATARS[key] || AVATARS.larry; }
+
+  // ── Profile state ──────────────────────────────────────────
+  let profile = {
+    name: '', status: '', bio: '', gender: '',
+    avatar: 'larry', isPublic: false
+  };
   let tickStarted = false;
   let dirty = false;
 
@@ -844,6 +1213,7 @@
   onAuthStateChanged(auth, async (user) => {
     if (!user) { window.location.href = "login.html"; return; }
     currentUser = user;
+    await loadProfile();
     await loadSchedule();
   });
 
@@ -1510,7 +1880,16 @@ Wed: OFF
   closeImport.addEventListener('click', closeModal);
   importModal.addEventListener('click', (e) => { if (e.target === importModal) closeModal(); });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && importModal.classList.contains('show')) closeModal();
+    if (e.key !== 'Escape') return;
+    if (importModal.classList.contains('show')) closeModal();
+    const profM = document.getElementById('profileModal');
+    const peopM = document.getElementById('peopleModal');
+    const setM = document.getElementById('settingsModal');
+    const shareM = document.getElementById('shareModal');
+    if (profM && profM.classList.contains('show')) profM.classList.remove('show');
+    else if (peopM && peopM.classList.contains('show')){ peopM.classList.remove('show'); document.body.style.overflow=''; }
+    else if (setM && setM.classList.contains('show')){ setM.classList.remove('show'); document.body.style.overflow=''; }
+    else if (shareM && shareM.classList.contains('show')){ shareM.classList.remove('show'); document.body.style.overflow=''; }
   });
 
   // Copy prompt to clipboard (with fallback for non-secure contexts)
@@ -1782,6 +2161,342 @@ Wed: OFF
       console.error('Share sync failed:', err);
     }
   }
+
+  // ══ Theme ═════════════════════════════════════════════════════
+  const THEME_KEY = 's2_theme';
+  function getThemePref(){
+    try{ return localStorage.getItem(THEME_KEY) || 'system'; } catch(e){ return 'system'; }
+  }
+  function applyTheme(pref){
+    const dark = pref === 'dark' || (pref === 'system' &&
+      window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    document.querySelectorAll('.theme-opt').forEach(b => {
+      b.classList.toggle('active', b.dataset.themePref === pref);
+    });
+  }
+  function setThemePref(pref){
+    try{ localStorage.setItem(THEME_KEY, pref); } catch(e){}
+    applyTheme(pref);
+  }
+  document.querySelectorAll('.theme-opt').forEach(btn => {
+    btn.addEventListener('click', () => setThemePref(btn.dataset.themePref));
+  });
+  // follow the system if that is the chosen mode
+  if (window.matchMedia){
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      if (getThemePref() === 'system') applyTheme('system');
+    });
+  }
+  applyTheme(getThemePref());
+
+  // ══ Settings and profile ══════════════════════════════════════
+  const settingsModal = document.getElementById('settingsModal');
+  const openSettings = document.getElementById('openSettings');
+  const closeSettings = document.getElementById('closeSettings');
+  const topbarAvatar = document.getElementById('topbarAvatar');
+  const avatarPicker = document.getElementById('avatarPicker');
+  const setName = document.getElementById('setName');
+  const setStatus = document.getElementById('setStatus');
+  const setBio = document.getElementById('setBio');
+  const setGender = document.getElementById('setGender');
+  const setEmail = document.getElementById('setEmail');
+  const publicToggle = document.getElementById('publicToggle');
+  const saveSettings = document.getElementById('saveSettings');
+  const setMsg = document.getElementById('setMsg');
+  const statusCount = document.getElementById('statusCount');
+  const bioCount = document.getElementById('bioCount');
+
+  function renderAvatarPicker(){
+    avatarPicker.innerHTML = '';
+    Object.keys(AVATARS).forEach(key => {
+      const wrap = document.createElement('div');
+      wrap.className = 'avatar-wrap';
+      const btn = document.createElement('button');
+      btn.className = 'avatar-opt' + (profile.avatar === key ? ' selected' : '');
+      btn.innerHTML = avatarSvg(key);
+      btn.addEventListener('click', () => {
+        profile.avatar = key;
+        renderAvatarPicker();
+        renderTopbarAvatar();
+      });
+      const label = document.createElement('div');
+      label.className = 'avatar-name';
+      label.textContent = AVATAR_NAMES[key];
+      wrap.appendChild(btn);
+      wrap.appendChild(label);
+      avatarPicker.appendChild(wrap);
+    });
+    const soon = document.createElement('div');
+    soon.className = 'avatar-wrap';
+    soon.innerHTML = '<div class="avatar-soon">More<br>coming<br>soon</div>';
+    avatarPicker.appendChild(soon);
+  }
+
+  function renderTopbarAvatar(){
+    topbarAvatar.innerHTML = avatarSvg(profile.avatar);
+  }
+
+  function fillSettingsForm(){
+    setName.value = profile.name || '';
+    setStatus.value = profile.status || '';
+    setBio.value = profile.bio || '';
+    setGender.value = profile.gender || '';
+    publicToggle.classList.toggle('on', !!profile.isPublic);
+    publicToggle.setAttribute('aria-checked', profile.isPublic ? 'true' : 'false');
+    statusCount.textContent = (profile.status || '').length;
+    bioCount.textContent = (profile.bio || '').length;
+    setEmail.textContent = currentUser ? currentUser.email : '';
+    renderAvatarPicker();
+  }
+
+  setStatus.addEventListener('input', () => { statusCount.textContent = setStatus.value.length; });
+  setBio.addEventListener('input', () => { bioCount.textContent = setBio.value.length; });
+
+  publicToggle.addEventListener('click', () => {
+    profile.isPublic = !profile.isPublic;
+    publicToggle.classList.toggle('on', profile.isPublic);
+    publicToggle.setAttribute('aria-checked', profile.isPublic ? 'true' : 'false');
+  });
+
+  function openSettingsModal(){
+    fillSettingsForm();
+    setMsg.textContent = '';
+    setMsg.className = 'set-msg';
+    document.getElementById('deleteConfirm').classList.remove('show');
+    settingsModal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSettingsModal(){
+    settingsModal.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+  openSettings.addEventListener('click', openSettingsModal);
+  topbarAvatar.addEventListener('click', openSettingsModal);
+  closeSettings.addEventListener('click', closeSettingsModal);
+  settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) closeSettingsModal(); });
+
+  async function loadProfile(){
+    if (!currentUser) return;
+    try{
+      const snap = await getDoc(doc(db, "profiles", currentUser.uid));
+      if (snap.exists()){
+        const d = snap.data();
+        profile = {
+          name: d.name || currentUser.displayName || '',
+          status: d.status || '',
+          bio: d.bio || '',
+          gender: d.gender || '',
+          avatar: AVATARS[d.avatar] ? d.avatar : 'larry',
+          isPublic: d.isPublic === true
+        };
+      } else {
+        profile.name = currentUser.displayName || '';
+      }
+    } catch (err){
+      console.error('Could not load profile:', err);
+      profile.name = currentUser.displayName || '';
+    }
+    renderTopbarAvatar();
+  }
+
+  saveSettings.addEventListener('click', async () => {
+    if (!currentUser) return;
+    const name = setName.value.trim();
+    if (!name){
+      setMsg.textContent = 'Add a display name.';
+      setMsg.className = 'set-msg err';
+      return;
+    }
+    saveSettings.disabled = true;
+    setMsg.textContent = 'Saving...';
+    setMsg.className = 'set-msg';
+
+    profile.name = name;
+    profile.status = setStatus.value.trim().slice(0, 60);
+    profile.bio = setBio.value.trim().slice(0, 200);
+    profile.gender = setGender.value;
+
+    try{
+      await setDoc(doc(db, "profiles", currentUser.uid), {
+        name: profile.name,
+        status: profile.status,
+        bio: profile.bio,
+        gender: profile.gender,
+        avatar: profile.avatar,
+        isPublic: profile.isPublic,
+        updatedAt: new Date().toISOString()
+      });
+      try{ await updateProfile(currentUser, { displayName: profile.name }); } catch(e){}
+      renderTopbarAvatar();
+      setMsg.textContent = 'Profile saved.';
+      setMsg.className = 'set-msg ok';
+    } catch (err){
+      console.error('Profile save failed:', err);
+      setMsg.textContent = 'Could not save. Check your Firestore rules.';
+      setMsg.className = 'set-msg err';
+    }
+    saveSettings.disabled = false;
+  });
+
+  // ── Delete account ─────────────────────────────────────────
+  const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+  const deleteConfirm = document.getElementById('deleteConfirm');
+  const deleteInput = document.getElementById('deleteInput');
+  const cancelDelete = document.getElementById('cancelDelete');
+  const confirmDelete = document.getElementById('confirmDelete');
+
+  deleteAccountBtn.addEventListener('click', () => {
+    deleteConfirm.classList.add('show');
+    deleteInput.value = '';
+    deleteInput.focus();
+  });
+  cancelDelete.addEventListener('click', () => {
+    deleteConfirm.classList.remove('show');
+  });
+
+  confirmDelete.addEventListener('click', async () => {
+    if (deleteInput.value.trim().toUpperCase() !== 'DELETE'){
+      setMsg.textContent = 'Type DELETE to confirm.';
+      setMsg.className = 'set-msg err';
+      return;
+    }
+    if (!currentUser) return;
+    confirmDelete.disabled = true;
+    setMsg.textContent = 'Deleting your account...';
+    setMsg.className = 'set-msg';
+
+    try{
+      // remove the share link first so nothing public is left behind
+      if (shareId){
+        try{ await deleteDoc(doc(db, "sharedSchedules", shareId)); } catch(e){ console.error(e); }
+      }
+      try{ await deleteDoc(doc(db, "profiles", currentUser.uid)); } catch(e){ console.error(e); }
+      try{ await deleteDoc(doc(db, "schedules", currentUser.uid)); } catch(e){ console.error(e); }
+      try{ await deleteDoc(doc(db, "users", currentUser.uid)); } catch(e){ console.error(e); }
+
+      dirty = false; // stop the unsaved changes warning
+      await deleteUser(currentUser);
+      window.location.href = "login.html";
+    } catch (err){
+      console.error('Delete failed:', err);
+      confirmDelete.disabled = false;
+      if (err && err.code === 'auth/requires-recent-login'){
+        setMsg.textContent = 'For safety, log out and log back in, then delete.';
+      } else {
+        setMsg.textContent = 'Could not delete the account. Try again.';
+      }
+      setMsg.className = 'set-msg err';
+    }
+  });
+
+  // ══ People list ═══════════════════════════════════════════════
+  const peopleModal = document.getElementById('peopleModal');
+  const openPeople = document.getElementById('openPeople');
+  const closePeople = document.getElementById('closePeople');
+  const peopleList = document.getElementById('peopleList');
+  const peopleSearch = document.getElementById('peopleSearch');
+  const profileModal = document.getElementById('profileModal');
+  const closeProfile = document.getElementById('closeProfile');
+  const profileView = document.getElementById('profileView');
+
+  let allPeople = [];
+
+  openPeople.addEventListener('click', async () => {
+    peopleModal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    peopleSearch.value = '';
+    peopleList.innerHTML = '<div class="people-empty">Loading people...</div>';
+    await fetchPeople();
+    renderPeople('');
+  });
+  function closePeopleModal(){
+    peopleModal.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+  closePeople.addEventListener('click', closePeopleModal);
+  peopleModal.addEventListener('click', (e) => { if (e.target === peopleModal) closePeopleModal(); });
+
+  async function fetchPeople(){
+    try{
+      const snap = await getDocs(collection(db, "profiles"));
+      allPeople = [];
+      snap.forEach(d => {
+        const data = d.data();
+        allPeople.push({
+          uid: d.id,
+          name: data.name || 'Unnamed',
+          status: data.status || '',
+          bio: data.bio || '',
+          gender: data.gender || '',
+          avatar: AVATARS[data.avatar] ? data.avatar : 'larry',
+          isPublic: data.isPublic === true
+        });
+      });
+      allPeople.sort((a,b) => a.name.localeCompare(b.name));
+    } catch (err){
+      console.error('Could not load people:', err);
+      allPeople = [];
+    }
+  }
+
+  function renderPeople(filter){
+    const f = (filter || '').trim().toLowerCase();
+    const list = f ? allPeople.filter(p => p.name.toLowerCase().includes(f)) : allPeople;
+    peopleList.innerHTML = '';
+    if (!list.length){
+      peopleList.innerHTML = '<div class="people-empty">' +
+        (allPeople.length ? 'No one matches that name.' : 'No profiles yet. Be the first to set one up.') +
+        '</div>';
+      return;
+    }
+    list.forEach(p => {
+      const btn = document.createElement('button');
+      btn.className = 'person';
+      const isMe = currentUser && p.uid === currentUser.uid;
+      btn.innerHTML = `
+        <div class="person-av">${avatarSvg(p.avatar)}</div>
+        <div class="person-info">
+          <div class="person-name">${escapeHtml(p.name)}${isMe ? ' (you)' : ''}</div>
+          <div class="person-status">${p.isPublic ? escapeHtml(p.status || 'No status') : 'Private account'}</div>
+        </div>
+        ${p.isPublic ? '' : '<div class="person-tag">Private</div>'}
+      `;
+      btn.addEventListener('click', () => showProfile(p));
+      peopleList.appendChild(btn);
+    });
+  }
+
+  peopleSearch.addEventListener('input', () => renderPeople(peopleSearch.value));
+
+  function showProfile(p){
+    const isMe = currentUser && p.uid === currentUser.uid;
+    const visible = p.isPublic || isMe;
+    if (visible){
+      profileView.innerHTML = `
+        <div class="pv-av">${avatarSvg(p.avatar)}</div>
+        <div class="pv-name">${escapeHtml(p.name)}</div>
+        ${p.status ? `<div class="pv-status">${escapeHtml(p.status)}</div>` : ''}
+        ${p.bio ? `<div class="pv-bio">${escapeHtml(p.bio)}</div>` : ''}
+        ${p.gender ? `<div class="pv-meta">${escapeHtml(p.gender)}</div>` : ''}
+        ${isMe && !p.isPublic ? '<div class="pv-meta" style="margin-top:10px;">Only you can see this. Turn on public in settings.</div>' : ''}
+      `;
+    } else {
+      profileView.innerHTML = `
+        <div class="pv-av">${avatarSvg(p.avatar)}</div>
+        <div class="pv-name">${escapeHtml(p.name)}</div>
+        <div class="pv-private">
+          <div class="pv-lock">🔒</div>
+          <div class="pv-private-title">This account is private</div>
+          <div class="pv-private-sub">Only their name is visible.</div>
+        </div>
+      `;
+    }
+    profileModal.classList.add('show');
+  }
+  function closeProfileModal(){ profileModal.classList.remove('show'); }
+  closeProfile.addEventListener('click', closeProfileModal);
+  profileModal.addEventListener('click', (e) => { if (e.target === profileModal) closeProfileModal(); });
 
   // warn before closing with unsaved changes
   window.addEventListener('beforeunload', (e) => {
