@@ -153,6 +153,16 @@
     line-height:0.92; font-variant-numeric:tabular-nums;
     color:var(--text);
   }
+  /* dot matrix countdown */
+  .dotclock{
+    display:block; width:100%;
+    max-width:min(420px, 78vw);
+    height:auto; margin:0 auto;
+    overflow:visible;
+  }
+  .dc-on{ fill:var(--text); }
+  .dc-off{ fill:var(--line); }
+  .hero-clock.live .dc-on{ fill:var(--amber); }
   .hero-sub{
     margin-top:20px; font-size:0.94rem; color:var(--text-dim);
     letter-spacing:-0.005em;
@@ -914,7 +924,7 @@
 
 <div class="hero">
   <div class="hero-label"><span class="accent" id="heroState">Next period in</span></div>
-  <div class="hero-clock" id="heroClock">--:--:--</div>
+  <div class="hero-clock" id="heroClock" role="timer" aria-label="--:--"></div>
   <div class="hero-sub" id="heroSub">Nothing yet. Add a schedule to get started.</div>
 </div>
 
@@ -1727,27 +1737,26 @@
     if(!current) next = todays.find(p => toMinutes(p.start) > nowMin) || null;
 
     const heroState = document.getElementById('heroState');
-    const heroClock = document.getElementById('heroClock');
     const heroSub = document.getElementById('heroSub');
 
     if(current){
       const secsLeft = Math.max(Math.round((toMinutes(current.end) - nowMin) * 60), 0);
       heroState.textContent = `${current.name} ends in`;
-      heroClock.textContent = secsToClock(secsLeft);
+      setHeroClock(secsToClock(secsLeft), true);
       const after = getNextAfter(todays, current);
       heroSub.innerHTML = `Then: <strong>${after ? escapeHtml(after.name) : 'Done for today'}</strong>`;
     } else if(next){
       const secsLeft = Math.max(Math.round((toMinutes(next.start) - nowMin) * 60), 0);
       heroState.textContent = `${next.name} starts in`;
-      heroClock.textContent = secsToClock(secsLeft);
+      setHeroClock(secsToClock(secsLeft), false);
       heroSub.innerHTML = next.room ? `In <strong>${escapeHtml(next.room)}</strong>` : 'Get ready.';
     } else if(todays.length){
       heroState.textContent = 'All done today';
-      heroClock.textContent = '--:--:--';
+      setHeroClock('--:--');
       heroSub.textContent = 'No more periods today. Nice work.';
     } else {
       heroState.textContent = 'Nothing scheduled today';
-      heroClock.textContent = '--:--:--';
+      setHeroClock('--:--');
       heroSub.textContent = `It's ${DAY_FULL[todayKey()]}. Add periods to this day to start the countdown.`;
     }
 
@@ -1760,6 +1769,61 @@
     const idx = list.findIndex(p => p.id === period.id);
     return list[idx+1] || null;
   }
+  // ══ Dot matrix countdown ══════════════════════════════════════
+  // Digits are drawn on a 5x7 grid of dots. Unlit dots stay faintly
+  // visible so the whole matrix reads as a panel, the way the real
+  // dot displays do.
+  const DOT_GLYPHS = {
+    '0':["01110","10001","10011","10101","11001","10001","01110"],
+    '1':["00100","01100","00100","00100","00100","00100","01110"],
+    '2':["01110","10001","00001","00010","00100","01000","11111"],
+    '3':["11111","00010","00100","00010","00001","10001","01110"],
+    '4':["00010","00110","01010","10010","11111","00010","00010"],
+    '5':["11111","10000","11110","00001","00001","10001","01110"],
+    '6':["00110","01000","10000","11110","10001","10001","01110"],
+    '7':["11111","00001","00010","00100","01000","01000","01000"],
+    '8':["01110","10001","10001","01110","10001","10001","01110"],
+    '9':["01110","10001","10001","01111","00001","00010","01100"],
+    ':':["00000","00100","00100","00000","00100","00100","00000"],
+    '-':["00000","00000","00000","01110","00000","00000","00000"]
+  };
+
+  let lastClockText = null;
+
+  function renderDotClock(text){
+    const rows = 7, dot = 1, gap = 0.62, step = dot + gap;
+    let x = 0;
+    const cells = [];
+    for (const ch of text){
+      const g = DOT_GLYPHS[ch];
+      if (!g){ x += step * 2; continue; }
+      const cols = g[0].length;
+      for (let r = 0; r < rows; r++){
+        for (let c = 0; c < cols; c++){
+          const on = g[r][c] === '1';
+          cells.push(
+            `<circle cx="${(x + c*step + dot/2).toFixed(2)}" cy="${(r*step + dot/2).toFixed(2)}" r="${dot/2}" class="${on ? 'dc-on' : 'dc-off'}"/>`
+          );
+        }
+      }
+      x += cols*step + step;
+    }
+    const w = Math.max(x - step, step);
+    const h = rows*step - gap;
+    return `<svg class="dotclock" viewBox="0 0 ${w.toFixed(2)} ${h.toFixed(2)}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${cells.join('')}</svg>`;
+  }
+
+  function setHeroClock(text, live){
+    const el = document.getElementById('heroClock');
+    if (!el) return;
+    el.classList.toggle('live', !!live);
+    if (text === lastClockText) return; // skip identical repaints
+    lastClockText = text;
+    el.innerHTML = renderDotClock(text);
+    el.setAttribute('aria-label', text);
+  }
+
+
   function secsToClock(totalSecs){
     const h = Math.floor(totalSecs/3600);
     const m = Math.floor((totalSecs%3600)/60);
