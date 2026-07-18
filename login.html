@@ -17,10 +17,8 @@
     --text-dim:#9AA4BC;
     --slate:#3D4A66;
     --amber:#E8823C;
-    --amber-dim:#E8823C22;
-    --amber-line:#E8823C55;
+    --amber-dim:#E8823C33;
     --error:#E85D5D;
-    --good:#5FC79E;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   html,body{height:100%;}
@@ -29,563 +27,289 @@
     background:var(--ink);
     color:var(--text);
     min-height:100vh;
-    padding-bottom:90px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    overflow:hidden;
+    padding:24px;
   }
 
-  /* ── Loading screen ───────────────────────────────────── */
-  .loading-screen{
-    position:fixed; inset:0; z-index:60;
-    background:var(--ink); display:flex; align-items:center; justify-content:center;
-    transition:opacity 0.35s ease, visibility 0.35s ease;
-  }
-  .loading-screen.hide{ opacity:0; visibility:hidden; }
-  .loading-inner{ display:flex; flex-direction:column; align-items:center; gap:18px; }
-  .loading-ring{
-    width:42px; height:42px; border-radius:50%;
-    border:3px solid var(--line); border-top-color:var(--amber);
-    animation:spin 0.8s linear infinite;
-  }
-  @keyframes spin{ to{ transform:rotate(360deg); } }
-  .loading-text{
-    font-family:'JetBrains Mono', monospace; font-size:0.8rem;
-    letter-spacing:0.08em; color:var(--text-dim);
-  }
-
-  /* ── Top rail ─────────────────────────────────────────── */
-  .daytrack{
-    position:sticky; top:0; z-index:20;
-    background:var(--ink);
-    border-bottom:1px solid var(--line);
-    padding:14px 20px 12px;
-  }
-  .daytrack-head{
-    display:flex; justify-content:space-between; align-items:baseline;
-    max-width:820px; margin:0 auto 10px;
-  }
-  .daytrack-title{
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.7rem; letter-spacing:0.14em; text-transform:uppercase;
-    color:var(--text-dim);
-  }
-  .daytrack-right{ display:flex; align-items:center; gap:14px; }
-  .daytrack-now{
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.78rem; color:var(--amber); font-weight:600;
-  }
-  .logout-btn{
-    background:none; border:1px solid var(--line); color:var(--text-dim);
-    font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:600;
-    padding:6px 12px; border-radius:7px; cursor:pointer;
-    transition:border-color 0.2s ease, color 0.2s ease;
-  }
-  .logout-btn:hover{ border-color:var(--error); color:var(--error); }
-  .rail-outer{
-    max-width:820px; margin:0 auto; height:6px;
-    background:var(--panel); border-radius:99px; position:relative;
+  /* ambient rail: the signature motif, a thin line of "time" always moving */
+  .rail{
+    position:fixed;
+    top:0; left:0; right:0;
+    height:3px;
+    background:var(--line);
+    z-index:5;
   }
   .rail-fill{
-    height:100%; width:0%;
+    height:100%;
+    width:38%;
     background:linear-gradient(90deg, var(--amber), #F2A65A);
-    border-radius:99px; transition:width 1s linear;
+    box-shadow:0 0 12px var(--amber);
+    animation:railmove 1.2s ease-out;
   }
-  .rail-dot{
-    position:absolute; top:50%; left:0%;
-    width:12px;height:12px; background:var(--amber);
-    border:2px solid var(--ink); border-radius:50%;
-    transform:translate(-50%,-50%); box-shadow:0 0 0 4px var(--amber-dim);
-    transition:left 1s linear;
+  @keyframes railmove{
+    from{width:0%;}
+  }
+  .rail-marker{
+    position:absolute;
+    top:-3px;
+    left:38%;
+    width:2px;
+    height:9px;
+    background:var(--amber);
   }
 
-  /* ── Hero ─────────────────────────────────────────────── */
-  .hero{ max-width:820px; margin:32px auto 24px; padding:0 20px; text-align:center; }
-  .hero-label{
+  .backdrop-grid{
+    position:fixed;
+    inset:0;
+    background-image:
+      linear-gradient(var(--ink-2) 1px, transparent 1px),
+      linear-gradient(90deg, var(--ink-2) 1px, transparent 1px);
+    background-size:64px 64px;
+    mask-image:radial-gradient(ellipse 60% 50% at 50% 40%, black, transparent);
+    opacity:0.5;
+    pointer-events:none;
+  }
+
+  .wrap{
+    width:100%;
+    max-width:400px;
+    position:relative;
+    z-index:2;
+    animation:rise 0.7s cubic-bezier(.16,1,.3,1);
+  }
+  @keyframes rise{
+    from{opacity:0; transform:translateY(18px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+
+  .eyebrow{
     font-family:'JetBrains Mono', monospace;
-    font-size:0.75rem; letter-spacing:0.16em; text-transform:uppercase;
-    color:var(--text-dim); margin-bottom:10px;
+    font-size:0.72rem;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--amber);
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:10px;
   }
-  .hero-label .accent{ color:var(--amber); }
-  .hero-clock{
-    font-family:'JetBrains Mono', monospace; font-weight:700;
-    font-size:clamp(3rem, 12vw, 5.5rem); letter-spacing:-0.02em;
-    line-height:1; font-variant-numeric:tabular-nums;
+  .eyebrow::before{
+    content:'';
+    width:6px;height:6px;
+    background:var(--amber);
+    border-radius:50%;
+    box-shadow:0 0 8px var(--amber);
   }
-  .hero-sub{ margin-top:12px; font-size:1rem; color:var(--text-dim); }
-  .hero-sub strong{ color:var(--text); font-weight:700; }
 
-  /* ── Day tabs ─────────────────────────────────────────── */
-  .daytabs{
-    max-width:820px; margin:0 auto 22px; padding:0 20px;
-    display:flex; gap:8px; overflow-x:auto; scrollbar-width:none;
-  }
-  .daytabs::-webkit-scrollbar{ display:none; }
-  .daytab{
-    flex:1 0 auto; min-width:64px;
-    text-align:center; padding:10px 6px;
-    background:var(--panel); border:1px solid var(--line);
-    border-radius:10px; cursor:pointer; user-select:none;
-    transition:border-color 0.2s ease, background 0.2s ease, transform 0.12s ease;
-  }
-  .daytab:hover{ border-color:var(--slate); }
-  .daytab:active{ transform:scale(0.97); }
-  .daytab.active{ background:var(--amber); border-color:var(--amber); }
-  .daytab.active .daytab-abbr, .daytab.active .daytab-count{ color:#1A0F04; }
-  .daytab-abbr{
-    font-weight:700; font-size:0.9rem; color:var(--text);
-    display:block;
-  }
-  .daytab-count{
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.66rem; color:var(--text-dim); margin-top:3px; display:block;
-  }
-  .daytab.today .daytab-abbr::after{
-    content:'•'; color:var(--amber); margin-left:4px;
-  }
-  .daytab.active.today .daytab-abbr::after{ color:#1A0F04; }
-
-  /* ── Schedule list ────────────────────────────────────── */
-  .section{ max-width:820px; margin:0 auto; padding:0 20px; transition:max-width 0.3s ease; }
-  body.weekview .section{ max-width:1200px; }
-  .section-head{
-    display:flex; justify-content:space-between; align-items:center;
-    margin-bottom:14px;
-  }
-  .section-head h2{ font-size:1.1rem; font-weight:700; }
-  .section-head .viewing{
-    font-family:'JetBrains Mono', monospace; font-size:0.72rem;
-    color:var(--text-dim); font-weight:400;
-  }
-  .btn-add{
-    display:flex; align-items:center; gap:6px;
-    background:var(--panel); border:1px solid var(--line); color:var(--text);
-    font-family:'Inter',sans-serif; font-size:0.85rem; font-weight:600;
-    padding:9px 14px; border-radius:9px; cursor:pointer;
-    transition:border-color 0.2s ease, transform 0.15s ease;
-  }
-  .btn-add:hover{ border-color:var(--amber); }
-  .btn-add:active{ transform:scale(0.97); }
-  .head-actions{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
-  @media (max-width:560px){
-    .section-head{ flex-direction:column; align-items:flex-start; gap:12px; }
-    .head-actions{ width:100%; justify-content:flex-start; }
-  }
-  .btn-import{
-    display:flex; align-items:center; gap:6px;
-    background:var(--amber-dim); border:1px solid var(--amber-line); color:var(--amber);
-    font-family:'Inter',sans-serif; font-size:0.85rem; font-weight:700;
-    padding:9px 14px; border-radius:9px; cursor:pointer;
-    transition:background 0.2s ease, transform 0.15s ease;
-  }
-  .btn-import:hover{ background:#E8823C33; }
-  .btn-import:active{ transform:scale(0.97); }
-  .btn-share{
-    background:var(--panel); border:1px solid var(--line); color:var(--text);
-    font-family:'Inter',sans-serif; font-size:0.85rem; font-weight:600;
-    padding:9px 14px; border-radius:9px; cursor:pointer;
-    transition:border-color 0.2s ease, transform 0.15s ease;
-  }
-  .btn-share:hover{ border-color:var(--good); color:var(--good); }
-  .btn-share:active{ transform:scale(0.97); }
-
-  /* share modal */
-  .share-modal{ max-width:460px; }
-  .share-head{ padding:28px 24px 16px; border-bottom:1px solid var(--line); }
-  .share-title{ font-weight:800; font-size:1.25rem; margin-bottom:8px; }
-  .share-sub{ color:var(--text-dim); font-size:0.88rem; line-height:1.5; }
-  .share-body{ padding:20px 24px 26px; display:flex; flex-direction:column; gap:12px; }
-  .share-state{ display:none; flex-direction:column; gap:10px; }
-  .share-state.show{ display:flex; }
-  .share-create{ padding:13px 0; }
-  .share-linkrow{ display:flex; gap:8px; }
-  .share-link{
-    flex:1; background:var(--ink-2); border:1px solid var(--line); border-radius:9px;
-    padding:11px 12px; color:var(--text); font-family:'JetBrains Mono', monospace;
-    font-size:0.74rem; outline:none;
-  }
-  .share-link:focus{ border-color:var(--amber); }
-  .share-note{
-    font-family:'JetBrains Mono', monospace; font-size:0.72rem;
-    color:var(--text-dim); line-height:1.5;
-  }
-  .share-revoke{ padding:10px 0; margin-top:4px; }
-
-  .periods{ display:flex; flex-direction:column; gap:10px; margin-bottom:24px; }
-
-  .period{
-    display:flex; align-items:center; gap:16px;
-    background:var(--panel); border:1px solid var(--line);
-    border-left:3px solid transparent; border-radius:10px;
-    padding:14px 16px; position:relative;
-    transition:border-left-color 0.4s ease, background 0.4s ease;
-  }
-  .period.current{
-    border-left-color:var(--amber);
-    background:linear-gradient(90deg, var(--amber-dim), var(--panel) 30%);
-  }
-  .period.past{ opacity:0.45; }
-  .period-time{
-    font-family:'JetBrains Mono', monospace; font-size:0.82rem;
-    color:var(--text-dim); width:128px; flex-shrink:0;
-    font-variant-numeric:tabular-nums;
-  }
-  .period.current .period-time{ color:var(--amber); font-weight:600; }
-  .period-num{
-    font-family:'JetBrains Mono', monospace; font-size:0.7rem;
-    color:var(--slate); width:22px; flex-shrink:0;
-  }
-  .period-info{ flex:1; min-width:0; }
-  .period-name{
-    font-weight:700; font-size:0.98rem;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  }
-  .period-room{ font-size:0.82rem; color:var(--text-dim); margin-top:2px; }
-  .period-tag{
-    font-family:'JetBrains Mono', monospace; font-size:0.68rem;
-    letter-spacing:0.06em; text-transform:uppercase; color:var(--amber);
-    background:var(--amber-dim); border:1px solid var(--amber-line);
-    padding:4px 8px; border-radius:6px; flex-shrink:0;
-  }
-  .period-del{
-    background:none; border:none; color:var(--text-dim); cursor:pointer;
-    font-size:1.1rem; padding:4px 8px; border-radius:6px; flex-shrink:0;
-    transition:color 0.2s ease, background 0.2s ease;
-  }
-  .period-del:hover{ color:var(--error); background:#E85D5D18; }
-
-  .empty{
-    text-align:center; padding:40px 20px;
-    border:1px dashed var(--line); border-radius:12px;
-  }
-  .empty-title{ font-weight:700; font-size:1rem; color:var(--text); margin-bottom:6px; }
-  .empty-sub{ color:var(--text-dim); font-size:0.88rem; }
-  .empty-copy{
-    margin-top:14px; background:var(--panel); border:1px solid var(--line);
-    color:var(--text); font-family:'Inter',sans-serif; font-size:0.8rem;
-    font-weight:600; padding:8px 14px; border-radius:8px; cursor:pointer;
-    transition:border-color 0.2s ease;
-  }
-  .empty-copy:hover{ border-color:var(--amber); }
-  .empty-copy:disabled{ opacity:0.4; cursor:default; }
-
-  /* ── Add period panel ─────────────────────────────────── */
-  .addpanel{
-    background:var(--panel); border:1px solid var(--amber-line);
-    border-radius:12px; padding:20px; margin-bottom:24px; display:none;
-    animation:slidein 0.3s cubic-bezier(.16,1,.3,1);
-  }
-  .addpanel.show{ display:block; }
-  @keyframes slidein{ from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);} }
-  .addpanel-title{
-    font-family:'JetBrains Mono', monospace; font-size:0.72rem;
-    letter-spacing:0.1em; text-transform:uppercase; color:var(--amber);
-    margin-bottom:16px;
-  }
-  .row2{ display:flex; gap:12px; }
-  .field{ margin-bottom:14px; flex:1; }
-  .field label{
-    display:block; font-family:'JetBrains Mono', monospace; font-size:0.68rem;
-    letter-spacing:0.06em; text-transform:uppercase; color:var(--text-dim);
+  h1{
+    font-family:'Inter',sans-serif;
+    font-weight:800;
+    font-size:2.1rem;
+    letter-spacing:-0.02em;
     margin-bottom:6px;
   }
+  .sub{
+    color:var(--text-dim);
+    font-size:0.95rem;
+    margin-bottom:32px;
+  }
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:28px;
+    position:relative;
+  }
+
+  .tabs{
+    display:flex;
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:3px;
+    margin-bottom:24px;
+    position:relative;
+  }
+  .tab{
+    flex:1;
+    text-align:center;
+    padding:9px 0;
+    font-size:0.85rem;
+    font-weight:600;
+    color:var(--text-dim);
+    cursor:pointer;
+    border-radius:8px;
+    z-index:1;
+    transition:color 0.25s ease;
+    user-select:none;
+  }
+  .tab.active{ color:var(--ink); }
+  .tab-slider{
+    position:absolute;
+    top:3px; left:3px;
+    width:calc(50% - 3px);
+    height:calc(100% - 6px);
+    background:var(--text);
+    border-radius:8px;
+    transition:transform 0.32s cubic-bezier(.16,1,.3,1);
+  }
+  .tab-slider.right{ transform:translateX(100%); }
+
+  .field{ margin-bottom:16px; }
+  .field label{
+    display:block;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.7rem;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    margin-bottom:7px;
+  }
   .field input{
-    width:100%; background:var(--ink-2); border:1px solid var(--line);
-    border-radius:8px; padding:10px 12px; color:var(--text);
-    font-family:'Inter',sans-serif; font-size:0.9rem; outline:none;
+    width:100%;
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:12px 14px;
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    font-size:0.95rem;
+    outline:none;
     transition:border-color 0.2s ease, box-shadow 0.2s ease;
   }
-  .field input:focus{ border-color:var(--amber); box-shadow:0 0 0 3px var(--amber-dim); }
-  .applydays{ margin-bottom:16px; }
-  .applydays-label{
-    font-family:'JetBrains Mono', monospace; font-size:0.68rem;
-    letter-spacing:0.06em; text-transform:uppercase; color:var(--text-dim);
-    margin-bottom:8px;
+  .field input::placeholder{ color:#5A6584; }
+  .field input:focus{
+    border-color:var(--amber);
+    box-shadow:0 0 0 3px var(--amber-dim);
   }
-  .daychips{ display:flex; gap:6px; flex-wrap:wrap; }
-  .daychip{
-    font-family:'JetBrains Mono', monospace; font-size:0.74rem; font-weight:600;
-    padding:7px 11px; border-radius:7px; cursor:pointer; user-select:none;
-    background:var(--ink-2); border:1px solid var(--line); color:var(--text-dim);
-    transition:all 0.15s ease;
-  }
-  .daychip.on{ background:var(--amber-dim); border-color:var(--amber-line); color:var(--amber); }
-  .addpanel-actions{ display:flex; gap:10px; margin-top:4px; }
-  .addpanel-msg{
-    font-family:'JetBrains Mono', monospace; font-size:0.76rem;
-    color:var(--error); min-height:16px; margin-bottom:10px;
-  }
-  .btn-primary, .btn-ghost{
-    flex:1; padding:11px 0; border-radius:8px;
-    font-family:'Inter',sans-serif; font-weight:700; font-size:0.88rem;
-    cursor:pointer; border:none; transition:transform 0.15s ease, background 0.2s ease;
-  }
-  .btn-primary{ background:var(--amber); color:#1A0F04; }
-  .btn-primary:hover{ background:#F2954F; }
-  .btn-primary:active{ transform:scale(0.98); }
-  .btn-ghost{ background:transparent; border:1px solid var(--line); color:var(--text-dim); }
-  .btn-ghost:hover{ border-color:var(--text-dim); color:var(--text); }
+  .field input.err{ border-color:var(--error); }
 
-  /* ── Save bar ─────────────────────────────────────────── */
-  .savebar{
-    position:fixed; bottom:0; left:0; right:0;
-    background:var(--ink-2); border-top:1px solid var(--line);
-    padding:14px 20px; display:flex; justify-content:center; gap:10px;
-    align-items:center; z-index:15;
+  .pw-wrap{ position:relative; }
+  .pw-wrap input{ padding-right:64px; }
+  .pw-toggle{
+    position:absolute; right:8px; top:50%; transform:translateY(-50%);
+    background:none; border:none; color:var(--text-dim);
+    font-family:'JetBrains Mono', monospace; font-size:0.72rem; font-weight:600;
+    cursor:pointer; padding:6px 8px; border-radius:6px;
+    transition:color 0.2s ease, background 0.2s ease;
   }
-  .savebar-inner{
-    max-width:820px; width:100%; display:flex; justify-content:flex-end;
-    gap:10px; align-items:center;
-  }
-  .savebar .btn-primary{ flex:none; padding:12px 24px; }
-  .savebar .btn-ghost{ flex:none; padding:12px 20px; }
-  .save-msg{
-    font-family:'JetBrains Mono', monospace; font-size:0.78rem;
-    color:var(--good); margin-right:auto; opacity:0; transition:opacity 0.3s ease;
-  }
-  .save-msg.show{ opacity:1; }
-  .unsaved-dot{
-    width:8px; height:8px; border-radius:50%; background:var(--amber);
-    margin-right:auto; opacity:0; transition:opacity 0.2s ease;
-  }
-  .unsaved-dot.show{ opacity:1; }
+  .pw-toggle:hover{ color:var(--amber); background:var(--amber-dim); }
 
-  /* ── View toggle ──────────────────────────────────────── */
-  .viewtoggle{
-    display:flex; background:var(--ink-2); border:1px solid var(--line);
-    border-radius:9px; padding:3px; gap:2px;
+  /* changelog */
+  .changelog{
+    margin-top:16px; background:var(--panel); border:1px solid var(--line);
+    border-radius:12px; overflow:hidden;
   }
-  .vt-btn{
-    background:none; border:none; color:var(--text-dim); cursor:pointer;
-    font-family:'Inter',sans-serif; font-size:0.82rem; font-weight:600;
-    padding:7px 14px; border-radius:7px; transition:color 0.2s ease, background 0.2s ease;
+  .changelog-head{
+    width:100%; display:flex; align-items:center; gap:10px;
+    background:none; border:none; cursor:pointer; padding:14px 18px;
+    color:var(--text); font-family:'Inter',sans-serif; text-align:left;
   }
-  .vt-btn.active{ background:var(--amber); color:#1A0F04; }
-
-  /* ── Week grid (dashboard) ────────────────────────────── */
-  .weekgrid{
-    display:none;
-    grid-template-columns:repeat(7, minmax(0, 1fr));
-    gap:12px; margin-bottom:24px;
-  }
-  .weekgrid.show{ display:grid; }
-  .wg-day{
-    background:var(--panel); border:1px solid var(--line);
-    border-radius:12px; padding:12px; display:flex; flex-direction:column;
-    min-height:120px;
-  }
-  .wg-day.today{ border-color:var(--amber-line); box-shadow:0 0 0 1px var(--amber-line); }
-  .wg-day-head{
-    display:flex; align-items:baseline; justify-content:space-between;
-    margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--line);
-  }
-  .wg-day-name{ font-weight:700; font-size:0.9rem; }
-  .wg-day.today .wg-day-name{ color:var(--amber); }
-  .wg-day-count{
-    font-family:'JetBrains Mono', monospace; font-size:0.64rem; color:var(--text-dim);
-  }
-  .wg-classes{ display:flex; flex-direction:column; gap:7px; flex:1; }
-  .wg-class{
-    background:var(--ink-2); border:1px solid var(--line);
-    border-left:2px solid var(--slate); border-radius:7px; padding:7px 9px;
-    transition:border-left-color 0.3s ease;
-  }
-  .wg-class.now{ border-left-color:var(--amber); background:var(--amber-dim); }
-  .wg-class-time{
-    font-family:'JetBrains Mono', monospace; font-size:0.62rem;
-    color:var(--text-dim); font-variant-numeric:tabular-nums;
-  }
-  .wg-class.now .wg-class-time{ color:var(--amber); }
-  .wg-class-name{
-    font-size:0.76rem; font-weight:600; margin-top:2px;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  }
-  .wg-class-room{ font-size:0.66rem; color:var(--text-dim); margin-top:1px; }
-  .wg-empty{
-    color:var(--slate); font-size:0.72rem; text-align:center;
-    margin:auto 0; font-family:'JetBrains Mono', monospace;
-  }
-  .wg-day-add{
-    margin-top:8px; background:none; border:1px dashed var(--line);
-    color:var(--text-dim); border-radius:7px; padding:6px; cursor:pointer;
-    font-size:0.72rem; font-family:'Inter',sans-serif; font-weight:600;
-    transition:border-color 0.2s ease, color 0.2s ease;
-  }
-  .wg-day-add:hover{ border-color:var(--amber); color:var(--amber); }
-
-  /* iPad / tablet: wrap into fewer columns */
-  @media (max-width:1000px){
-    .weekgrid{ grid-template-columns:repeat(4, minmax(0,1fr)); }
-  }
-  @media (max-width:760px){
-    .weekgrid{ grid-template-columns:repeat(3, minmax(0,1fr)); }
-  }
-  @media (max-width:560px){
-    .weekgrid{ grid-template-columns:repeat(2, minmax(0,1fr)); gap:9px; }
-    .wg-day{ min-height:100px; }
-  }
-  /* narrow phones: single stacked column */
-  @media (max-width:400px){
-    .weekgrid{ grid-template-columns:1fr; }
-    .wg-day{ min-height:0; }
-  }
-
-  @media (max-width:520px){
-    .period-time{ width:94px; font-size:0.72rem; }
-    .row2{ flex-direction:column; gap:0; }
-    .hero-clock{ font-size:3rem; }
-  }
-
-  /* ── Import modal ─────────────────────────────────────── */
-  .modal-overlay{
-    position:fixed; inset:0; z-index:50;
-    background:rgba(4,8,18,0.72); backdrop-filter:blur(4px);
-    display:none; align-items:flex-start; justify-content:center;
-    padding:24px 16px; overflow-y:auto;
-  }
-  .modal-overlay.show{ display:flex; animation:fadeIn 0.25s ease; }
-  @keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
-  .modal{
-    background:var(--panel); border:1px solid var(--line);
-    border-radius:16px; width:100%; max-width:520px; position:relative;
-    margin:auto; animation:modalRise 0.3s cubic-bezier(.16,1,.3,1);
-  }
-  @keyframes modalRise{ from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:translateY(0);} }
-  .modal-close{
-    position:absolute; top:14px; right:14px; z-index:2;
-    background:var(--ink-2); border:1px solid var(--line); color:var(--text-dim);
-    width:30px; height:30px; border-radius:8px; cursor:pointer; font-size:0.9rem;
-    transition:color 0.2s ease, border-color 0.2s ease;
-  }
-  .modal-close:hover{ color:var(--error); border-color:var(--error); }
-
-  .modal-steps{ padding:28px 24px 20px; border-bottom:1px solid var(--line); }
-  .stepdots{ display:flex; gap:7px; justify-content:center; margin-bottom:20px; }
-  .stepdot{
-    width:7px; height:7px; border-radius:50%; background:var(--line);
-    transition:background 0.3s ease, width 0.3s ease;
-  }
-  .stepdot.active{ background:var(--amber); width:22px; border-radius:99px; }
-
-  .stepstage{ position:relative; height:340px; overflow:hidden; }
-  .step{
-    position:absolute; inset:0; text-align:center; padding:0 10px;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    opacity:0; transform:translateX(40px); pointer-events:none;
-    transition:opacity 0.35s ease, transform 0.35s cubic-bezier(.16,1,.3,1);
-  }
-  .step.active{ opacity:1; transform:translateX(0); pointer-events:auto; }
-  .step.left{ transform:translateX(-40px); }
-  .step-num{
-    font-family:'JetBrains Mono', monospace; font-size:0.7rem; font-weight:700;
-    color:var(--amber); border:1px solid var(--amber-line); background:var(--amber-dim);
-    width:26px; height:26px; border-radius:50%; display:flex; align-items:center;
-    justify-content:center; margin-bottom:12px;
-  }
-  .step-icon{ font-size:2.4rem; margin-bottom:10px; line-height:1; }
-  .step-title{ font-weight:800; font-size:1.15rem; margin-bottom:8px; }
-  .step-text{ color:var(--text-dim); font-size:0.9rem; line-height:1.5; max-width:360px; }
-  .demo-caption{ margin-bottom:14px; }
-
-  /* fake chatbot demo */
-  .chatdemo{
-    width:100%; max-width:380px; background:var(--ink-2);
-    border:1px solid var(--line); border-radius:12px; overflow:hidden;
-    position:relative; text-align:left;
-  }
-  .chatdemo-bar{
-    display:flex; align-items:center; gap:6px;
-    padding:9px 12px; background:var(--panel); border-bottom:1px solid var(--line);
-  }
-  .chatdemo-dot{ width:8px; height:8px; border-radius:50%; background:var(--slate); }
-  .chatdemo-name{
-    font-family:'JetBrains Mono', monospace; font-size:0.68rem;
-    color:var(--text-dim); margin-left:6px;
-  }
-  .chatdemo-body{
-    padding:12px; min-height:150px; max-height:150px; overflow:hidden;
-    display:flex; flex-direction:column; gap:8px;
-  }
-  .chat-msg{ display:flex; flex-direction:column; gap:4px; opacity:0; transition:opacity 0.3s ease; }
-  .chat-msg.show{ opacity:1; }
-  .chat-msg.user{ align-items:flex-end; }
-  .chat-msg.bot{ align-items:flex-start; }
-  .chat-photo{
-    font-size:0.66rem; color:var(--text-dim); background:var(--panel);
-    border:1px solid var(--line); border-radius:7px; padding:4px 8px;
-    font-family:'JetBrains Mono', monospace;
-  }
-  .chat-bubble{
-    max-width:80%; padding:8px 11px; border-radius:11px; font-size:0.72rem;
-    line-height:1.4; white-space:pre-wrap; word-break:break-word;
-    font-family:'JetBrains Mono', monospace;
-  }
-  .chat-msg.user .chat-bubble{ background:var(--amber); color:#1A0F04; border-bottom-right-radius:3px; }
-  .bot-bubble{ background:var(--panel); border:1px solid var(--line); color:var(--text); border-bottom-left-radius:3px; }
-  .chatdemo-input{
-    display:flex; align-items:center; gap:8px; padding:9px 12px;
-    border-top:1px solid var(--line); background:var(--panel);
-  }
-  .chatdemo-field{
-    flex:1; background:var(--ink-2); border:1px solid var(--line); border-radius:8px;
-    padding:8px 10px; font-family:'JetBrains Mono', monospace; font-size:0.68rem;
-    color:var(--text); min-height:32px; display:flex; align-items:center;
-    white-space:nowrap; overflow:hidden;
-  }
-  .chatdemo-field.active{ border-color:var(--amber); }
-  .caret{
-    display:inline-block; width:1.5px; height:12px; background:var(--amber);
-    margin-left:1px; opacity:0;
-  }
-  .caret.blink{ animation:caretBlink 0.8s step-end infinite; }
-  @keyframes caretBlink{ 50%{ opacity:0; } 0%,100%{ opacity:1; } }
-  .chatdemo-send{
-    width:30px; height:30px; border-radius:8px; background:var(--slate);
-    color:var(--text-dim); display:flex; align-items:center; justify-content:center;
-    font-size:0.8rem; transition:background 0.2s ease, color 0.2s ease, transform 0.15s ease;
-  }
-  .chatdemo-send.hot{ background:var(--amber); color:#1A0F04; }
-  .chatdemo-send.pressed{ transform:scale(0.85); }
-  .fake-cursor{
-    position:absolute; left:50%; top:60%; font-size:1rem; color:#fff;
-    text-shadow:0 1px 3px rgba(0,0,0,0.6); pointer-events:none; opacity:0;
-    transform:rotate(-20deg); transition:opacity 0.3s ease;
-    z-index:3; will-change:left, top;
-  }
-
-  .step-nav{ display:flex; gap:10px; margin-top:18px; }
-  .step-nav .btn-ghost, .step-nav .btn-primary{ flex:1; padding:11px 0; }
-  .step-back:disabled{ opacity:0.35; cursor:default; }
-
-  .modal-body{ padding:22px 24px 26px; display:flex; flex-direction:column; gap:22px; }
-  .io-block{ display:flex; flex-direction:column; gap:9px; }
-  .io-label{
-    display:flex; justify-content:space-between; align-items:center;
+  .changelog-title{ font-weight:700; font-size:0.88rem; flex:1; }
+  .changelog-version{
     font-family:'JetBrains Mono', monospace; font-size:0.72rem;
-    letter-spacing:0.06em; text-transform:uppercase; color:var(--text-dim);
+    color:var(--amber); background:var(--amber-dim);
+    border:1px solid var(--amber-line); padding:3px 8px; border-radius:6px;
   }
-  .io-copy{
-    background:var(--ink-2); border:1px solid var(--line); color:var(--text);
-    font-family:'Inter',sans-serif; font-size:0.75rem; font-weight:600;
-    padding:6px 11px; border-radius:7px; cursor:pointer; text-transform:none; letter-spacing:0;
-    transition:border-color 0.2s ease, color 0.2s ease;
+  .changelog-arrow{
+    color:var(--text-dim); font-size:0.8rem;
+    transition:transform 0.25s ease;
   }
-  .io-copy:hover{ border-color:var(--amber); color:var(--amber); }
-  .io-copy.done{ border-color:var(--good); color:var(--good); }
-  .io-pre{
-    background:var(--ink-2); border:1px solid var(--line); border-radius:10px;
-    padding:14px; font-family:'JetBrains Mono', monospace; font-size:0.76rem;
-    line-height:1.55; color:var(--text-dim); white-space:pre-wrap; word-break:break-word;
-    max-height:200px; overflow-y:auto;
+  .changelog-arrow.open{ transform:rotate(180deg); }
+  .changelog-body{
+    max-height:0; overflow:hidden;
+    transition:max-height 0.35s cubic-bezier(.16,1,.3,1);
   }
-  .io-textarea{
-    background:var(--ink-2); border:1px solid var(--line); border-radius:10px;
-    padding:14px; font-family:'JetBrains Mono', monospace; font-size:0.82rem;
-    color:var(--text); min-height:120px; resize:vertical; outline:none;
-    transition:border-color 0.2s ease, box-shadow 0.2s ease;
+  .changelog-body.open{ max-height:520px; overflow-y:auto; }
+  .cl-entry{ padding:0 18px 16px; }
+  .cl-entry:first-child{ padding-top:4px; }
+  .cl-ver{ display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+  .cl-num{
+    font-family:'JetBrains Mono', monospace; font-size:0.78rem;
+    font-weight:700; color:var(--text);
   }
-  .io-textarea:focus{ border-color:var(--amber); box-shadow:0 0 0 3px var(--amber-dim); }
-  .io-msg{ font-family:'JetBrains Mono', monospace; font-size:0.78rem; min-height:18px; }
-  .io-msg.ok{ color:var(--good); }
-  .io-msg.err{ color:var(--error); }
-  .import-apply{ padding:12px 0; }
+  .cl-tag{
+    font-family:'JetBrains Mono', monospace; font-size:0.62rem;
+    letter-spacing:0.06em; text-transform:uppercase;
+    padding:2px 7px; border-radius:5px;
+  }
+  .cl-tag.new{ color:var(--good); background:#5FC79E1A; border:1px solid #5FC79E44; }
+  .cl-list{ list-style:none; display:flex; flex-direction:column; gap:5px; }
+  .cl-list li{
+    color:var(--text-dim); font-size:0.82rem; line-height:1.45;
+    padding-left:14px; position:relative;
+  }
+  .cl-list li::before{
+    content:''; position:absolute; left:0; top:8px;
+    width:4px; height:4px; border-radius:50%; background:var(--slate);
+  }
+
+  .name-row{
+    display:none;
+    gap:12px;
+  }
+  .name-row.show{ display:flex; }
+  .name-row .field{ flex:1; }
+
+  .msg{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.78rem;
+    color:var(--error);
+    min-height:18px;
+    margin:-4px 0 14px;
+    display:none;
+  }
+  .msg.show{ display:block; }
+
+  button.submit{
+    width:100%;
+    background:var(--amber);
+    color:#1A0F04;
+    border:none;
+    border-radius:9px;
+    padding:13px 0;
+    font-family:'Inter',sans-serif;
+    font-weight:700;
+    font-size:0.95rem;
+    cursor:pointer;
+    transition:transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+    position:relative;
+    overflow:hidden;
+  }
+  button.submit:hover{ background:#F2954F; box-shadow:0 6px 20px var(--amber-dim); }
+  button.submit:active{ transform:scale(0.98); }
+  button.submit:disabled{ opacity:0.6; cursor:default; transform:none; }
+
+  .spinner{
+    display:none;
+    width:16px; height:16px;
+    border:2px solid #1A0F0455;
+    border-top-color:#1A0F04;
+    border-radius:50%;
+    animation:spin 0.7s linear infinite;
+    margin:0 auto;
+  }
+  button.submit.loading .label{ display:none; }
+  button.submit.loading .spinner{ display:block; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .foot{
+    text-align:center;
+    margin-top:20px;
+    font-size:0.82rem;
+    color:var(--text-dim);
+  }
+  .foot a{
+    color:var(--amber);
+    text-decoration:none;
+    font-weight:600;
+  }
+  .foot a:hover{ text-decoration:underline; }
 
   @media (prefers-reduced-motion: reduce){
     *{ animation:none !important; transition:none !important; }
@@ -594,210 +318,117 @@
 </head>
 <body>
 
-<div class="loading-screen" id="loadingScreen">
-  <div class="loading-inner">
-    <div class="loading-ring"></div>
-    <div class="loading-text" id="loadingText">Loading your week…</div>
-  </div>
-</div>
+<div class="rail"><div class="rail-fill"><div class="rail-marker"></div></div></div>
+<div class="backdrop-grid"></div>
 
-<div class="daytrack">
-  <div class="daytrack-head">
-    <div class="daytrack-title">Today's progress</div>
-    <div class="daytrack-right">
-      <div class="daytrack-now" id="clockNow">--:--</div>
-      <button class="logout-btn" onclick="handleLogout()">Log out</button>
+<div class="wrap">
+  <div class="eyebrow">Period 3 of 7 · Live</div>
+  <h1>Schedule 2.0</h1>
+  <div class="sub">Remember that old schedule app Berk made? Here's the new one.</div>
+
+  <div class="panel">
+    <div class="tabs">
+      <div class="tab active" id="tabLogin" onclick="setMode('login')">Log in</div>
+      <div class="tab" id="tabSignup" onclick="setMode('signup')">Sign up</div>
+      <div class="tab-slider" id="tabSlider"></div>
     </div>
-  </div>
-  <div class="rail-outer">
-    <div class="rail-fill" id="railFill"></div>
-    <div class="rail-dot" id="railDot"></div>
-  </div>
-</div>
 
-<div class="hero">
-  <div class="hero-label"><span class="accent" id="heroState">Next period in</span></div>
-  <div class="hero-clock" id="heroClock">--:--:--</div>
-  <div class="hero-sub" id="heroSub">Nothing yet. Add a schedule to get started.</div>
-</div>
-
-<div class="daytabs" id="dayTabs"></div>
-
-<div class="section">
-  <div class="section-head">
-    <h2>Schedule <span class="viewing" id="viewingLabel"></span></h2>
-    <div class="head-actions">
-      <div class="viewtoggle" id="viewToggle">
-        <button class="vt-btn active" id="vtDay" data-view="day">Day</button>
-        <button class="vt-btn" id="vtWeek" data-view="week">Week</button>
+    <form id="authForm" novalidate>
+      <div class="name-row" id="nameRow">
+        <div class="field">
+          <label for="firstName">First name</label>
+          <input type="text" id="firstName" placeholder="John" autocomplete="given-name">
+        </div>
+        <div class="field">
+          <label for="lastName">Last name</label>
+          <input type="text" id="lastName" placeholder="Doe" autocomplete="family-name">
+        </div>
       </div>
-      <button class="btn-import" id="openImport">⚡ Import</button>
-      <button class="btn-share" id="openShare">Share</button>
-      <button class="btn-add" id="toggleAdd">+ Add period</button>
-    </div>
-  </div>
 
-  <div class="addpanel" id="addPanel">
-    <div class="addpanel-title">New period</div>
-    <div class="field">
-      <label for="pName">Class name</label>
-      <input type="text" id="pName" placeholder="AP Chemistry">
-    </div>
-    <div class="row2">
       <div class="field">
-        <label for="pStart">Start time</label>
-        <input type="time" id="pStart">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="you@school.edu" autocomplete="email">
       </div>
+
       <div class="field">
-        <label for="pEnd">End time</label>
-        <input type="time" id="pEnd">
+        <label for="password">Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+          <button type="button" class="pw-toggle" id="pwToggle" aria-label="Show password">Show</button>
+        </div>
       </div>
-    </div>
-    <div class="field">
-      <label for="pRoom">Room (optional)</label>
-      <input type="text" id="pRoom" placeholder="Room 214">
-    </div>
-    <div class="applydays">
-      <div class="applydays-label">Add to which days?</div>
-      <div class="daychips" id="dayChips"></div>
-    </div>
-    <div class="addpanel-msg" id="addMsg"></div>
-    <div class="addpanel-actions">
-      <button class="btn-ghost" id="cancelAdd">Cancel</button>
-      <button class="btn-primary" id="confirmAdd">Add period</button>
+
+      <div class="msg" id="authMsg"></div>
+
+      <button type="submit" class="submit" id="submitBtn">
+        <span class="label" id="submitLabel">Log in</span>
+        <span class="spinner"></span>
+      </button>
+    </form>
+
+    <div class="foot" id="footNote">
+      No account yet? <a href="#" onclick="setMode('signup');return false;">Sign up</a>
     </div>
   </div>
 
-  <div class="periods" id="periodsList">
-    <div class="empty" id="emptyState">
-      <div class="empty-title">Nothing yet</div>
-      <div class="empty-sub">Add a period to build this day.</div>
-      <button class="empty-copy" id="copyPrevDay">Copy from another day</button>
-    </div>
-  </div>
-
-  <div class="weekgrid" id="weekGrid"></div>
-</div>
-
-<div class="modal-overlay" id="shareModal">
-  <div class="modal share-modal">
-    <button class="modal-close" id="closeShare" aria-label="Close">✕</button>
-    <div class="share-head">
-      <div class="share-title">Share your schedule</div>
-      <div class="share-sub">Anyone with the link can view your week. They cannot edit it, and they do not need an account.</div>
-    </div>
-    <div class="share-body">
-      <div class="share-state" id="shareInactive">
-        <button class="btn-primary share-create" id="createShare">Create share link</button>
-      </div>
-
-      <div class="share-state" id="shareActive">
-        <div class="io-label"><span>Your link</span></div>
-        <div class="share-linkrow">
-          <input type="text" class="share-link" id="shareLink" readonly>
-          <button class="io-copy" id="copyShareLink">Copy</button>
+  <div class="changelog">
+    <button class="changelog-head" id="changelogToggle">
+      <span class="changelog-title">What's new</span>
+      <span class="changelog-version">v2.3</span>
+      <span class="changelog-arrow" id="changelogArrow">▾</span>
+    </button>
+    <div class="changelog-body" id="changelogBody">
+      <div class="cl-entry">
+        <div class="cl-ver">
+          <span class="cl-num">2.3</span>
+          <span class="cl-tag new">Latest</span>
         </div>
-        <div class="share-note" id="shareNote">Updates you save show up for anyone with this link.</div>
-        <button class="btn-ghost share-revoke" id="revokeShare">Turn off sharing</button>
+        <ul class="cl-list">
+          <li>Share your schedule with a view only link</li>
+          <li>Logo added to the browser tab</li>
+        </ul>
       </div>
-
-      <div class="io-msg" id="shareMsg"></div>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="importModal">
-  <div class="modal">
-    <button class="modal-close" id="closeImport" aria-label="Close">✕</button>
-
-    <div class="modal-steps" id="modalSteps">
-      <div class="stepdots">
-        <span class="stepdot active" data-step="0"></span>
-        <span class="stepdot" data-step="1"></span>
-        <span class="stepdot" data-step="2"></span>
+      <div class="cl-entry">
+        <div class="cl-ver"><span class="cl-num">2.2</span></div>
+        <ul class="cl-list">
+          <li>Week dashboard showing all seven days at once</li>
+          <li>Full support for computer, tablet, and phone</li>
+        </ul>
       </div>
-
-      <div class="stepstage" id="stepStage">
-        <div class="step" data-step="0">
-          <div class="step-num">1</div>
-          <div class="step-icon">📋</div>
-          <div class="step-title">Copy the prompt</div>
-          <div class="step-text">Grab the ready made prompt below. It tells your chatbot exactly how to read your schedule.</div>
-        </div>
-        <div class="step" data-step="1">
-          <div class="step-num">2</div>
-          <div class="step-title">Paste it into your chatbot</div>
-          <div class="step-text demo-caption">Open any chatbot, paste the prompt with a photo of your schedule, and it hands you back the code.</div>
-          <div class="chatdemo" id="chatDemo">
-            <div class="chatdemo-bar">
-              <span class="chatdemo-dot"></span><span class="chatdemo-dot"></span><span class="chatdemo-dot"></span>
-              <span class="chatdemo-name">AI Chat</span>
-            </div>
-            <div class="chatdemo-body" id="chatBody">
-              <div class="chat-msg user" id="demoUserMsg">
-                <div class="chat-photo">🖼️ schedule.jpg</div>
-                <div class="chat-bubble" id="demoUserBubble"></div>
-              </div>
-              <div class="chat-msg bot" id="demoBotMsg">
-                <div class="chat-bubble bot-bubble" id="demoBotBubble"></div>
-              </div>
-            </div>
-            <div class="chatdemo-input">
-              <div class="chatdemo-field" id="demoField"><span id="demoFieldText"></span><span class="caret" id="demoCaret"></span></div>
-              <div class="chatdemo-send" id="demoSend">➤</div>
-            </div>
-            <div class="fake-cursor" id="fakeCursor">▲</div>
-          </div>
-        </div>
-        <div class="step" data-step="2">
-          <div class="step-num">3</div>
-          <div class="step-icon">✨</div>
-          <div class="step-title">Paste the code back here</div>
-          <div class="step-text">Copy the code it gives you, drop it in the box below, and your whole week fills in automatically.</div>
-        </div>
+      <div class="cl-entry">
+        <div class="cl-ver"><span class="cl-num">2.1</span></div>
+        <ul class="cl-list">
+          <li>Import your whole week from a chatbot with one paste</li>
+          <li>Walkthrough that shows you how it works</li>
+          <li>Loading screen, plus a fix for the frozen import button</li>
+        </ul>
       </div>
-
-      <div class="step-nav">
-        <button class="btn-ghost step-back" id="stepBack">Back</button>
-        <button class="btn-primary step-next" id="stepNext">Next</button>
+      <div class="cl-entry">
+        <div class="cl-ver"><span class="cl-num">2.0</span></div>
+        <ul class="cl-list">
+          <li>Rebuilt from scratch with accounts and cloud saving</li>
+          <li>Full week instead of a single day</li>
+          <li>Live countdown to your next period</li>
+        </ul>
       </div>
     </div>
-
-    <div class="modal-body">
-      <div class="io-block">
-        <div class="io-label">
-          <span>The prompt</span>
-          <button class="io-copy" id="copyPrompt">Copy prompt</button>
-        </div>
-        <pre class="io-pre" id="promptText"></pre>
-      </div>
-
-      <div class="io-block">
-        <div class="io-label">
-          <span>Paste your schedule code</span>
-          <button class="io-copy" id="exportCode">Export current week</button>
-        </div>
-        <textarea class="io-textarea" id="codeInput" placeholder="Paste the SCHEDULE2.0 code your chatbot gave you here..."></textarea>
-        <div class="io-msg" id="importMsg"></div>
-        <button class="btn-primary import-apply" id="applyCode">Fill my schedule</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="savebar">
-  <div class="savebar-inner">
-    <span class="save-msg" id="saveMsg">Saved ✓</span>
-    <span class="unsaved-dot" id="unsavedDot" title="Unsaved changes"></span>
-    <button class="btn-ghost" id="clearAll">Clear day</button>
-    <button class="btn-primary" id="saveSchedule">Save</button>
   </div>
 </div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  import {
+    getAuth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    updateProfile,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+  import {
+    getFirestore,
+    doc,
+    setDoc
+  } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBmD7gtaHTmrIE4Pl9q1746s-zoWvx6XAI",
@@ -812,980 +443,133 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // Safety net: never let the loading screen hang more than 8s.
-  setTimeout(() => {
-    const ls = document.getElementById('loadingScreen');
-    if (ls && !ls.classList.contains('hide')) ls.classList.add('hide');
-  }, 8000);
-
-  let currentUser = null;
-  let shareId = null;
-  let tickStarted = false;
-  let dirty = false;
-
-  // ── Data model: week = { Mon:[], Tue:[], ... } ─────────────
-  const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const DAY_FULL = { Mon:'Monday', Tue:'Tuesday', Wed:'Wednesday', Thu:'Thursday', Fri:'Friday', Sat:'Saturday', Sun:'Sunday' };
-  const JS_DAY_TO_KEY = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; // getDay() index
-
-  let week = emptyWeek();
-  let viewingDay = todayKey();      // which tab is open
-  let applyDays = new Set();        // which days a new period gets added to
-
-  function emptyWeek(){
-    const w = {};
-    DAYS.forEach(d => w[d] = []);
-    return w;
-  }
-  function todayKey(){
-    return JS_DAY_TO_KEY[new Date().getDay()];
-  }
-
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) { window.location.href = "login.html"; return; }
-    currentUser = user;
-    await loadSchedule();
+  // If already logged in, skip straight to the schedule.
+  onAuthStateChanged(auth, (user) => {
+    if (user) window.location.href = "schedule.html";
   });
 
-  let introSeen = false;
+  let mode = 'login';
 
-  async function loadSchedule(){
-    try{
-      const snap = await getDoc(doc(db, "schedules", currentUser.uid));
-      if (snap.exists()){
-        const data = snap.data();
-        introSeen = data.introSeen === true;
-        shareId = data.shareId || null;
-        if (data.week && typeof data.week === 'object'){
-          // new weekly format
-          week = normalizeWeek(data.week);
-        } else if (Array.isArray(data.periods)){
-          // migrate old single-day format into every weekday
-          week = emptyWeek();
-          ['Mon','Tue','Wed','Thu','Fri'].forEach(d => {
-            week[d] = data.periods.map(p => ({...p, id: freshId()}));
-          });
-        }
-      }
-    } catch (err){
-      console.error('Failed to load schedule:', err);
-    }
-    // default the add-to-days to whatever day you're viewing
-    applyDays = new Set([viewingDay]);
-    renderDayTabs();
-    renderChips();
-    renderPeriods();
-    tick();
-    if (!tickStarted){ tickStarted = true; setInterval(tick, 1000); }
-
-    hideLoading();
-
-    // First visit: auto-open the import walkthrough once.
-    if (!introSeen){
-      setTimeout(() => { openModal(); markIntroSeen(); }, 600);
-    }
+  window.setMode = function(next){
+    mode = next;
+    const isSignup = mode === 'signup';
+    document.getElementById('tabLogin').classList.toggle('active', !isSignup);
+    document.getElementById('tabSignup').classList.toggle('active', isSignup);
+    document.getElementById('tabSlider').classList.toggle('right', isSignup);
+    document.getElementById('nameRow').classList.toggle('show', isSignup);
+    document.getElementById('submitLabel').textContent = isSignup ? 'Create account' : 'Log in';
+    document.getElementById('password').autocomplete = isSignup ? 'new-password' : 'current-password';
+    document.getElementById('footNote').innerHTML = isSignup
+      ? 'Already have an account? <a href="#" onclick="setMode(\'login\');return false;">Log in</a>'
+      : 'No account yet? <a href="#" onclick="setMode(\'signup\');return false;">Sign up</a>';
+    hideMsg();
   }
 
-  function showLoading(msg){
-    const ls = document.getElementById('loadingScreen');
-    const lt = document.getElementById('loadingText');
-    if (lt && msg) lt.textContent = msg;
-    if (ls) ls.classList.remove('hide');
+  function showMsg(text){
+    const m = document.getElementById('authMsg');
+    m.textContent = text;
+    m.classList.add('show');
   }
-  function hideLoading(){
-    const ls = document.getElementById('loadingScreen');
-    if (ls) ls.classList.add('hide');
-  }
-
-  async function markIntroSeen(){
-    introSeen = true;
-    if (!currentUser) return;
-    try{
-      // merge the flag without clobbering the schedule
-      await setDoc(doc(db, "schedules", currentUser.uid), { introSeen: true }, { merge: true });
-    } catch (err){
-      console.error('Could not save intro flag:', err);
-    }
+  function hideMsg(){
+    const m = document.getElementById('authMsg');
+    m.classList.remove('show');
+    m.textContent = '';
   }
 
-  function normalizeWeek(w){
-    const out = emptyWeek();
-    DAYS.forEach(d => {
-      if (Array.isArray(w[d])) out[d] = w[d].map(p => ({
-        id: p.id || freshId(),
-        name: p.name || '',
-        start: p.start || '',
-        end: p.end || '',
-        room: p.room || ''
-      }));
-    });
-    return out;
-  }
-
-  async function persistSchedule(){
-    if(!currentUser) return;
-    await setDoc(doc(db, "schedules", currentUser.uid), {
-      week,
-      introSeen: introSeen === true,
-      shareId: shareId || '',
-      updatedAt: new Date().toISOString()
-    });
-    setDirty(false);
-    // push the same week to the public copy if sharing is on
-    syncShareIfActive();
-  }
-
-  window.handleLogout = function(){
-    signOut(auth);
-  };
-
-  // ── DOM refs ────────────────────────────────────────────
-  const toggleAdd = document.getElementById('toggleAdd');
-  const addPanel = document.getElementById('addPanel');
-  const cancelAdd = document.getElementById('cancelAdd');
-  const confirmAdd = document.getElementById('confirmAdd');
-  const periodsList = document.getElementById('periodsList');
-  const emptyState = document.getElementById('emptyState');
-  const saveSchedule = document.getElementById('saveSchedule');
-  const saveMsg = document.getElementById('saveMsg');
-  const clearAll = document.getElementById('clearAll');
-  const dayTabs = document.getElementById('dayTabs');
-  const dayChips = document.getElementById('dayChips');
-  const viewingLabel = document.getElementById('viewingLabel');
-  const unsavedDot = document.getElementById('unsavedDot');
-  const weekGrid = document.getElementById('weekGrid');
-  const vtDay = document.getElementById('vtDay');
-  const vtWeek = document.getElementById('vtWeek');
-
-  let currentView = 'day'; // 'day' | 'week'
-
-  function freshId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
-
-  function setDirty(v){
-    dirty = v;
-    unsavedDot.classList.toggle('show', v);
-  }
-
-  // ── Day tabs ────────────────────────────────────────────
-  function renderDayTabs(){
-    dayTabs.innerHTML = '';
-    const tk = todayKey();
-    DAYS.forEach(d => {
-      const tab = document.createElement('div');
-      tab.className = 'daytab' + (d === viewingDay ? ' active' : '') + (d === tk ? ' today' : '');
-      const count = week[d].length;
-      tab.innerHTML = `
-        <span class="daytab-abbr">${d}</span>
-        <span class="daytab-count">${count ? count + (count===1?' class':' classes') : 'empty'}</span>
-      `;
-      tab.addEventListener('click', () => {
-        viewingDay = d;
-        renderDayTabs();
-        renderPeriods();
-      });
-      dayTabs.appendChild(tab);
-    });
-    viewingLabel.textContent = '· ' + DAY_FULL[viewingDay];
-  }
-
-  // ── Apply-to-day chips in the add panel ─────────────────
-  function renderChips(){
-    dayChips.innerHTML = '';
-    DAYS.forEach(d => {
-      const chip = document.createElement('div');
-      chip.className = 'daychip' + (applyDays.has(d) ? ' on' : '');
-      chip.textContent = d;
-      chip.addEventListener('click', () => {
-        if (applyDays.has(d)) applyDays.delete(d);
-        else applyDays.add(d);
-        renderChips();
-      });
-      dayChips.appendChild(chip);
-    });
-  }
-
-  toggleAdd.addEventListener('click', () => {
-    addPanel.classList.toggle('show');
-    if(addPanel.classList.contains('show')){
-      applyDays = new Set([viewingDay]);
-      renderChips();
-      document.getElementById('pName').focus();
-    }
-  });
-  cancelAdd.addEventListener('click', () => { addPanel.classList.remove('show'); clearForm(); });
-
-  function clearForm(){
-    document.getElementById('pName').value='';
-    document.getElementById('pStart').value='';
-    document.getElementById('pEnd').value='';
-    document.getElementById('pRoom').value='';
-  }
-
-  function toMinutes(hhmm){
-    if(!hhmm) return null;
-    const [h,m] = hhmm.split(':').map(Number);
-    return h*60+m;
-  }
-
-  const addMsg = document.getElementById('addMsg');
-  function showAddMsg(t){ addMsg.textContent = t; }
-
-  confirmAdd.addEventListener('click', () => {
-    const name = document.getElementById('pName').value.trim();
-    const start = document.getElementById('pStart').value;
-    const end = document.getElementById('pEnd').value;
-    const room = document.getElementById('pRoom').value.trim();
-
-    if(!name || !start || !end){ showAddMsg('Add a class name, start time, and end time.'); return; }
-    if(toMinutes(end) <= toMinutes(start)){ showAddMsg('End time must be after start time.'); return; }
-    if(applyDays.size === 0){ showAddMsg('Pick at least one day to add this to.'); return; }
-    showAddMsg('');
-
-    applyDays.forEach(d => {
-      week[d].push({ id: freshId(), name, start, end, room });
-      week[d].sort((a,b) => toMinutes(a.start) - toMinutes(b.start));
-    });
-
-    setDirty(true);
-    clearForm();
-    addPanel.classList.remove('show');
-    renderDayTabs();
-    renderPeriods();
+  // Changelog expand and collapse
+  document.getElementById('changelogToggle').addEventListener('click', () => {
+    const body = document.getElementById('changelogBody');
+    const arrow = document.getElementById('changelogArrow');
+    body.classList.toggle('open');
+    arrow.classList.toggle('open');
   });
 
-  clearAll.addEventListener('click', () => {
-    if(!week[viewingDay].length) return;
-    week[viewingDay] = [];
-    setDirty(true);
-    renderDayTabs();
-    renderPeriods();
-    saveMsg.textContent = `Cleared ${DAY_FULL[viewingDay]}. Not saved yet.`;
-    saveMsg.style.color = 'var(--text-dim)';
-    saveMsg.classList.add('show');
-    setTimeout(() => saveMsg.classList.remove('show'), 3000);
+  // Show/hide password toggle
+  document.getElementById('pwToggle').addEventListener('click', () => {
+    const pw = document.getElementById('password');
+    const btn = document.getElementById('pwToggle');
+    if (pw.type === 'password'){
+      pw.type = 'text';
+      btn.textContent = 'Hide';
+      btn.setAttribute('aria-label', 'Hide password');
+    } else {
+      pw.type = 'password';
+      btn.textContent = 'Show';
+      btn.setAttribute('aria-label', 'Show password');
+    }
   });
 
-  window.removePeriod = function(id){
-    week[viewingDay] = week[viewingDay].filter(p => p.id !== id);
-    setDirty(true);
-    renderDayTabs();
-    renderPeriods();
-  };
+  // Turns Firebase's error codes into plain, friendly messages.
+  function friendlyError(err){
+    const code = err.code || '';
+    if(code.includes('email-already-in-use')) return 'That email already has an account. Try logging in.';
+    if(code.includes('invalid-email')) return 'That email address doesn\'t look right.';
+    if(code.includes('weak-password')) return 'Password must be at least 6 characters.';
+    if(code.includes('user-not-found') || code.includes('wrong-password') || code.includes('invalid-credential')) return 'Incorrect email or password.';
+    if(code.includes('too-many-requests')) return 'Too many attempts. Wait a bit and try again.';
+    if(code.includes('network-request-failed')) return 'Network error. Check your connection.';
+    return 'Something went wrong. Try again.';
+  }
 
-  // copy the nearest filled day's periods into the currently-viewed (empty) day
-  window.copyFromDay = function(){
-    const options = DAYS.filter(d => d !== viewingDay && week[d].length);
-    if (!options.length){
-      flashSave('No other day has periods to copy yet.', 'var(--text-dim)');
+  document.getElementById('authForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    hideMsg();
+
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const first = document.getElementById('firstName').value.trim();
+    const last = document.getElementById('lastName').value.trim();
+
+    if(!email || !password){
+      showMsg('Enter your email and password.');
       return;
     }
-    // pick the closest filled day by position in the week
-    const vi = DAYS.indexOf(viewingDay);
-    options.sort((a,b) => Math.abs(DAYS.indexOf(a)-vi) - Math.abs(DAYS.indexOf(b)-vi));
-    const key = options[0];
-    week[viewingDay] = week[key].map(p => ({...p, id: freshId()}));
-    setDirty(true);
-    renderDayTabs();
-    renderPeriods();
-    flashSave(`Copied ${DAY_FULL[key]} into ${DAY_FULL[viewingDay]}.`, 'var(--good)');
-  };
-
-  function flashSave(text, color){
-    saveMsg.textContent = text;
-    saveMsg.style.color = color || 'var(--good)';
-    saveMsg.classList.add('show');
-    setTimeout(() => saveMsg.classList.remove('show'), 3000);
-  }
-
-  function fmtTime(hhmm){
-    const [h,m] = hhmm.split(':').map(Number);
-    const suffix = h >= 12 ? 'PM' : 'AM';
-    const h12 = h % 12 === 0 ? 12 : h % 12;
-    return `${h12}:${String(m).padStart(2,'0')} ${suffix}`;
-  }
-
-  function renderPeriods(){
-    periodsList.innerHTML = '';
-    const list = week[viewingDay];
-    if(list.length === 0){
-      // wire the copy button then show empty state
-      const copyBtn = emptyState.querySelector('#copyPrevDay');
-      if (copyBtn) copyBtn.onclick = () => window.copyFromDay();
-      periodsList.appendChild(emptyState);
+    if(mode === 'signup' && (!first || !last)){
+      showMsg('Enter your first and last name.');
       return;
     }
-    const isToday = viewingDay === todayKey();
-    const nowMin = new Date().getHours()*60 + new Date().getMinutes();
-
-    list.forEach((p, i) => {
-      const startMin = toMinutes(p.start);
-      const endMin = toMinutes(p.end);
-      const isCurrent = isToday && nowMin >= startMin && nowMin < endMin;
-      const isPast = isToday && nowMin >= endMin;
-
-      const row = document.createElement('div');
-      row.className = 'period' + (isCurrent ? ' current' : '') + (isPast ? ' past' : '');
-      row.innerHTML = `
-        <div class="period-num">${String(i+1).padStart(2,'0')}</div>
-        <div class="period-time">${fmtTime(p.start)} to ${fmtTime(p.end)}</div>
-        <div class="period-info">
-          <div class="period-name">${escapeHtml(p.name)}</div>
-          ${p.room ? `<div class="period-room">${escapeHtml(p.room)}</div>` : ''}
-        </div>
-        ${isCurrent ? '<div class="period-tag">Now</div>' : ''}
-        <button class="period-del" onclick="removePeriod('${p.id}')" aria-label="Remove period">✕</button>
-      `;
-      periodsList.appendChild(row);
-    });
-  }
-
-  function escapeHtml(str){
-    const d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
-  }
-
-  // ── View switching (Day <-> Week dashboard) ─────────────
-  function setView(view){
-    currentView = view;
-    const isWeek = view === 'week';
-    document.body.classList.toggle('weekview', isWeek);
-    vtDay.classList.toggle('active', !isWeek);
-    vtWeek.classList.toggle('active', isWeek);
-
-    // Day-only UI hides in week mode
-    dayTabs.style.display = isWeek ? 'none' : '';
-    periodsList.style.display = isWeek ? 'none' : '';
-    weekGrid.classList.toggle('show', isWeek);
-    viewingLabel.style.display = isWeek ? 'none' : '';
-    // the add panel belongs to day view; close it when switching to week
-    if (isWeek) addPanel.classList.remove('show');
-
-    if (isWeek) renderWeekGrid();
-    else renderPeriods();
-  }
-
-  vtDay.addEventListener('click', () => setView('day'));
-  vtWeek.addEventListener('click', () => setView('week'));
-
-  function renderWeekGrid(){
-    weekGrid.innerHTML = '';
-    const tk = todayKey();
-    const nowMin = new Date().getHours()*60 + new Date().getMinutes();
-
-    DAYS.forEach(d => {
-      const list = week[d];
-      const isToday = d === tk;
-      const col = document.createElement('div');
-      col.className = 'wg-day' + (isToday ? ' today' : '');
-
-      let classesHtml = '';
-      if (list.length === 0){
-        classesHtml = '<div class="wg-empty">Free</div>';
-      } else {
-        classesHtml = '<div class="wg-classes">' + list.map(p => {
-          const isNow = isToday && nowMin >= toMinutes(p.start) && nowMin < toMinutes(p.end);
-          return `
-            <div class="wg-class${isNow ? ' now' : ''}">
-              <div class="wg-class-time">${fmtTime(p.start)} to ${fmtTime(p.end)}</div>
-              <div class="wg-class-name">${escapeHtml(p.name)}</div>
-              ${p.room ? `<div class="wg-class-room">${escapeHtml(p.room)}</div>` : ''}
-            </div>`;
-        }).join('') + '</div>';
-      }
-
-      col.innerHTML = `
-        <div class="wg-day-head">
-          <span class="wg-day-name">${DAY_FULL[d]}</span>
-          <span class="wg-day-count">${list.length || ''}</span>
-        </div>
-        ${classesHtml}
-        <button class="wg-day-add" data-day="${d}">+ Add</button>
-      `;
-      // tapping a day's + Add jumps to that day in day-view with the add panel open
-      col.querySelector('.wg-day-add').addEventListener('click', () => {
-        viewingDay = d;
-        setView('day');
-        renderDayTabs();
-        applyDays = new Set([d]);
-        renderChips();
-        addPanel.classList.add('show');
-        document.getElementById('pName').focus();
-      });
-      weekGrid.appendChild(col);
-    });
-  }
-
-  saveSchedule.addEventListener('click', async () => {
-    saveSchedule.disabled = true;
-    try{
-      await persistSchedule();
-      saveMsg.textContent = 'Saved ✓';
-      saveMsg.style.color = 'var(--good)';
-      saveMsg.classList.add('show');
-    } catch(err){
-      console.error('Save failed:', err);
-      saveMsg.textContent = 'Save failed. Try again';
-      saveMsg.style.color = 'var(--error)';
-      saveMsg.classList.add('show');
-    }
-    saveSchedule.disabled = false;
-    setTimeout(() => saveMsg.classList.remove('show'), 2000);
-  });
-
-  // ── Live clock + hero countdown (always keyed to real today) ──
-  function pad(n){ return String(n).padStart(2,'0'); }
-
-  function tick(){
-    const now = new Date();
-    const nowMin = now.getHours()*60 + now.getMinutes() + now.getSeconds()/60;
-    document.getElementById('clockNow').textContent =
-      `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-
-    const todays = week[todayKey()] || [];
-
-    if(todays.length){
-      const dayStart = toMinutes(todays[0].start);
-      const dayEnd = toMinutes(todays[todays.length-1].end);
-      const span = Math.max(dayEnd - dayStart, 1);
-      const pct = Math.min(Math.max((nowMin - dayStart) / span, 0), 1) * 100;
-      document.getElementById('railFill').style.width = pct + '%';
-      document.getElementById('railDot').style.left = pct + '%';
-    } else {
-      document.getElementById('railFill').style.width = '0%';
-      document.getElementById('railDot').style.left = '0%';
+    if(password.length < 6){
+      showMsg('Password must be at least 6 characters.');
+      return;
     }
 
-    let current = null, next = null;
-    for(const p of todays){
-      const s = toMinutes(p.start), e = toMinutes(p.end);
-      if(nowMin >= s && nowMin < e){ current = p; break; }
-    }
-    if(!current) next = todays.find(p => toMinutes(p.start) > nowMin) || null;
+    const btn = document.getElementById('submitBtn');
+    btn.classList.add('loading');
+    btn.disabled = true;
 
-    const heroState = document.getElementById('heroState');
-    const heroClock = document.getElementById('heroClock');
-    const heroSub = document.getElementById('heroSub');
+    const finish = () => {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    };
 
-    if(current){
-      const secsLeft = Math.max(Math.round((toMinutes(current.end) - nowMin) * 60), 0);
-      heroState.textContent = `${current.name} ends in`;
-      heroClock.textContent = secsToClock(secsLeft);
-      const after = getNextAfter(todays, current);
-      heroSub.innerHTML = `Then: <strong>${after ? escapeHtml(after.name) : 'Done for today'}</strong>`;
-    } else if(next){
-      const secsLeft = Math.max(Math.round((toMinutes(next.start) - nowMin) * 60), 0);
-      heroState.textContent = `${next.name} starts in`;
-      heroClock.textContent = secsToClock(secsLeft);
-      heroSub.innerHTML = next.room ? `In <strong>${escapeHtml(next.room)}</strong>` : 'Get ready.';
-    } else if(todays.length){
-      heroState.textContent = 'All done today';
-      heroClock.textContent = '--:--:--';
-      heroSub.textContent = 'No more periods today. Nice work.';
-    } else {
-      heroState.textContent = 'Nothing scheduled today';
-      heroClock.textContent = '--:--:--';
-      heroSub.textContent = `It's ${DAY_FULL[todayKey()]}. Add periods to this day to start the countdown.`;
-    }
-
-    // keep the "Now" highlight fresh in whichever view is open
-    if (currentView === 'week') renderWeekGrid();
-    else if (viewingDay === todayKey()) renderPeriods();
-  }
-
-  function getNextAfter(list, period){
-    const idx = list.findIndex(p => p.id === period.id);
-    return list[idx+1] || null;
-  }
-  function secsToClock(totalSecs){
-    const h = Math.floor(totalSecs/3600);
-    const m = Math.floor((totalSecs%3600)/60);
-    const s = totalSecs%60;
-    return h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
-  }
-
-  // ══ Import / Export via SCHEDULE2.0 code ═══════════════════════
-  const PROMPT_TEXT =
-`I have a weekly school schedule. Here is a photo of it.
-
-Convert it into this exact format, and give me ONLY the code block, nothing else:
-
-SCHEDULE2.0
-Mon: 9:00-10:00 Class Name (Room), 10:15-11:15 Another Class
-Tue: 9:00-10:00 Class Name (Room)
-Wed: OFF
-Thu: 9:00-10:00 Class Name
-Fri: 9:00-10:00 Class Name
-Sat: OFF
-Sun: OFF
-
-Rules:
-- Each line starts with the 3 letter day (Mon, Tue, Wed, Thu, Fri, Sat, Sun).
-- Time format is START-END using HH:MM, 24 hour clock (e.g. 13:30 for 1:30 PM).
-- After the time comes the class name.
-- If there is a room, put it in parentheses right after the name.
-- Separate multiple classes on the same day with commas.
-- Write OFF for any day with no classes.
-- Keep class names exactly as written on the schedule.`;
-
-  const importModal = document.getElementById('importModal');
-  const openImport = document.getElementById('openImport');
-  const closeImport = document.getElementById('closeImport');
-  const promptText = document.getElementById('promptText');
-  const copyPrompt = document.getElementById('copyPrompt');
-  const exportCode = document.getElementById('exportCode');
-  const codeInput = document.getElementById('codeInput');
-  const applyCode = document.getElementById('applyCode');
-  const importMsg = document.getElementById('importMsg');
-  const stepStage = document.getElementById('stepStage');
-  const stepBack = document.getElementById('stepBack');
-  const stepNext = document.getElementById('stepNext');
-  const stepDots = Array.from(document.querySelectorAll('.stepdot'));
-  const steps = Array.from(document.querySelectorAll('.step'));
-
-  promptText.textContent = PROMPT_TEXT;
-
-  let stepIndex = 0;
-  function showStep(n){
-    stepIndex = Math.max(0, Math.min(2, n));
-    steps.forEach((s, i) => {
-      s.classList.remove('active','left');
-      if (i === stepIndex) s.classList.add('active');
-      else if (i < stepIndex) s.classList.add('left');
-    });
-    stepDots.forEach((d, i) => d.classList.toggle('active', i === stepIndex));
-    stepBack.disabled = stepIndex === 0;
-    stepNext.textContent = stepIndex === 2 ? 'Got it' : 'Next';
-
-    // Auto-play the chatbot demo when step 2 (index 1) is reached; reset otherwise.
-    if (stepIndex === 1) playChatDemo();
-    else stopChatDemo();
-  }
-
-  stepBack.addEventListener('click', () => showStep(stepIndex - 1));
-  stepNext.addEventListener('click', () => {
-    if (stepIndex === 2){
-      // scroll down to the paste box on the final step
-      codeInput.scrollIntoView({ behavior:'smooth', block:'center' });
-      codeInput.focus();
-    } else {
-      showStep(stepIndex + 1);
-    }
-  });
-
-  function openModal(){
-    importModal.classList.add('show');
-    showStep(0);
-    importMsg.textContent = '';
-    importMsg.className = 'io-msg';
-    document.body.style.overflow = 'hidden';
-  }
-  function closeModal(){
-    importModal.classList.remove('show');
-    document.body.style.overflow = '';
-    stopChatDemo();
-  }
-
-  // ══ Fake chatbot demo (auto-plays on step 2) ══════════════════
-  const chatDemoEls = {
-    cursor: document.getElementById('fakeCursor'),
-    field: document.getElementById('demoField'),
-    fieldText: document.getElementById('demoFieldText'),
-    caret: document.getElementById('demoCaret'),
-    send: document.getElementById('demoSend'),
-    userMsg: document.getElementById('demoUserMsg'),
-    userBubble: document.getElementById('demoUserBubble'),
-    botMsg: document.getElementById('demoBotMsg'),
-    botBubble: document.getElementById('demoBotBubble'),
-    body: document.getElementById('chatBody')
-  };
-  const DEMO_PROMPT_SHORT = 'Convert my schedule to SCHEDULE2.0';
-  const DEMO_BOT_REPLY =
-`SCHEDULE2.0
-Mon: 09:00-10:00 AP Chem (214)
-Tue: 10:15-11:15 English Lit
-Wed: OFF
-...`;
-  let demoTimers = [];
-  let demoRunning = false;
-
-  function demoWait(ms){
-    return new Promise(res => { const t = setTimeout(res, ms); demoTimers.push(t); });
-  }
-  function stopChatDemo(){
-    demoRunning = false;
-    demoTimers.forEach(clearTimeout);
-    demoTimers = [];
-    // reset visuals
-    const e = chatDemoEls;
-    if (!e.cursor) return;
-    e.cursor.style.opacity = '0';
-    e.fieldText.textContent = '';
-    e.caret.classList.remove('blink');
-    e.field.classList.remove('active');
-    e.send.classList.remove('hot','pressed');
-    e.userMsg.classList.remove('show');
-    e.botMsg.classList.remove('show');
-    e.userBubble.textContent = '';
-    e.botBubble.textContent = '';
-  }
-
-  function moveCursor(xPct, yPct){
-    chatDemoEls.cursor.style.left = xPct + '%';
-    chatDemoEls.cursor.style.top = yPct + '%';
-  }
-
-  async function playChatDemo(){
-    const e = chatDemoEls;
-    if (!e.cursor) return;
-    stopChatDemo();
-    demoRunning = true;
-    const mine = {}; // token to detect restart
-    playChatDemo._token = mine;
-    const alive = () => demoRunning && playChatDemo._token === mine;
-
-    // start: cursor drifts in toward the input field
-    e.cursor.style.transition = 'left 0.7s cubic-bezier(.4,0,.2,1), top 0.7s cubic-bezier(.4,0,.2,1), opacity 0.3s ease';
-    moveCursor(80, 88);
-    await demoWait(150); if(!alive()) return;
-    e.cursor.style.opacity = '1';
-    moveCursor(40, 82);
-    await demoWait(800); if(!alive()) return;
-
-    // click into field
-    e.field.classList.add('active');
-    e.caret.classList.add('blink');
-    e.send.classList.remove('hot');
-    await demoWait(300); if(!alive()) return;
-
-    // type the prompt into the field, smooth and fast
-    e.caret.classList.remove('blink');
-    e.caret.style.opacity = '1';
-    for (let i = 1; i <= DEMO_PROMPT_SHORT.length; i++){
-      if(!alive()) return;
-      e.fieldText.textContent = DEMO_PROMPT_SHORT.slice(0, i);
-      await demoWait(24);
-    }
-    e.caret.classList.add('blink');
-    await demoWait(450); if(!alive()) return;
-
-    // move cursor to send button
-    moveCursor(92, 82);
-    e.send.classList.add('hot');
-    await demoWait(650); if(!alive()) return;
-
-    // press send
-    e.send.classList.add('pressed');
-    await demoWait(160); if(!alive()) return;
-    e.send.classList.remove('pressed');
-
-    // user message appears, field clears
-    e.fieldText.textContent = '';
-    e.caret.classList.remove('blink');
-    e.field.classList.remove('active');
-    e.userBubble.textContent = DEMO_PROMPT_SHORT;
-    e.userMsg.classList.add('show');
-    e.cursor.style.opacity = '0';
-    await demoWait(700); if(!alive()) return;
-
-    // bot "types" the reply line by line
-    e.botMsg.classList.add('show');
-    const lines = DEMO_BOT_REPLY.split('\n');
-    for (let i = 0; i < lines.length; i++){
-      if(!alive()) return;
-      e.botBubble.textContent = lines.slice(0, i+1).join('\n');
-      await demoWait(360);
-    }
-    await demoWait(1600); if(!alive()) return;
-
-    // Restart the demo once, only if still on step 2. Scheduled (not a tight
-    // recursive call) so timers can't stack up and freeze the page.
-    if (alive() && stepIndex === 1){
-      const t = setTimeout(() => { if (demoRunning && stepIndex === 1) playChatDemo(); }, 400);
-      demoTimers.push(t);
-    }
-  }
-
-  openImport.addEventListener('click', openModal);
-  closeImport.addEventListener('click', closeModal);
-  importModal.addEventListener('click', (e) => { if (e.target === importModal) closeModal(); });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && importModal.classList.contains('show')) closeModal();
-  });
-
-  // Copy prompt to clipboard (with fallback for non-secure contexts)
-  async function copyToClipboard(text){
-    try{
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch {
-      try{
-        const ta = document.createElement('textarea');
-        ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
-        document.body.appendChild(ta); ta.select();
-        const ok = document.execCommand('copy');
-        document.body.removeChild(ta);
-        return ok;
-      } catch { return false; }
-    }
-  }
-
-  copyPrompt.addEventListener('click', async () => {
-    const ok = await copyToClipboard(PROMPT_TEXT);
-    copyPrompt.textContent = ok ? 'Copied ✓' : 'Copy failed';
-    copyPrompt.classList.toggle('done', ok);
-    setTimeout(() => { copyPrompt.textContent = 'Copy prompt'; copyPrompt.classList.remove('done'); }, 1800);
-  });
-
-  // Export current week to SCHEDULE2.0 code
-  function weekToCode(){
-    let out = 'SCHEDULE2.0\n';
-    DAYS.forEach(d => {
-      const list = week[d];
-      if (!list.length){ out += `${d}: OFF\n`; return; }
-      const parts = list
-        .slice()
-        .sort((a,b) => toMinutes(a.start) - toMinutes(b.start))
-        .map(p => `${p.start}-${p.end} ${p.name}${p.room ? ` (${p.room})` : ''}`);
-      out += `${d}: ${parts.join(', ')}\n`;
-    });
-    return out.trim();
-  }
-
-  exportCode.addEventListener('click', async () => {
-    const code = weekToCode();
-    const ok = await copyToClipboard(code);
-    exportCode.textContent = ok ? 'Copied ✓' : 'Copy failed';
-    exportCode.classList.toggle('done', ok);
-    codeInput.value = code;
-    setTimeout(() => { exportCode.textContent = 'Export current week'; exportCode.classList.remove('done'); }, 1800);
-  });
-
-  // Parse SCHEDULE2.0 code back into the week model
-  function parseCode(raw){
-    const text = raw.trim();
-    if (!text) throw new Error('Paste some code first.');
-    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-    // drop the header line if present
-    if (lines[0] && lines[0].toUpperCase().startsWith('SCHEDULE2.0')) lines.shift();
-    if (!lines.length) throw new Error('No day lines found.');
-
-    const dayMap = { mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat', sun:'Sun' };
-    const parsed = emptyWeek();
-    let matchedAnyDay = false;
-
-    for (const line of lines){
-      const colon = line.indexOf(':');
-      if (colon === -1) continue;
-      const dayRaw = line.slice(0, colon).trim().toLowerCase().slice(0,3);
-      const dayKey = dayMap[dayRaw];
-      if (!dayKey) continue;
-      matchedAnyDay = true;
-
-      const rest = line.slice(colon + 1).trim();
-      if (!rest || rest.toUpperCase() === 'OFF') continue;
-
-      // Split into classes by finding each "HH:MM-HH:MM ..." segment.
-      // This is more robust than splitting on commas, since class names
-      // themselves can contain commas (e.g. "Reading, Writing (A1)").
-      const classRegex = /(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})\s*([^]*?)(?=(?:,\s*)?\d{1,2}:\d{2}\s*[-–]\s*\d{1,2}:\d{2}|$)/g;
-      let m, foundAny = false, guard = 0;
-      while ((m = classRegex.exec(rest)) !== null){
-        // Safety: never allow a zero-width match or runaway loop to freeze the page.
-        if (m.index === classRegex.lastIndex) classRegex.lastIndex++;
-        if (++guard > 200) break;
-        if (m[0].length === 0) continue;
-        foundAny = true;
-        let [, start, end, remainder] = m;
-        remainder = remainder.replace(/,\s*$/, '').trim();
-
-        // pull room out of trailing parentheses if present
-        let room = '';
-        const roomMatch = remainder.match(/\(([^)]*)\)\s*$/);
-        if (roomMatch){
-          room = roomMatch[1].trim();
-          remainder = remainder.slice(0, roomMatch.index).trim();
-        }
-        const name = remainder || 'Untitled';
-        parsed[dayKey].push({
-          id: freshId(),
-          name,
-          start: normalizeTime(start),
-          end: normalizeTime(end),
-          room
+    if (mode === 'signup') {
+      createUserWithEmailAndPassword(auth, email, password)
+        .then((cred) => {
+          return updateProfile(cred.user, { displayName: `${first} ${last}` })
+            .then(() => setDoc(doc(db, "users", cred.user.uid), {
+              firstName: first,
+              lastName: last,
+              email: email,
+              createdAt: new Date().toISOString()
+            }));
+        })
+        .then(() => {
+          window.location.href = "schedule.html";
+        })
+        .catch((err) => {
+          finish();
+          showMsg(friendlyError(err));
         });
-      }
-      if (!foundAny) throw new Error(`Could not read any class times in: "${rest}"`);
-      parsed[dayKey].sort((a,b) => toMinutes(a.start) - toMinutes(b.start));
+    } else {
+      signInWithEmailAndPassword(auth, email, password)
+        .then(() => {
+          window.location.href = "schedule.html";
+        })
+        .catch((err) => {
+          finish();
+          showMsg(friendlyError(err));
+        });
     }
-
-    if (!matchedAnyDay) throw new Error('No valid day lines (Mon, Tue, ...) found.');
-    return parsed;
-  }
-
-  function normalizeTime(t){
-    let [h,m] = t.split(':').map(Number);
-    if (isNaN(h) || isNaN(m)) return '00:00';
-    h = Math.max(0, Math.min(23, h));
-    m = Math.max(0, Math.min(59, m));
-    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-  }
-
-  applyCode.addEventListener('click', () => {
-    importMsg.className = 'io-msg';
-    let parsed;
-    try{
-      parsed = parseCode(codeInput.value);
-    } catch (err){
-      importMsg.textContent = err.message;
-      importMsg.classList.add('err');
-      return;
-    }
-    const total = DAYS.reduce((n,d) => n + parsed[d].length, 0);
-    if (total === 0){
-      importMsg.textContent = 'That code had no classes in it.';
-      importMsg.classList.add('err');
-      return;
-    }
-
-    // Apply immediately (no blocking confirm dialog, those are unreliable in
-    // in-app browsers). Stop the demo, show a brief loader, then fill.
-    stopChatDemo();
-    showLoading('Filling your schedule…');
-
-    setTimeout(() => {
-      week = parsed;
-      setDirty(true);
-      renderDayTabs();
-      renderChips();
-      renderPeriods();
-      if (currentView === 'week') renderWeekGrid();
-      hideLoading();
-      closeModal();
-      // surface a confirmation on the main screen via the save message
-      saveMsg.textContent = `Imported ${total} ${total===1?'class':'classes'}. Hit Save to keep it.`;
-      saveMsg.style.color = 'var(--good)';
-      saveMsg.classList.add('show');
-      setTimeout(() => saveMsg.classList.remove('show'), 4000);
-    }, 300);
-  });
-
-  // ══ Share schedule (public read only link) ════════════════════
-  const shareModal = document.getElementById('shareModal');
-  const openShare = document.getElementById('openShare');
-  const closeShare = document.getElementById('closeShare');
-  const createShare = document.getElementById('createShare');
-  const revokeShare = document.getElementById('revokeShare');
-  const shareLink = document.getElementById('shareLink');
-  const copyShareLink = document.getElementById('copyShareLink');
-  const shareInactive = document.getElementById('shareInactive');
-  const shareActive = document.getElementById('shareActive');
-  const shareMsg = document.getElementById('shareMsg');
-
-  function shareUrlFor(id){
-    const base = window.location.href.replace(/\/[^\/]*$/, '/');
-    return base + 'share.html?id=' + id;
-  }
-
-  function makeShareId(){
-    // long random id so links cannot be guessed
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    let out = '';
-    for (let i = 0; i < 22; i++) out += chars[Math.floor(Math.random()*chars.length)];
-    return out;
-  }
-
-  function renderShareState(){
-    const on = !!shareId;
-    shareInactive.classList.toggle('show', !on);
-    shareActive.classList.toggle('show', on);
-    if (on) shareLink.value = shareUrlFor(shareId);
-  }
-
-  function showShareMsg(text, kind){
-    shareMsg.textContent = text || '';
-    shareMsg.className = 'io-msg' + (kind ? ' ' + kind : '');
-  }
-
-  openShare.addEventListener('click', () => {
-    shareModal.classList.add('show');
-    document.body.style.overflow = 'hidden';
-    showShareMsg('');
-    renderShareState();
-  });
-  function closeShareModal(){
-    shareModal.classList.remove('show');
-    document.body.style.overflow = '';
-  }
-  closeShare.addEventListener('click', closeShareModal);
-  shareModal.addEventListener('click', (e) => { if (e.target === shareModal) closeShareModal(); });
-
-  createShare.addEventListener('click', async () => {
-    if (!currentUser) return;
-    createShare.disabled = true;
-    showShareMsg('Creating link...', '');
-    const id = makeShareId();
-    try{
-      await setDoc(doc(db, "sharedSchedules", id), {
-        userId: currentUser.uid,
-        ownerName: currentUser.displayName || '',
-        week,
-        updatedAt: new Date().toISOString()
-      });
-      shareId = id;
-      // remember the share id on the schedule doc so it persists across logins
-      await setDoc(doc(db, "schedules", currentUser.uid), { shareId: id }, { merge: true });
-      renderShareState();
-      showShareMsg('Link is live. Copy it and send it to whoever you want.', 'ok');
-    } catch (err){
-      console.error('Share create failed:', err);
-      showShareMsg('Could not create the link. Check your Firestore rules.', 'err');
-    }
-    createShare.disabled = false;
-  });
-
-  copyShareLink.addEventListener('click', async () => {
-    const ok = await copyToClipboard(shareLink.value);
-    copyShareLink.textContent = ok ? 'Copied' : 'Copy failed';
-    copyShareLink.classList.toggle('done', ok);
-    setTimeout(() => { copyShareLink.textContent = 'Copy'; copyShareLink.classList.remove('done'); }, 1800);
-  });
-
-  revokeShare.addEventListener('click', async () => {
-    if (!shareId || !currentUser) return;
-    revokeShare.disabled = true;
-    showShareMsg('Turning off...', '');
-    try{
-      await deleteDoc(doc(db, "sharedSchedules", shareId));
-      await setDoc(doc(db, "schedules", currentUser.uid), { shareId: '' }, { merge: true });
-      shareId = null;
-      renderShareState();
-      showShareMsg('Sharing is off. That link no longer works.', 'ok');
-    } catch (err){
-      console.error('Revoke failed:', err);
-      showShareMsg('Could not turn off sharing. Try again.', 'err');
-    }
-    revokeShare.disabled = false;
-  });
-
-  // keep the shared copy in sync whenever the schedule is saved
-  async function syncShareIfActive(){
-    if (!shareId || !currentUser) return;
-    try{
-      await setDoc(doc(db, "sharedSchedules", shareId), {
-        userId: currentUser.uid,
-        ownerName: currentUser.displayName || '',
-        week,
-        updatedAt: new Date().toISOString()
-      });
-    } catch (err){
-      console.error('Share sync failed:', err);
-    }
-  }
-
-  // warn before closing with unsaved changes
-  window.addEventListener('beforeunload', (e) => {
-    if (dirty){ e.preventDefault(); e.returnValue = ''; }
   });
 </script>
 
