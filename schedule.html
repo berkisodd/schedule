@@ -387,7 +387,7 @@
   .chatdemo-field{
     flex:1; background:var(--ink-2); border:1px solid var(--line); border-radius:8px;
     padding:8px 10px; font-family:'JetBrains Mono', monospace; font-size:0.68rem;
-    color:var(--text-dim); min-height:32px; display:flex; align-items:center;
+    color:var(--text); min-height:32px; display:flex; align-items:center;
     white-space:nowrap; overflow:hidden;
   }
   .chatdemo-field.active{ border-color:var(--amber); }
@@ -1100,7 +1100,7 @@ Rules:
     botBubble: document.getElementById('demoBotBubble'),
     body: document.getElementById('chatBody')
   };
-  const DEMO_PROMPT_SHORT = 'Convert my schedule photo to SCHEDULE2.0 code';
+  const DEMO_PROMPT_SHORT = 'Convert my schedule to SCHEDULE2.0';
   const DEMO_BOT_REPLY =
 `SCHEDULE2.0
 Mon: 09:00-10:00 AP Chem (214)
@@ -1157,11 +1157,18 @@ Wed: OFF
     e.field.classList.add('active');
     e.caret.classList.add('blink');
     e.send.classList.remove('hot');
-    await demoWait(400); if(!alive()) return;
+    await demoWait(300); if(!alive()) return;
 
-    // "paste" the prompt (appears instantly, like a paste, then a beat)
-    e.fieldText.textContent = DEMO_PROMPT_SHORT;
-    await demoWait(700); if(!alive()) return;
+    // type the prompt into the field, smooth and fast
+    e.caret.classList.remove('blink');
+    e.caret.style.opacity = '1';
+    for (let i = 1; i <= DEMO_PROMPT_SHORT.length; i++){
+      if(!alive()) return;
+      e.fieldText.textContent = DEMO_PROMPT_SHORT.slice(0, i);
+      await demoWait(24);
+    }
+    e.caret.classList.add('blink');
+    await demoWait(450); if(!alive()) return;
 
     // move cursor to send button
     moveCursor(92, 82);
