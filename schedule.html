@@ -220,6 +220,62 @@
   .btn-share:hover{ border-color:var(--good); color:var(--good); }
   .btn-share:active{ transform:scale(0.97); }
 
+  /* presence dots */
+  .pdot{
+    width:10px; height:10px; border-radius:50%; flex-shrink:0;
+    display:inline-block; position:relative;
+    background:var(--slate); border:2px solid var(--panel);
+    box-sizing:content-box;
+  }
+  .pdot.online{ background:#3BA55D; }
+  .pdot.idle{ background:#E8A93C; }
+  .pdot.offline{ background:var(--slate); }
+  .pdot.online::after{
+    content:''; position:absolute; inset:-2px; border-radius:50%;
+    border:2px solid #3BA55D; opacity:0.55;
+    animation:pdotPulse 2.2s ease-out infinite;
+  }
+  @keyframes pdotPulse{
+    0%{ transform:scale(1); opacity:0.55; }
+    70%{ transform:scale(1.9); opacity:0; }
+    100%{ transform:scale(1.9); opacity:0; }
+  }
+
+  .presence-preview{
+    display:flex; align-items:center; gap:9px; margin-bottom:11px;
+    background:var(--ink-2); border:1px solid var(--line);
+    border-radius:9px; padding:11px 13px;
+  }
+  .presence-label{ font-size:0.88rem; color:var(--text); }
+  .presence-picker{ display:flex; gap:7px; flex-wrap:wrap; }
+  .presence-opt{
+    flex:1; min-width:72px; background:var(--ink-2); border:1px solid var(--line);
+    color:var(--text-dim); font-family:'Inter',sans-serif; font-size:0.8rem;
+    font-weight:600; padding:9px 0; border-radius:8px; cursor:pointer;
+    transition:all 0.2s ease;
+  }
+  .presence-opt:hover{ border-color:var(--text-dim); color:var(--text); }
+  .presence-opt.active{
+    background:var(--amber); border-color:var(--amber); color:var(--on-amber);
+  }
+
+  /* avatar with presence badge */
+  .av-badge{ position:relative; flex-shrink:0; }
+  .av-badge .pdot{
+    position:absolute; right:-1px; bottom:-1px;
+    border-color:var(--ink-2);
+  }
+  .pv-av-wrap{ position:relative; width:96px; margin:0 auto 16px; }
+  .pv-av-wrap .pdot{
+    position:absolute; right:4px; bottom:4px;
+    width:16px; height:16px; border-color:var(--panel);
+  }
+  .pv-presence{
+    font-family:'JetBrains Mono', monospace; font-size:0.72rem;
+    color:var(--text-dim); margin-bottom:12px;
+    display:flex; align-items:center; justify-content:center; gap:7px;
+  }
+
   /* settings modal */
   .settings-modal{ max-width:480px; }
   .set-head{ padding:28px 24px 16px; border-bottom:1px solid var(--line); }
@@ -363,6 +419,12 @@
   .people-empty{
     text-align:center; padding:30px 10px; color:var(--text-dim);
     font-size:0.86rem;
+  }
+  .people-count{
+    display:flex; align-items:center; gap:8px; padding:2px 2px 8px;
+    font-family:'JetBrains Mono', monospace; font-size:0.7rem;
+    letter-spacing:0.05em; text-transform:uppercase; color:var(--text-dim);
+    border-bottom:1px solid var(--line); margin-bottom:2px;
   }
 
   /* profile view */
@@ -958,6 +1020,33 @@
       </div>
 
       <div class="set-section">
+        <div class="set-label">Activity status</div>
+        <div class="presence-preview">
+          <span class="pdot online" id="myPresenceDot"></span>
+          <span class="presence-label" id="myPresenceLabel">Online</span>
+        </div>
+        <div class="presence-picker" id="presencePicker">
+          <button class="presence-opt" data-presence="auto">Automatic</button>
+          <button class="presence-opt" data-presence="online">Online</button>
+          <button class="presence-opt" data-presence="idle">Idle</button>
+          <button class="presence-opt" data-presence="offline">Offline</button>
+        </div>
+        <div class="set-hint">Automatic shows online while you are using the app, idle after five quiet minutes, and offline after thirty.</div>
+      </div>
+
+      <div class="set-section">
+        <div class="set-row">
+          <div>
+            <div class="set-label" style="margin-bottom:4px;">Hide my activity</div>
+            <div class="set-hint" style="margin:0;">You always appear offline and the app stops recording when you were last active.</div>
+          </div>
+          <button class="switch" id="hideStatusToggle" role="switch" aria-checked="false">
+            <span class="switch-knob"></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="set-section">
         <div class="set-row">
           <div>
             <div class="set-label" style="margin-bottom:4px;">Public account</div>
@@ -1187,7 +1276,8 @@
   // ── Profile state ──────────────────────────────────────────
   let profile = {
     name: '', status: '', bio: '', gender: '',
-    avatar: 'larry', isPublic: false
+    avatar: 'larry', isPublic: false,
+    hideStatus: false, lastActive: null, manualPresence: 'auto'
   };
   let tickStarted = false;
   let dirty = false;
@@ -2190,6 +2280,119 @@ Wed: OFF
   }
   applyTheme(getThemePref());
 
+  // ══ Presence (online, idle, offline) ══════════════════════════
+  // Status is derived from a lastActive timestamp rather than a live
+  // connection, so it costs one small write instead of an open socket.
+  const PRESENCE = {
+    ONLINE_MS: 5 * 60 * 1000,      // active within 5 minutes
+    IDLE_MS: 30 * 60 * 1000,       // active within 30 minutes
+    WRITE_THROTTLE_MS: 90 * 1000,  // never write more than once per 90s
+    IDLE_AFTER_MS: 5 * 60 * 1000   // no input for 5 min counts as idle
+  };
+
+  let lastPresenceWrite = 0;
+  let lastInteractionAt = Date.now();
+  let presenceTimer = null;
+
+  function presenceFrom(lastActiveIso, hideStatus, manual){
+    if (hideStatus) return 'offline';
+    if (manual && manual !== 'auto') return manual;
+    if (!lastActiveIso) return 'offline';
+    const t = new Date(lastActiveIso).getTime();
+    if (isNaN(t)) return 'offline';
+    const age = Date.now() - t;
+    if (age <= PRESENCE.ONLINE_MS) return 'online';
+    if (age <= PRESENCE.IDLE_MS) return 'idle';
+    return 'offline';
+  }
+
+  const PRESENCE_LABEL = { online:'Online', idle:'Idle', offline:'Offline' };
+
+  function presenceDot(state){
+    return `<span class="pdot ${state}" title="${PRESENCE_LABEL[state]}"></span>`;
+  }
+
+  // Human readable "last seen" for offline and idle people
+  function lastSeenText(lastActiveIso){
+    if (!lastActiveIso) return '';
+    const t = new Date(lastActiveIso).getTime();
+    if (isNaN(t)) return '';
+    const mins = Math.floor((Date.now() - t) / 60000);
+    if (mins < 1) return 'Active just now';
+    if (mins < 60) return `Active ${mins} min${mins===1?'':'s'} ago`;
+    const hrs = Math.floor(mins/60);
+    if (hrs < 24) return `Active ${hrs} hour${hrs===1?'':'s'} ago`;
+    const days = Math.floor(hrs/24);
+    if (days === 1) return 'Active yesterday';
+    if (days < 7) return `Active ${days} days ago`;
+    return 'Active a while ago';
+  }
+
+  // My own current state, used for the settings preview
+  function myPresence(){
+    if (profile.hideStatus) return 'offline';
+    if (profile.manualPresence && profile.manualPresence !== 'auto') return profile.manualPresence;
+    const quiet = Date.now() - lastInteractionAt;
+    return quiet > PRESENCE.IDLE_AFTER_MS ? 'idle' : 'online';
+  }
+
+  // Write the heartbeat, throttled so it cannot spam Firestore
+  async function touchPresence(force){
+    if (!currentUser) return;
+    if (profile.hideStatus) return; // respect privacy, do not record activity
+    const now = Date.now();
+    if (!force && now - lastPresenceWrite < PRESENCE.WRITE_THROTTLE_MS) return;
+    // do not count a hidden tab as active
+    if (!force && document.visibilityState === 'hidden') return;
+    lastPresenceWrite = now;
+    const stamp = new Date().toISOString();
+    profile.lastActive = stamp;
+    try{
+      await setDoc(doc(db, "profiles", currentUser.uid), { lastActive: stamp }, { merge: true });
+    } catch (err){
+      console.error('Presence write failed:', err);
+    }
+  }
+
+  function noteInteraction(){
+    lastInteractionAt = Date.now();
+    touchPresence(false);
+  }
+
+  function startPresence(){
+    if (presenceTimer) clearInterval(presenceTimer);
+    // real user activity drives the heartbeat
+    ['click','keydown','touchstart','scroll'].forEach(evt => {
+      window.addEventListener(evt, noteInteraction, { passive:true });
+    });
+    // coming back to the tab counts as activity
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') noteInteraction();
+      updateMyPresenceUI();
+    });
+    // slow keepalive so a page left open still reads as idle rather than offline
+    presenceTimer = setInterval(() => {
+      const quiet = Date.now() - lastInteractionAt;
+      if (quiet < PRESENCE.IDLE_AFTER_MS && document.visibilityState === 'visible'){
+        touchPresence(false);
+      }
+      updateMyPresenceUI();
+    }, 60 * 1000);
+    touchPresence(true);
+  }
+
+  function updateMyPresenceUI(){
+    const dot = document.getElementById('myPresenceDot');
+    const label = document.getElementById('myPresenceLabel');
+    if (!dot || !label) return;
+    const state = myPresence();
+    dot.className = 'pdot ' + state;
+    let text = PRESENCE_LABEL[state];
+    if (profile.hideStatus) text = 'Hidden, you appear offline';
+    else if (profile.manualPresence && profile.manualPresence !== 'auto') text += ' (set by you)';
+    label.textContent = text;
+  }
+
   // ══ Settings and profile ══════════════════════════════════════
   const settingsModal = document.getElementById('settingsModal');
   const openSettings = document.getElementById('openSettings');
@@ -2237,6 +2440,28 @@ Wed: OFF
     topbarAvatar.innerHTML = avatarSvg(profile.avatar);
   }
 
+  const hideStatusToggle = document.getElementById('hideStatusToggle');
+
+  function renderPresencePicker(){
+    document.querySelectorAll('.presence-opt').forEach(b => {
+      b.classList.toggle('active', b.dataset.presence === (profile.manualPresence || 'auto'));
+    });
+  }
+  document.querySelectorAll('.presence-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      profile.manualPresence = btn.dataset.presence;
+      renderPresencePicker();
+      updateMyPresenceUI();
+    });
+  });
+
+  hideStatusToggle.addEventListener('click', () => {
+    profile.hideStatus = !profile.hideStatus;
+    hideStatusToggle.classList.toggle('on', profile.hideStatus);
+    hideStatusToggle.setAttribute('aria-checked', profile.hideStatus ? 'true' : 'false');
+    updateMyPresenceUI();
+  });
+
   function fillSettingsForm(){
     setName.value = profile.name || '';
     setStatus.value = profile.status || '';
@@ -2244,10 +2469,14 @@ Wed: OFF
     setGender.value = profile.gender || '';
     publicToggle.classList.toggle('on', !!profile.isPublic);
     publicToggle.setAttribute('aria-checked', profile.isPublic ? 'true' : 'false');
+    hideStatusToggle.classList.toggle('on', !!profile.hideStatus);
+    hideStatusToggle.setAttribute('aria-checked', profile.hideStatus ? 'true' : 'false');
     statusCount.textContent = (profile.status || '').length;
     bioCount.textContent = (profile.bio || '').length;
     setEmail.textContent = currentUser ? currentUser.email : '';
     renderAvatarPicker();
+    renderPresencePicker();
+    updateMyPresenceUI();
   }
 
   setStatus.addEventListener('input', () => { statusCount.textContent = setStatus.value.length; });
@@ -2288,7 +2517,10 @@ Wed: OFF
           bio: d.bio || '',
           gender: d.gender || '',
           avatar: AVATARS[d.avatar] ? d.avatar : 'larry',
-          isPublic: d.isPublic === true
+          isPublic: d.isPublic === true,
+          hideStatus: d.hideStatus === true,
+          lastActive: d.lastActive || null,
+          manualPresence: ['auto','online','idle','offline'].includes(d.manualPresence) ? d.manualPresence : 'auto'
         };
       } else {
         profile.name = currentUser.displayName || '';
@@ -2298,6 +2530,7 @@ Wed: OFF
       profile.name = currentUser.displayName || '';
     }
     renderTopbarAvatar();
+    startPresence();
   }
 
   saveSettings.addEventListener('click', async () => {
@@ -2325,6 +2558,9 @@ Wed: OFF
         gender: profile.gender,
         avatar: profile.avatar,
         isPublic: profile.isPublic,
+        hideStatus: profile.hideStatus,
+        manualPresence: profile.manualPresence || 'auto',
+        lastActive: profile.hideStatus ? null : (profile.lastActive || new Date().toISOString()),
         updatedAt: new Date().toISOString()
       });
       try{ await updateProfile(currentUser, { displayName: profile.name }); } catch(e){}
@@ -2430,7 +2666,10 @@ Wed: OFF
           bio: data.bio || '',
           gender: data.gender || '',
           avatar: AVATARS[data.avatar] ? data.avatar : 'larry',
-          isPublic: data.isPublic === true
+          isPublic: data.isPublic === true,
+          hideStatus: data.hideStatus === true,
+          lastActive: data.lastActive || null,
+          manualPresence: ['auto','online','idle','offline'].includes(data.manualPresence) ? data.manualPresence : 'auto'
         });
       });
       allPeople.sort((a,b) => a.name.localeCompare(b.name));
@@ -2442,7 +2681,19 @@ Wed: OFF
 
   function renderPeople(filter){
     const f = (filter || '').trim().toLowerCase();
-    const list = f ? allPeople.filter(p => p.name.toLowerCase().includes(f)) : allPeople;
+    let list = f ? allPeople.filter(p => p.name.toLowerCase().includes(f)) : allPeople.slice();
+
+    // online first, then idle, then offline, alphabetical inside each group
+    const rank = { online:0, idle:1, offline:2 };
+    list.forEach(p => {
+      const isMe = currentUser && p.uid === currentUser.uid;
+      p._state = isMe ? myPresence() : presenceFrom(p.lastActive, p.hideStatus, p.manualPresence);
+    });
+    list.sort((a,b) => {
+      const r = rank[a._state] - rank[b._state];
+      return r !== 0 ? r : a.name.localeCompare(b.name);
+    });
+
     peopleList.innerHTML = '';
     if (!list.length){
       peopleList.innerHTML = '<div class="people-empty">' +
@@ -2450,15 +2701,37 @@ Wed: OFF
         '</div>';
       return;
     }
+
+    const onlineCount = list.filter(p => p._state === 'online').length;
+    const countBar = document.createElement('div');
+    countBar.className = 'people-count';
+    countBar.innerHTML = `${presenceDot('online')} <span>${onlineCount} online now</span>`;
+    peopleList.appendChild(countBar);
+
     list.forEach(p => {
       const btn = document.createElement('button');
       btn.className = 'person';
       const isMe = currentUser && p.uid === currentUser.uid;
+      const state = p._state;
+
+      // what the second line says: their status if public, otherwise presence
+      let sub;
+      if (!p.isPublic && !isMe){
+        sub = 'Private account';
+      } else if (p.status){
+        sub = p.status;
+      } else {
+        sub = PRESENCE_LABEL[state];
+      }
+
       btn.innerHTML = `
-        <div class="person-av">${avatarSvg(p.avatar)}</div>
+        <div class="person-av av-badge">
+          ${avatarSvg(p.avatar)}
+          ${presenceDot(state)}
+        </div>
         <div class="person-info">
           <div class="person-name">${escapeHtml(p.name)}${isMe ? ' (you)' : ''}</div>
-          <div class="person-status">${p.isPublic ? escapeHtml(p.status || 'No status') : 'Private account'}</div>
+          <div class="person-status">${escapeHtml(sub)}</div>
         </div>
         ${p.isPublic ? '' : '<div class="person-tag">Private</div>'}
       `;
@@ -2472,23 +2745,41 @@ Wed: OFF
   function showProfile(p){
     const isMe = currentUser && p.uid === currentUser.uid;
     const visible = p.isPublic || isMe;
+    const state = isMe ? myPresence() : presenceFrom(p.lastActive, p.hideStatus, p.manualPresence);
+
+    // only reveal a last seen time when they have not hidden activity
+    let seen = '';
+    if (!p.hideStatus && !(p.manualPresence && p.manualPresence !== 'auto')){
+      if (state === 'online') seen = 'Active now';
+      else seen = lastSeenText(p.lastActive);
+    }
+
     if (visible){
       profileView.innerHTML = `
-        <div class="pv-av">${avatarSvg(p.avatar)}</div>
+        <div class="pv-av-wrap">
+          <div class="pv-av">${avatarSvg(p.avatar)}</div>
+          ${presenceDot(state)}
+        </div>
         <div class="pv-name">${escapeHtml(p.name)}</div>
+        <div class="pv-presence">${presenceDot(state)}<span>${PRESENCE_LABEL[state]}${seen ? ' · ' + escapeHtml(seen) : ''}</span></div>
         ${p.status ? `<div class="pv-status">${escapeHtml(p.status)}</div>` : ''}
         ${p.bio ? `<div class="pv-bio">${escapeHtml(p.bio)}</div>` : ''}
         ${p.gender ? `<div class="pv-meta">${escapeHtml(p.gender)}</div>` : ''}
         ${isMe && !p.isPublic ? '<div class="pv-meta" style="margin-top:10px;">Only you can see this. Turn on public in settings.</div>' : ''}
+        ${isMe && p.hideStatus ? '<div class="pv-meta" style="margin-top:10px;">Your activity is hidden, so everyone sees you as offline.</div>' : ''}
       `;
     } else {
       profileView.innerHTML = `
-        <div class="pv-av">${avatarSvg(p.avatar)}</div>
+        <div class="pv-av-wrap">
+          <div class="pv-av">${avatarSvg(p.avatar)}</div>
+          ${presenceDot(state)}
+        </div>
         <div class="pv-name">${escapeHtml(p.name)}</div>
+        <div class="pv-presence">${presenceDot(state)}<span>${PRESENCE_LABEL[state]}</span></div>
         <div class="pv-private">
           <div class="pv-lock">🔒</div>
           <div class="pv-private-title">This account is private</div>
-          <div class="pv-private-sub">Only their name is visible.</div>
+          <div class="pv-private-sub">Only their name and activity are visible.</div>
         </div>
       `;
     }
