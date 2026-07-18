@@ -4,7 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Schedule 2.0</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%230B1120'/><circle cx='32' cy='32' r='28' fill='none' stroke='%23E8823C' stroke-width='2'/><circle cx='32' cy='32' r='4' fill='%23E8823C'/><line x1='32' y1='12' x2='32' y2='22' stroke='%23E8823C' stroke-width='2' stroke-linecap='round'/><line x1='32' y1='32' x2='44' y2='32' stroke='%23E8823C' stroke-width='2' stroke-linecap='round'/></svg>">
+<meta name="theme-color" content="#0A0A0B">
+
+<!-- PWA -->
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Schedule">
+
+<link rel="icon" type="image/png" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script>
@@ -81,6 +91,13 @@
     letter-spacing:0.16em; text-transform:uppercase; color:var(--amber);
     margin-bottom:10px;
   }
+  .dotclock{
+    display:block; width:100%; max-width:min(420px, 78vw);
+    height:auto; margin:0 auto; overflow:visible;
+  }
+  .dc-on{ fill:var(--text); }
+  .dc-off{ fill:var(--line); }
+  .hero-clock.live .dc-on{ fill:var(--amber); }
   .hero-clock{
     font-family:'JetBrains Mono', monospace; font-weight:700;
     font-size:clamp(2.6rem, 11vw, 4.6rem); letter-spacing:-0.02em;
@@ -196,7 +213,7 @@
   <div class="hero">
     <div class="hero-owner" id="heroOwner"></div>
     <div class="hero-label" id="heroState">Next period in</div>
-    <div class="hero-clock" id="heroClock">--:--:--</div>
+    <div class="hero-clock" id="heroClock" role="timer" aria-label="--:--"></div>
     <div class="hero-sub" id="heroSub"></div>
   </div>
 
@@ -354,6 +371,50 @@
     });
   }
 
+  const DOT_GLYPHS = {
+    '0':["01110","10001","10011","10101","11001","10001","01110"],
+    '1':["00100","01100","00100","00100","00100","00100","01110"],
+    '2':["01110","10001","00001","00010","00100","01000","11111"],
+    '3':["11111","00010","00100","00010","00001","10001","01110"],
+    '4':["00010","00110","01010","10010","11111","00010","00010"],
+    '5':["11111","10000","11110","00001","00001","10001","01110"],
+    '6':["00110","01000","10000","11110","10001","10001","01110"],
+    '7':["11111","00001","00010","00100","01000","01000","01000"],
+    '8':["01110","10001","10001","01110","10001","10001","01110"],
+    '9':["01110","10001","10001","01111","00001","00010","01100"],
+    ':':["00000","00100","00100","00000","00100","00100","00000"],
+    '-':["00000","00000","00000","01110","00000","00000","00000"]
+  };
+  let lastClockText = null;
+  function renderDotClock(text){
+    const rows = 7, dot = 1, gap = 0.62, step = dot + gap;
+    let x = 0; const cells = [];
+    for (const ch of text){
+      const g = DOT_GLYPHS[ch];
+      if (!g){ x += step * 2; continue; }
+      const cols = g[0].length;
+      for (let r = 0; r < rows; r++){
+        for (let c = 0; c < cols; c++){
+          const on = g[r][c] === '1';
+          cells.push(`<circle cx="${(x + c*step + dot/2).toFixed(2)}" cy="${(r*step + dot/2).toFixed(2)}" r="${dot/2}" class="${on ? 'dc-on' : 'dc-off'}"/>`);
+        }
+      }
+      x += cols*step + step;
+    }
+    const w = Math.max(x - step, step);
+    const h = rows*step - gap;
+    return `<svg class="dotclock" viewBox="0 0 ${w.toFixed(2)} ${h.toFixed(2)}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${cells.join('')}</svg>`;
+  }
+  function setHeroClock(text, live){
+    const el = document.getElementById('heroClock');
+    if (!el) return;
+    el.classList.toggle('live', !!live);
+    if (text === lastClockText) return;
+    lastClockText = text;
+    el.innerHTML = renderDotClock(text);
+    el.setAttribute('aria-label', text);
+  }
+
   function secsToClock(totalSecs){
     const h = Math.floor(totalSecs/3600);
     const m = Math.floor((totalSecs%3600)/60);
@@ -376,28 +437,27 @@
     if (!current) next = todays.find(p => toMinutes(p.start) > nowMin) || null;
 
     const heroState = document.getElementById('heroState');
-    const heroClock = document.getElementById('heroClock');
     const heroSub = document.getElementById('heroSub');
 
     if (current){
       const secsLeft = Math.max(Math.round((toMinutes(current.end) - nowMin) * 60), 0);
       heroState.textContent = `${current.name} ends in`;
-      heroClock.textContent = secsToClock(secsLeft);
+      setHeroClock(secsToClock(secsLeft), true);
       const idx = todays.indexOf(current);
       const after = todays[idx+1] || null;
       heroSub.innerHTML = `Then: <strong>${after ? escapeHtml(after.name) : 'Done for today'}</strong>`;
     } else if (next){
       const secsLeft = Math.max(Math.round((toMinutes(next.start) - nowMin) * 60), 0);
       heroState.textContent = `${next.name} starts in`;
-      heroClock.textContent = secsToClock(secsLeft);
+      setHeroClock(secsToClock(secsLeft), false);
       heroSub.innerHTML = next.room ? `In <strong>${escapeHtml(next.room)}</strong>` : 'Coming up next.';
     } else if (todays.length){
       heroState.textContent = 'All done today';
-      heroClock.textContent = '--:--:--';
+      setHeroClock('--:--');
       heroSub.textContent = 'No more periods today.';
     } else {
       heroState.textContent = 'Nothing scheduled today';
-      heroClock.textContent = '--:--:--';
+      setHeroClock('--:--');
       heroSub.textContent = `It is ${DAY_FULL[todayKey()]}.`;
     }
 
