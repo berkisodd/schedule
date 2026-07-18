@@ -4,7 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Schedule 2.0</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%230B1120'/><circle cx='32' cy='32' r='28' fill='none' stroke='%23E8823C' stroke-width='2'/><circle cx='32' cy='32' r='4' fill='%23E8823C'/><line x1='32' y1='12' x2='32' y2='22' stroke='%23E8823C' stroke-width='2' stroke-linecap='round'/><line x1='32' y1='32' x2='44' y2='32' stroke='%23E8823C' stroke-width='2' stroke-linecap='round'/></svg>">
+<meta name="theme-color" content="#0A0A0B">
+<meta name="description" content="Your school schedule, with a live countdown to whatever's next.">
+
+<!-- PWA -->
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Schedule">
+
+<link rel="icon" type="image/png" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script>
@@ -856,6 +867,186 @@
     z-index:3; will-change:left, top;
   }
 
+  /* ── Add to home screen tutorial ──────────────────────────── */
+  .install-btn{
+    width:100%; display:flex; align-items:center; gap:12px;
+    background:var(--panel); border:1px solid var(--line); color:var(--text);
+    padding:13px 14px; border-radius:var(--radius); cursor:pointer;
+    text-align:left; font-family:inherit; font-size:0.9rem;
+    transition:border-color 0.2s ease, background 0.2s ease;
+  }
+  .install-btn:hover{ border-color:var(--slate); background:var(--ink-2); }
+  .install-btn-icon{
+    width:34px; height:34px; flex:none; border-radius:9px;
+    border:1px solid var(--line); display:flex; align-items:center;
+    justify-content:center; background:var(--ink-2);
+  }
+  .install-btn-icon svg{ width:16px; height:16px; }
+  .install-btn-main{ flex:1; min-width:0; }
+  .install-btn-title{ font-weight:600; margin-bottom:2px; }
+  .install-btn-sub{ font-size:0.78rem; color:var(--text-dim); }
+  .install-btn-chev{ color:var(--text-dim); font-size:1.1rem; flex:none; }
+
+  /* phone mockup used in every tutorial step */
+  .phone{
+    width:186px; height:300px; flex:none;
+    border:1.5px solid var(--line); border-radius:22px;
+    background:var(--ink-2); position:relative; overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+  .phone-notch{
+    width:52px; height:4px; border-radius:99px; background:var(--line);
+    margin:8px auto 0;
+  }
+  .phone-screen{ flex:1; position:relative; overflow:hidden; padding:8px 9px; }
+
+  /* miniature of the app itself, shown inside the phone */
+  .mini-app{ display:flex; flex-direction:column; gap:5px; }
+  .mini-row{ height:7px; border-radius:3px; background:var(--line-soft); }
+  .mini-row.w70{ width:70%; }
+  .mini-row.w50{ width:50%; }
+  .mini-card{
+    border:1px solid var(--line); border-radius:6px; padding:6px 7px;
+    display:flex; flex-direction:column; gap:4px;
+  }
+  .mini-card.live{ border-color:var(--amber); }
+  .mini-bar{ height:5px; border-radius:3px; background:var(--line); width:60%; }
+  .mini-bar.amber{ background:var(--amber); width:44%; }
+
+  /* browser chrome bar at the bottom of the phone */
+  .phone-chrome{
+    border-top:1px solid var(--line); padding:7px 9px;
+    display:flex; align-items:center; gap:7px; background:var(--panel);
+  }
+  .chrome-url{
+    flex:1; height:16px; border-radius:99px; background:var(--ink);
+    border:1px solid var(--line); display:flex; align-items:center;
+    padding:0 7px; font-family:'JetBrains Mono',monospace;
+    font-size:0.42rem; color:var(--text-dim); letter-spacing:0.02em;
+    overflow:hidden; white-space:nowrap;
+  }
+  .chrome-btn{
+    width:17px; height:17px; flex:none; border-radius:5px;
+    border:1px solid var(--line); display:flex; align-items:center;
+    justify-content:center; color:var(--text-dim);
+    transition:border-color 0.3s ease, color 0.3s ease, background 0.3s ease;
+  }
+  .chrome-btn svg{ width:9px; height:9px; }
+  /* the button the current step wants you to notice */
+  .chrome-btn.target{
+    border-color:var(--amber); color:var(--amber); background:var(--amber-dim);
+    animation:targetPulse 1.8s ease-in-out infinite;
+  }
+  @keyframes targetPulse{
+    0%,100%{ box-shadow:0 0 0 0 rgba(217,116,53,0.35); }
+    50%{ box-shadow:0 0 0 5px rgba(217,116,53,0); }
+  }
+
+  /* iOS-style share sheet sliding up from the bottom */
+  .share-sheet{
+    position:absolute; left:0; right:0; bottom:0;
+    background:var(--panel); border-top:1px solid var(--line);
+    border-radius:14px 14px 0 0; padding:9px 8px 10px;
+    transform:translateY(102%);
+    transition:transform 0.5s cubic-bezier(.16,1,.3,1);
+  }
+  .step.active .share-sheet.up{ transform:translateY(0); }
+  .sheet-grab{
+    width:30px; height:3px; border-radius:99px; background:var(--line);
+    margin:0 auto 8px;
+  }
+  .sheet-item{
+    display:flex; align-items:center; gap:7px; padding:5px 6px;
+    border-radius:7px; font-size:0.5rem; color:var(--text-dim);
+    border:1px solid transparent;
+  }
+  .sheet-item-ic{
+    width:15px; height:15px; flex:none; border-radius:4px;
+    border:1px solid var(--line); display:flex;
+    align-items:center; justify-content:center;
+  }
+  .sheet-item-ic svg{ width:8px; height:8px; }
+  /* the row the step is pointing at */
+  .sheet-item.target{
+    color:var(--amber); border-color:var(--amber-line); background:var(--amber-dim);
+  }
+  .sheet-item.target .sheet-item-ic{ border-color:var(--amber); }
+
+  /* home screen grid, shown on the final step */
+  .home-grid{
+    position:absolute; inset:0; padding:14px 12px;
+    display:grid; grid-template-columns:repeat(4,1fr); gap:11px 9px;
+    align-content:start;
+    /* start, not stretch: the labeled slot is taller than the plain
+       icons, and stretching would squash the others out of square */
+    align-items:start;
+  }
+  .home-ic{ aspect-ratio:1; border-radius:9px; background:var(--line-soft); }
+
+  /* our app landing on the home screen.
+     The label lives outside .home-ic-box because that box clips its
+     contents to keep the amber glow inside the rounded corners. */
+  .home-slot{ display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .home-ic-box{
+    width:100%; aspect-ratio:1; border-radius:9px;
+    background:var(--ink); border:1px solid var(--amber);
+    position:relative; overflow:hidden;
+  }
+  .home-slot{ opacity:0; transform:scale(0.4); }
+  .step.active .home-slot{ animation:iconLand 0.7s cubic-bezier(.16,1,.3,1) 0.45s both; }
+  @keyframes iconLand{
+    0%{ opacity:0; transform:scale(0.4); }
+    70%{ opacity:1; transform:scale(1.08); }
+    100%{ opacity:1; transform:scale(1); }
+  }
+  .home-ic-box::after{
+    content:''; position:absolute; right:14%; bottom:16%;
+    width:38%; height:38%; border-radius:50%; background:var(--amber);
+    filter:blur(2.5px); opacity:0.9;
+  }
+  .home-ic-label{
+    font-size:0.4rem; text-align:center; color:var(--text-dim);
+    letter-spacing:0.01em; line-height:1;
+  }
+
+  /* animated tap ring, marks where your finger goes */
+  .tap{
+    position:absolute; width:22px; height:22px; border-radius:50%;
+    border:1.5px solid var(--amber); pointer-events:none; opacity:0;
+    margin:-11px 0 0 -11px;
+  }
+  .step.active .tap{ animation:tapPing 2.2s ease-out infinite; }
+  @keyframes tapPing{
+    0%{ opacity:0; transform:scale(0.5); }
+    18%{ opacity:1; transform:scale(1); }
+    45%{ opacity:0.55; transform:scale(1.5); }
+    70%,100%{ opacity:0; transform:scale(1.9); }
+  }
+
+  .install-stage{ height:auto; min-height:392px; }
+  .install-stage .step{ justify-content:flex-start; padding-top:4px; }
+  .install-phone-wrap{ margin-bottom:14px; }
+  .install-note{
+    margin-top:14px; padding:10px 12px; border:1px solid var(--line);
+    border-radius:var(--radius); background:var(--ink-2);
+    font-size:0.78rem; color:var(--text-dim); line-height:1.45;
+    max-width:340px;
+  }
+  .plat-tabs{ display:flex; gap:6px; justify-content:center; margin-bottom:16px; }
+  .plat-tab{
+    font-family:'JetBrains Mono',monospace; font-size:0.66rem;
+    letter-spacing:0.08em; text-transform:uppercase;
+    padding:7px 14px; border-radius:99px; cursor:pointer;
+    border:1px solid var(--line); background:transparent; color:var(--text-dim);
+    transition:color 0.2s ease, border-color 0.2s ease;
+  }
+  .plat-tab.active{ color:var(--text); border-color:var(--text); }
+
+  @media (max-width:420px){
+    .phone{ width:168px; height:276px; }
+    .install-stage{ min-height:376px; }
+  }
+
   .step-nav{ display:flex; gap:10px; margin-top:18px; }
   .step-nav .btn-ghost, .step-nav .btn-primary{ flex:1; padding:11px 0; }
   .step-back:disabled{ opacity:0.35; cursor:default; }
@@ -1080,6 +1271,24 @@
         </div>
       </div>
 
+      <div class="set-section" id="installSection">
+        <div class="set-label">App</div>
+        <button class="install-btn" id="openInstallBtn">
+          <span class="install-btn-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="3"/>
+              <path d="M12 8v7"/><path d="M9 12l3 3 3-3"/>
+            </svg>
+          </span>
+          <span class="install-btn-main">
+            <span class="install-btn-title">Add to home screen</span>
+            <span class="install-btn-sub" id="installBtnSub">Run it fullscreen, like an app</span>
+          </span>
+          <span class="install-btn-chev">›</span>
+        </button>
+      </div>
+
       <div class="set-msg" id="setMsg"></div>
       <button class="btn-primary set-save" id="saveSettings">Save profile</button>
 
@@ -1097,6 +1306,169 @@
         </div>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="installModal">
+  <div class="modal import-modal">
+    <button class="modal-close" id="closeInstall" aria-label="Close">✕</button>
+
+    <div class="set-head">
+      <div class="set-title">Add to your home screen</div>
+      <div class="set-sub" id="installSub">Opens fullscreen, like a normal app.</div>
+    </div>
+
+    <div class="modal-steps">
+      <div class="plat-tabs">
+        <button class="plat-tab active" id="platIos" onclick="setInstallPlatform('ios')">iPhone</button>
+        <button class="plat-tab" id="platAndroid" onclick="setInstallPlatform('android')">Android</button>
+      </div>
+
+      <div class="stepdots" id="installDots">
+        <div class="stepdot active"></div>
+        <div class="stepdot"></div>
+        <div class="stepdot"></div>
+      </div>
+
+      <div class="stepstage install-stage" id="installStage">
+
+        <!-- Step 1: find the share / menu button in the browser bar -->
+        <div class="step active" data-istep="0">
+          <div class="install-phone-wrap">
+            <div class="phone">
+              <div class="phone-notch"></div>
+              <div class="phone-screen">
+                <div class="mini-app">
+                  <div class="mini-row w50"></div>
+                  <div class="mini-card live">
+                    <div class="mini-bar amber"></div>
+                    <div class="mini-bar"></div>
+                  </div>
+                  <div class="mini-card">
+                    <div class="mini-bar"></div>
+                    <div class="mini-bar"></div>
+                  </div>
+                  <div class="mini-card">
+                    <div class="mini-bar"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="phone-chrome">
+                <div class="chrome-url">berkisodd.github.io</div>
+                <!-- iOS: share icon. Android: three dots. Swapped in JS. -->
+                <div class="chrome-btn target" id="chromeTargetBtn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                       stroke-linecap="round" stroke-linejoin="round" id="chromeTargetIcon">
+                    <path d="M12 16V4"/><path d="M8 8l4-4 4 4"/>
+                    <path d="M4 14v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5"/>
+                  </svg>
+                </div>
+              </div>
+              <!-- tap ring sits over the target button -->
+              <div class="tap" style="right:14px; bottom:16px; left:auto;"></div>
+            </div>
+          </div>
+          <div class="step-title" id="iStep1Title">Tap the share button</div>
+          <div class="step-text" id="iStep1Text">
+            It's in the browser bar at the bottom. The square with the arrow pointing up.
+          </div>
+        </div>
+
+        <!-- Step 2: the share sheet opens, scroll to Add to Home Screen -->
+        <div class="step" data-istep="1">
+          <div class="install-phone-wrap">
+            <div class="phone">
+              <div class="phone-notch"></div>
+              <div class="phone-screen">
+                <div class="mini-app" style="opacity:0.4;">
+                  <div class="mini-row w50"></div>
+                  <div class="mini-card live">
+                    <div class="mini-bar amber"></div>
+                  </div>
+                  <div class="mini-card">
+                    <div class="mini-bar"></div>
+                  </div>
+                </div>
+                <div class="share-sheet up">
+                  <div class="sheet-grab"></div>
+                  <div class="sheet-item">
+                    <div class="sheet-item-ic">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                           stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="4" y="4" width="16" height="16" rx="3"/>
+                      </svg>
+                    </div>
+                    <span>Copy</span>
+                  </div>
+                  <div class="sheet-item target" id="sheetTargetRow">
+                    <div class="sheet-item-ic">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                           stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="4" y="4" width="16" height="16" rx="3"/>
+                        <path d="M12 9v6"/><path d="M9 12h6"/>
+                      </svg>
+                    </div>
+                    <span id="sheetTargetLabel">Add to Home Screen</span>
+                  </div>
+                  <div class="sheet-item">
+                    <div class="sheet-item-ic">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                           stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14"/>
+                      </svg>
+                    </div>
+                    <span>Markup</span>
+                  </div>
+                </div>
+              </div>
+              <div class="tap" style="left:50%; bottom:74px;"></div>
+            </div>
+          </div>
+          <div class="step-title" id="iStep2Title">Pick "Add to Home Screen"</div>
+          <div class="step-text" id="iStep2Text">
+            Scroll down the list if you don't see it right away. It's usually a bit past the sharing options.
+          </div>
+        </div>
+
+        <!-- Step 3: icon lands on the home screen -->
+        <div class="step" data-istep="2">
+          <div class="install-phone-wrap">
+            <div class="phone">
+              <div class="phone-notch"></div>
+              <div class="phone-screen">
+                <div class="home-grid">
+                  <div class="home-ic"></div>
+                  <div class="home-ic"></div>
+                  <div class="home-ic"></div>
+                  <div class="home-ic"></div>
+                  <div class="home-ic"></div>
+                  <div class="home-slot">
+                    <div class="home-ic-box"></div>
+                    <div class="home-ic-label">Schedule</div>
+                  </div>
+                  <div class="home-ic"></div>
+                  <div class="home-ic"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="step-title">That's it</div>
+          <div class="step-text">
+            Tap Add in the corner and the icon shows up on your home screen. Open it from there and it runs fullscreen, no browser bar.
+          </div>
+        </div>
+
+      </div>
+
+      <div class="install-note" id="installNote" style="margin-left:auto;margin-right:auto;">
+        Heads up: on iPhone this only works in Safari. If you're in Chrome, open the link in Safari first.
+      </div>
+
+      <div class="step-nav">
+        <button class="btn-ghost step-back" id="installBack" disabled onclick="installStep(-1)">Back</button>
+        <button class="btn-primary" id="installNext" onclick="installStep(1)">Next</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1867,8 +2239,10 @@ Rules:
   const stepStage = document.getElementById('stepStage');
   const stepBack = document.getElementById('stepBack');
   const stepNext = document.getElementById('stepNext');
-  const stepDots = Array.from(document.querySelectorAll('.stepdot'));
-  const steps = Array.from(document.querySelectorAll('.step'));
+  // Scoped to the import modal on purpose: the install tutorial reuses the
+  // same .step / .stepdot classes, so a document-wide query would grab both.
+  const stepDots = Array.from(importModal.querySelectorAll('.stepdot'));
+  const steps = Array.from(importModal.querySelectorAll('.step'));
 
   promptText.textContent = PROMPT_TEXT;
 
@@ -2855,6 +3229,150 @@ Wed: OFF
   function closeProfileModal(){ profileModal.classList.remove('show'); }
   closeProfile.addEventListener('click', closeProfileModal);
   profileModal.addEventListener('click', (e) => { if (e.target === profileModal) closeProfileModal(); });
+
+  // ══ Add to home screen tutorial ════════════════════════════════
+  (function initInstall(){
+    const installModal = document.getElementById('installModal');
+    if (!installModal) return;
+
+    const openBtn    = document.getElementById('openInstallBtn');
+    const closeBtn   = document.getElementById('closeInstall');
+    const backBtn    = document.getElementById('installBack');
+    const nextBtn    = document.getElementById('installNext');
+    const dots       = Array.from(installModal.querySelectorAll('.stepdot'));
+    const steps      = Array.from(installModal.querySelectorAll('.step'));
+    const noteEl     = document.getElementById('installNote');
+    const platIos    = document.getElementById('platIos');
+    const platAndroid= document.getElementById('platAndroid');
+
+    // Already running as an installed app? Then this whole thing is moot.
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+                      || window.navigator.standalone === true;
+
+    const ua = navigator.userAgent;
+    const isIOS = /iPad|iPhone|iPod/.test(ua)
+               || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    if (isStandalone){
+      const sub = document.getElementById('installBtnSub');
+      const title = openBtn && openBtn.querySelector('.install-btn-title');
+      if (title) title.textContent = 'Already installed';
+      if (sub) sub.textContent = "You're running the app version right now";
+      if (openBtn) openBtn.disabled = true;
+      if (openBtn) openBtn.style.opacity = '0.55';
+    }
+
+    // Chrome/Edge fire this when the site qualifies for a real install prompt.
+    // If we get it, we can skip the tutorial and let the browser do the work.
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+
+    let platform = isIOS ? 'ios' : 'android';
+
+    const COPY = {
+      ios: {
+        s1Title: 'Tap the share button',
+        s1Text:  "It's in the browser bar at the bottom. The square with the arrow pointing up.",
+        s2Title: 'Pick "Add to Home Screen"',
+        s2Text:  "Scroll down the list if you don't see it right away. It's usually a bit past the sharing options.",
+        sheetLabel: 'Add to Home Screen',
+        note: "Heads up: on iPhone this only works in Safari. If you're in Chrome, open the link in Safari first."
+      },
+      android: {
+        s1Title: 'Tap the menu button',
+        s1Text:  'Three dots in the top right of Chrome. That opens the browser menu.',
+        s2Title: 'Pick "Install app"',
+        s2Text:  'Some versions call it "Add to Home screen" instead. Either one does the same thing.',
+        sheetLabel: 'Install app',
+        note: 'On Android this works in Chrome, Edge, and most other browsers.'
+      }
+    };
+
+    // iOS share glyph vs Android three-dot menu glyph
+    const ICONS = {
+      ios: '<path d="M12 16V4"/><path d="M8 8l4-4 4 4"/><path d="M4 14v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5"/>',
+      android: '<circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/>'
+    };
+
+    function applyPlatform(){
+      const c = COPY[platform];
+      document.getElementById('iStep1Title').textContent = c.s1Title;
+      document.getElementById('iStep1Text').textContent  = c.s1Text;
+      document.getElementById('iStep2Title').textContent = c.s2Title;
+      document.getElementById('iStep2Text').textContent  = c.s2Text;
+      document.getElementById('sheetTargetLabel').textContent = c.sheetLabel;
+      noteEl.textContent = c.note;
+
+      const icon = document.getElementById('chromeTargetIcon');
+      if (icon) icon.innerHTML = ICONS[platform];
+
+      platIos.classList.toggle('active', platform === 'ios');
+      platAndroid.classList.toggle('active', platform === 'android');
+    }
+
+    window.setInstallPlatform = function(next){
+      platform = next;
+      applyPlatform();
+      showStep(0);
+    };
+
+    let idx = 0;
+    function showStep(n){
+      idx = Math.max(0, Math.min(steps.length - 1, n));
+      steps.forEach((s, i) => {
+        s.classList.remove('active','left');
+        if (i === idx) s.classList.add('active');
+        else if (i < idx) s.classList.add('left');
+      });
+      dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+      backBtn.disabled = idx === 0;
+      nextBtn.textContent = idx === steps.length - 1 ? 'Got it' : 'Next';
+    }
+
+    window.installStep = function(delta){
+      if (idx === steps.length - 1 && delta > 0){ close(); return; }
+      showStep(idx + delta);
+    };
+
+    function open(){
+      // If the browser can install it natively, just do that instead of
+      // walking someone through steps they don't need.
+      if (deferredPrompt){
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.finally(() => { deferredPrompt = null; });
+        return;
+      }
+      applyPlatform();
+      showStep(0);
+      installModal.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+    function close(){
+      installModal.classList.remove('show');
+      document.body.style.overflow = '';
+    }
+
+    if (openBtn) openBtn.addEventListener('click', () => { if (!isStandalone) open(); });
+    closeBtn.addEventListener('click', close);
+    installModal.addEventListener('click', (e) => { if (e.target === installModal) close(); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && installModal.classList.contains('show')) close();
+    });
+
+    applyPlatform();
+  })();
+
+  // Register the service worker so the app works offline once installed.
+  if ('serviceWorker' in navigator){
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js').catch(() => {
+        // Not fatal. The app still works, it just won't run offline.
+      });
+    });
+  }
 
   // warn before closing with unsaved changes
   window.addEventListener('beforeunload', (e) => {
