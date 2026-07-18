@@ -31,6 +31,25 @@
     padding-bottom:90px;
   }
 
+  /* ── Loading screen ───────────────────────────────────── */
+  .loading-screen{
+    position:fixed; inset:0; z-index:60;
+    background:var(--ink); display:flex; align-items:center; justify-content:center;
+    transition:opacity 0.35s ease, visibility 0.35s ease;
+  }
+  .loading-screen.hide{ opacity:0; visibility:hidden; }
+  .loading-inner{ display:flex; flex-direction:column; align-items:center; gap:18px; }
+  .loading-ring{
+    width:42px; height:42px; border-radius:50%;
+    border:3px solid var(--line); border-top-color:var(--amber);
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .loading-text{
+    font-family:'JetBrains Mono', monospace; font-size:0.8rem;
+    letter-spacing:0.08em; color:var(--text-dim);
+  }
+
   /* ── Top rail ─────────────────────────────────────────── */
   .daytrack{
     position:sticky; top:0; z-index:20;
@@ -455,6 +474,13 @@
 </head>
 <body>
 
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-inner">
+    <div class="loading-ring"></div>
+    <div class="loading-text" id="loadingText">Loading your week…</div>
+  </div>
+</div>
+
 <div class="daytrack">
   <div class="daytrack-head">
     <div class="daytrack-title">Today's progress</div>
@@ -631,6 +657,12 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
+  // Safety net: never let the loading screen hang more than 8s.
+  setTimeout(() => {
+    const ls = document.getElementById('loadingScreen');
+    if (ls && !ls.classList.contains('hide')) ls.classList.add('hide');
+  }, 8000);
+
   let currentUser = null;
   let tickStarted = false;
   let dirty = false;
@@ -689,10 +721,23 @@
     tick();
     if (!tickStarted){ tickStarted = true; setInterval(tick, 1000); }
 
+    hideLoading();
+
     // First visit: auto-open the import walkthrough once.
     if (!introSeen){
       setTimeout(() => { openModal(); markIntroSeen(); }, 600);
     }
+  }
+
+  function showLoading(msg){
+    const ls = document.getElementById('loadingScreen');
+    const lt = document.getElementById('loadingText');
+    if (lt && msg) lt.textContent = msg;
+    if (ls) ls.classList.remove('hide');
+  }
+  function hideLoading(){
+    const ls = document.getElementById('loadingScreen');
+    if (ls) ls.classList.add('hide');
   }
 
   async function markIntroSeen(){
@@ -1197,10 +1242,14 @@ Wed: OFF
       e.botBubble.textContent = lines.slice(0, i+1).join('\n');
       await demoWait(360);
     }
-    await demoWait(1400); if(!alive()) return;
+    await demoWait(1600); if(!alive()) return;
 
-    // loop the demo softly so it always shows something in motion
-    if (alive() && stepIndex === 1) playChatDemo();
+    // Restart the demo once, only if still on step 2. Scheduled (not a tight
+    // recursive call) so timers can't stack up and freeze the page.
+    if (alive() && stepIndex === 1){
+      const t = setTimeout(() => { if (demoRunning && stepIndex === 1) playChatDemo(); }, 400);
+      demoTimers.push(t);
+    }
   }
 
   openImport.addEventListener('click', openModal);
@@ -1286,8 +1335,12 @@ Wed: OFF
       // This is more robust than splitting on commas, since class names
       // themselves can contain commas (e.g. "Reading, Writing (A1)").
       const classRegex = /(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})\s*([^]*?)(?=(?:,\s*)?\d{1,2}:\d{2}\s*[-–]\s*\d{1,2}:\d{2}|$)/g;
-      let m, foundAny = false;
+      let m, foundAny = false, guard = 0;
       while ((m = classRegex.exec(rest)) !== null){
+        // Safety: never allow a zero-width match or runaway loop to freeze the page.
+        if (m.index === classRegex.lastIndex) classRegex.lastIndex++;
+        if (++guard > 200) break;
+        if (m[0].length === 0) continue;
         foundAny = true;
         let [, start, end, remainder] = m;
         remainder = remainder.replace(/,\s*$/, '').trim();
@@ -1343,14 +1396,22 @@ Wed: OFF
     const replace = confirm(`Found ${total} classes across the week. This will replace your current schedule. Continue?`);
     if (!replace) return;
 
-    week = parsed;
-    setDirty(true);
-    renderDayTabs();
-    renderChips();
-    renderPeriods();
-    importMsg.textContent = `Imported ${total} classes. Review and hit Save.`;
-    importMsg.classList.add('ok');
-    setTimeout(closeModal, 1200);
+    // stop the demo so nothing animates behind the import, then show a brief loader
+    stopChatDemo();
+    showLoading('Filling your schedule…');
+
+    // defer the heavy DOM work one frame so the loader actually paints
+    setTimeout(() => {
+      week = parsed;
+      setDirty(true);
+      renderDayTabs();
+      renderChips();
+      renderPeriods();
+      closeModal();
+      hideLoading();
+      importMsg.textContent = `Imported ${total} classes. Review and hit Save.`;
+      importMsg.className = 'io-msg ok';
+    }, 300);
   });
 
   // warn before closing with unsaved changes
