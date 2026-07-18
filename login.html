@@ -21,26 +21,30 @@
 </script>
 <style>
   :root{
-    --ink:#0B1120;
-    --ink-2:#0F1729;
-    --panel:#121B30;
-    --line:#232E47;
-    --text:#F2EFE9;
-    --text-dim:#9AA4BC;
-    --slate:#3D4A66;
-    --amber:#E8823C;
-    --amber-dim:#E8823C33;
-    --error:#E85D5D;
-    --good:#5FC79E;
-    --amber-line:#E8823C55;
-    --avatar-bg:#000000; --avatar-stroke:#FFFFFF; --on-amber:#1A0F04;
+    --ink:#0A0A0B;
+    --ink-2:#121214;
+    --panel:#141416;
+    --line:#232326;
+    --text:#F4F4F5;
+    --text-dim:#8A8A91;
+    --slate:#4A4A50;
+    --amber:#D97435;
+    --amber-dim:#D9743533;
+    --error:#D9564E;
+    --good:#4FA97F;
+    --amber-line:#D9743555;
+    --avatar-bg:#000000; --avatar-stroke:#FFFFFF; --on-amber:#0A0A0B;
+    --line-soft:#1B1B1E; --radius:10px; --radius-lg:14px;
+    --shadow-lift:0 4px 16px rgba(0,0,0,0.35);
   }
   html[data-theme="light"]{
-    --ink:#F7F5F1; --ink-2:#FFFFFF; --panel:#FFFFFF; --line:#E2DDD4;
-    --text:#16202E; --text-dim:#6B7488; --slate:#A8B0C0;
-    --amber:#C96A22; --amber-dim:#C96A2218; --amber-line:#C96A2255;
-    --error:#C4453F; --good:#2E8F68;
-    --avatar-bg:#16202E; --avatar-stroke:#F7F5F1; --on-amber:#FFFFFF;
+    --ink:#FAFAF9; --ink-2:#FFFFFF; --panel:#FFFFFF; --line:#E4E4E2;
+    --text:#131316; --text-dim:#71717A; --slate:#B4B4B8;
+    --amber:#C05F1E; --amber-dim:#C05F1E18; --amber-line:#C05F1E55;
+    --error:#BE4A42; --good:#2F8560;
+    --avatar-bg:#131316; --avatar-stroke:#FAFAF9; --on-amber:#FFFFFF;
+    --line-soft:#EFEFED;
+    --shadow-lift:0 4px 16px rgba(0,0,0,0.07);
   }
   html{ background:var(--ink); }
   *{margin:0;padding:0;box-sizing:border-box;}
@@ -69,7 +73,7 @@
   .rail-fill{
     height:100%;
     width:38%;
-    background:linear-gradient(90deg, var(--amber), #F2A65A);
+    background:var(--amber);
     box-shadow:0 0 12px var(--amber);
     animation:railmove 1.2s ease-out;
   }
@@ -261,7 +265,7 @@
     letter-spacing:0.06em; text-transform:uppercase;
     padding:2px 7px; border-radius:5px;
   }
-  .cl-tag.new{ color:var(--good); background:#5FC79E1A; border:1px solid #5FC79E44; }
+  .cl-tag.new{ color:var(--good); background:#4FA97F1A; border:1px solid #4FA97F44; }
   .cl-list{ list-style:none; display:flex; flex-direction:column; gap:5px; }
   .cl-list li{
     color:var(--text-dim); font-size:0.82rem; line-height:1.45;
@@ -304,14 +308,14 @@
     position:relative;
     overflow:hidden;
   }
-  button.submit:hover{ background:#F2954F; box-shadow:0 6px 20px var(--amber-dim); }
+  button.submit:hover{ opacity:0.88; }
   button.submit:active{ transform:scale(0.98); }
   button.submit:disabled{ opacity:0.6; cursor:default; transform:none; }
 
   .spinner{
     display:none;
     width:16px; height:16px;
-    border:2px solid #1A0F0455;
+    border:2px solid #0A0A0B55;
     border-top-color:var(--on-amber);
     border-radius:50%;
     animation:spin 0.7s linear infinite;
@@ -397,14 +401,34 @@
   <div class="changelog">
     <button class="changelog-head" id="changelogToggle">
       <span class="changelog-title">What's new</span>
-      <span class="changelog-version">v2.5</span>
+      <span class="changelog-version">v2.7</span>
       <span class="changelog-arrow" id="changelogArrow">▾</span>
     </button>
     <div class="changelog-body" id="changelogBody">
       <div class="cl-entry">
         <div class="cl-ver">
-          <span class="cl-num">2.5</span>
+          <span class="cl-num">2.7</span>
           <span class="cl-tag new">Latest</span>
+        </div>
+        <ul class="cl-list">
+          <li>Countdown now renders as a real dot matrix display</li>
+          <li>Dots light up amber while a class is running</li>
+        </ul>
+      </div>
+      <div class="cl-entry">
+        <div class="cl-ver">
+          <span class="cl-num">2.6</span>
+        </div>
+        <ul class="cl-list">
+          <li>Cleaner look with more room to breathe</li>
+          <li>Neutral palette so the accent colour only marks what matters</li>
+          <li>Bigger, quieter countdown</li>
+          <li>Buttons and cards reduced to thin outlines</li>
+        </ul>
+      </div>
+      <div class="cl-entry">
+        <div class="cl-ver">
+          <span class="cl-num">2.5</span>
         </div>
         <ul class="cl-list">
           <li>Activity dots showing who is online, idle, or offline</li>
