@@ -609,6 +609,12 @@
   }
   .addpanel.show{ display:block; }
   @keyframes slidein{ from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes cardIn{ from{opacity:0; transform:translateY(7px);} to{opacity:1; transform:translateY(0);} }
+  .period{ animation:cardIn 0.32s cubic-bezier(.16,1,.3,1) backwards; }
+  @media (prefers-reduced-motion: reduce){
+    .period{ animation:none; }
+    .step, .share-sheet{ transition:none; }
+  }
   .addpanel-title{
     font-family:'JetBrains Mono', monospace; font-size:0.72rem;
     letter-spacing:0.1em; text-transform:uppercase; color:var(--amber);
@@ -2170,6 +2176,7 @@
 
       const row = document.createElement('div');
       row.className = 'period' + (isCurrent ? ' current' : '') + (isPast ? ' past' : '');
+      row.style.animationDelay = Math.min(i, 8) * 45 + 'ms';
       if (p.color) row.style.setProperty('--period-color', p.color);
       row.innerHTML = `
         <div class="period-num">${String(i+1).padStart(2,'0')}</div>
@@ -2194,6 +2201,18 @@
         removePeriod(p.id);
       });
       row.addEventListener('dblclick', () => openEditPeriod(p.id));
+      // iOS Safari doesn't fire dblclick from taps, so detect two quick
+      // touches ourselves. Ignore taps on the buttons; they handle themselves.
+      let lastTap = 0;
+      row.addEventListener('touchend', (e) => {
+        if (e.target.closest('.period-edit, .period-del')) return;
+        const t = Date.now();
+        if (t - lastTap < 350){
+          e.preventDefault(); // also stops iOS double-tap zoom
+          openEditPeriod(p.id);
+        }
+        lastTap = t;
+      });
       periodsList.appendChild(row);
     });
   }
@@ -2296,6 +2315,7 @@
   // ── Live clock + hero countdown (always keyed to real today) ──
   function pad(n){ return String(n).padStart(2,'0'); }
 
+  let lastNowSig = '';
   function tick(){
     const now = new Date();
     const nowMin = now.getHours()*60 + now.getMinutes() + now.getSeconds()/60;
@@ -2347,9 +2367,22 @@
       heroSub.textContent = `It's ${DAY_FULL[todayKey()]}. Add periods to this day to start the countdown.`;
     }
 
-    // keep the "Now" highlight fresh in whichever view is open
-    if (currentView === 'week') renderWeekGrid();
-    else if (viewingDay === todayKey()) renderPeriods();
+    // keep the "Now" highlight fresh in whichever view is open.
+    // Only re-render when something actually changed (a period started
+    // or ended, or the day rolled over). Re-rendering every second
+    // destroyed the DOM nodes constantly, which broke double-tap
+    // editing and replayed animations nonstop.
+    const tk = todayKey();
+    const tlist = week[tk] || [];
+    const nmin = new Date().getHours()*60 + new Date().getMinutes();
+    const curId = (tlist.find(p => nmin >= toMinutes(p.start) && nmin < toMinutes(p.end)) || {}).id || '';
+    const pastN = tlist.filter(p => nmin >= toMinutes(p.end)).length;
+    const nowSig = tk + '|' + curId + '|' + pastN;
+    if (nowSig !== lastNowSig){
+      lastNowSig = nowSig;
+      if (currentView === 'week') renderWeekGrid();
+      else if (viewingDay === tk) renderPeriods();
+    }
   }
 
   function getNextAfter(list, period){
