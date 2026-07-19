@@ -3323,14 +3323,33 @@ Wed: OFF
 
   let allPeople = [];
 
-  openPeople.addEventListener('click', async () => {
+  openPeople.addEventListener('click', () => {
     peopleModal.classList.add('show');
     document.body.style.overflow = 'hidden';
     peopleSearch.value = '';
-    peopleList.innerHTML = '<div class="people-empty">Loading people...</div>';
-    await fetchPeople();
-    renderPeople('');
+    loadPeople();
   });
+
+  // Firestore's getDocs retries a bad connection internally for a very
+  // long time with no deadline, which looked like an infinite spinner.
+  // Race it against a timeout and offer a retry instead.
+  async function loadPeople(){
+    peopleList.innerHTML = '<div class="people-empty">Loading people...</div>';
+    try{
+      await Promise.race([
+        fetchPeople(),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000))
+      ]);
+      renderPeople('');
+    } catch (err){
+      console.error('Could not load people:', err);
+      peopleList.innerHTML =
+        '<div class="people-empty">Couldn\'t load people. Bad connection, maybe.<br>' +
+        '<button class="btn-ghost" id="peopleRetry" style="margin-top:12px;">Try again</button></div>';
+      const r = document.getElementById('peopleRetry');
+      if (r) r.addEventListener('click', loadPeople);
+    }
+  }
   function closePeopleModal(){
     peopleModal.classList.remove('show');
     document.body.style.overflow = '';
@@ -3339,10 +3358,12 @@ Wed: OFF
   peopleModal.addEventListener('click', (e) => { if (e.target === peopleModal) closePeopleModal(); });
 
   async function fetchPeople(){
-    try{
-      const snap = await getDocs(collection(db, "profiles"));
-      allPeople = [];
-      snap.forEach(d => {
+    // No try/catch here on purpose: loadPeople handles failures and
+    // shows a retry. Swallowing the error here would render a
+    // misleading "No profiles yet" instead.
+    const snap = await getDocs(collection(db, "profiles"));
+    allPeople = [];
+    snap.forEach(d => {
         const data = d.data();
         allPeople.push({
           uid: d.id,
@@ -3357,11 +3378,7 @@ Wed: OFF
           manualPresence: ['auto','online','idle','offline'].includes(data.manualPresence) ? data.manualPresence : 'auto'
         });
       });
-      allPeople.sort((a,b) => a.name.localeCompare(b.name));
-    } catch (err){
-      console.error('Could not load people:', err);
-      allPeople = [];
-    }
+    allPeople.sort((a,b) => a.name.localeCompare(b.name));
   }
 
   function renderPeople(filter){
