@@ -93,15 +93,46 @@
   }
   .loading-screen.hide{ opacity:0; visibility:hidden; }
   .loading-inner{ display:flex; flex-direction:column; align-items:center; gap:18px; }
-  .loading-ring{
-    width:42px; height:42px; border-radius:50%;
-    border:3px solid var(--line); border-top-color:var(--amber);
-    animation:spin 0.8s linear infinite;
-  }
   @keyframes spin{ to{ transform:rotate(360deg); } }
   .loading-text{
     font-family:'JetBrains Mono', monospace; font-size:0.8rem;
     letter-spacing:0.08em; color:var(--text-dim);
+  }
+
+  /* Shimmer skeleton: a rough silhouette of the real layout (day tabs,
+     hero, a few period cards) so loading reads as "your schedule is
+     assembling" rather than a blank spinner screen. */
+  .skeleton{
+    width:100%; max-width:520px; padding:0 20px;
+    display:flex; flex-direction:column; gap:22px;
+  }
+  .sk-row{ display:flex; gap:8px; }
+  .sk-pill{
+    height:30px; width:44px; border-radius:8px;
+    background:var(--line-soft); flex-shrink:0;
+  }
+  .sk-hero{
+    height:120px; border-radius:var(--radius-lg);
+    background:var(--line-soft);
+  }
+  .sk-card{
+    height:64px; border-radius:var(--radius);
+    background:var(--line-soft);
+  }
+  .sk-pill, .sk-hero, .sk-card{
+    position:relative; overflow:hidden;
+  }
+  .sk-pill::after, .sk-hero::after, .sk-card::after{
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(90deg, transparent, rgba(244,244,245,0.06), transparent);
+    animation:shimmer 1.5s ease-in-out infinite;
+  }
+  @keyframes shimmer{
+    0%{ transform:translateX(-100%); }
+    100%{ transform:translateX(100%); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .sk-pill::after, .sk-hero::after, .sk-card::after{ animation:none; }
   }
 
   /* ── Top rail ─────────────────────────────────────────── */
@@ -511,6 +542,11 @@
   .share-revoke{ padding:10px 0; margin-top:4px; }
 
   .periods{ display:flex; flex-direction:column; gap:10px; margin-bottom:24px; }
+  /* Fade used when switching between day and week view. Applied briefly
+     by JS, not a permanent state, so it doesn't fight the skeleton or
+     the per-card entrance animation. */
+  .view-fade{ opacity:0; transition:opacity 0.18s ease; }
+  @media (prefers-reduced-motion: reduce){ .view-fade{ transition:none; } }
 
   .period{
     display:flex; align-items:center; gap:18px;
@@ -1127,7 +1163,16 @@
 
 <div class="loading-screen" id="loadingScreen">
   <div class="loading-inner">
-    <div class="loading-ring"></div>
+    <div class="skeleton">
+      <div class="sk-row">
+        <div class="sk-pill"></div><div class="sk-pill"></div><div class="sk-pill"></div>
+        <div class="sk-pill"></div><div class="sk-pill"></div>
+      </div>
+      <div class="sk-hero"></div>
+      <div class="sk-card"></div>
+      <div class="sk-card"></div>
+      <div class="sk-card"></div>
+    </div>
     <div class="loading-text" id="loadingText">Loading your week…</div>
   </div>
 </div>
@@ -1306,6 +1351,18 @@
           <button class="theme-opt" data-theme-pref="light">Light</button>
           <button class="theme-opt" data-theme-pref="dark">Dark</button>
           <button class="theme-opt" data-theme-pref="system">System</button>
+        </div>
+      </div>
+
+      <div class="set-section">
+        <div class="set-row">
+          <div>
+            <div class="set-label" style="margin-bottom:4px;">Sound</div>
+            <div class="set-hint" style="margin:0;">A soft ping when a class starts. Off by default.</div>
+          </div>
+          <button class="switch" id="soundToggle" role="switch" aria-checked="false">
+            <span class="switch-knob"></span>
+          </button>
         </div>
       </div>
 
@@ -1938,7 +1995,7 @@
     none.className = 'color-chip none' + (selectedColor === null ? ' selected' : '');
     none.textContent = '✕';
     none.setAttribute('aria-label', 'No color');
-    none.addEventListener('click', () => { selectedColor = null; renderColorPicker(); });
+    none.addEventListener('click', () => { selectedColor = null; renderColorPicker(); saveDraft(); });
     colorPicker.appendChild(none);
 
     CLASS_COLORS.forEach(c => {
@@ -1947,7 +2004,7 @@
       chip.className = 'color-chip' + (selectedColor === c ? ' selected' : '');
       chip.style.background = c;
       chip.setAttribute('aria-label', 'Color ' + c);
-      chip.addEventListener('click', () => { selectedColor = c; renderColorPicker(); });
+      chip.addEventListener('click', () => { selectedColor = c; renderColorPicker(); saveDraft(); });
       colorPicker.appendChild(chip);
     });
   }
@@ -2007,13 +2064,56 @@
     openAddPanel();
   });
 
+  // ══ Draft auto-save ═══════════════════════════════════════════
+  // Only for the "new period" flow. Editing an existing period always
+  // starts from its real saved values, restoring a stray draft there
+  // would be confusing (which value is real, the saved one or the draft?).
+  const DRAFT_KEY = 's2_draft_period';
+  const draftFields = ['pName','pStart','pEnd','pRoom'];
+
+  function saveDraft(){
+    if (editingId !== null) return;
+    const draft = {};
+    draftFields.forEach(id => draft[id] = document.getElementById(id).value);
+    draft.color = selectedColor;
+    const hasContent = draftFields.some(id => draft[id]);
+    try{
+      if (hasContent) localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      else localStorage.removeItem(DRAFT_KEY);
+    } catch(e){}
+  }
+
+  function loadDraft(){
+    try{
+      const raw = localStorage.getItem(DRAFT_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch(e){ return null; }
+  }
+
+  function clearDraft(){
+    try{ localStorage.removeItem(DRAFT_KEY); } catch(e){}
+  }
+
+  draftFields.forEach(id => {
+    document.getElementById(id).addEventListener('input', saveDraft);
+  });
+
   function openAddPanel(){
     editingId = null;
     addPanelTitle.textContent = 'New period';
     confirmAdd.textContent = 'Add period';
     applyDaysSection.style.display = '';
-    selectedColor = null;
     clearForm();
+
+    const draft = loadDraft();
+    if (draft){
+      draftFields.forEach(id => { if (draft[id]) document.getElementById(id).value = draft[id]; });
+      selectedColor = draft.color || null;
+      showAddMsg('Picked up where you left off.');
+    } else {
+      selectedColor = null;
+    }
+
     renderColorPicker();
     applyDays = new Set([viewingDay]);
     renderChips();
@@ -2043,7 +2143,12 @@
     document.getElementById('pName').focus();
   };
 
-  cancelAdd.addEventListener('click', () => { addPanel.classList.remove('show'); clearForm(); editingId = null; });
+  cancelAdd.addEventListener('click', () => {
+    addPanel.classList.remove('show');
+    clearForm();
+    editingId = null;
+    clearDraft();
+  });
 
   function clearForm(){
     document.getElementById('pName').value='';
@@ -2099,6 +2204,7 @@
 
     setDirty(true);
     clearForm();
+    clearDraft();
     addPanel.classList.remove('show');
     renderDayTabs();
     renderPeriods();
@@ -2227,20 +2333,33 @@
   function setView(view){
     currentView = view;
     const isWeek = view === 'week';
-    document.body.classList.toggle('weekview', isWeek);
-    vtDay.classList.toggle('active', !isWeek);
-    vtWeek.classList.toggle('active', isWeek);
 
-    // Day-only UI hides in week mode
-    dayTabs.style.display = isWeek ? 'none' : '';
-    periodsList.style.display = isWeek ? 'none' : '';
-    weekGrid.classList.toggle('show', isWeek);
-    viewingLabel.style.display = isWeek ? 'none' : '';
-    // the add panel belongs to day view; close it when switching to week
-    if (isWeek) addPanel.classList.remove('show');
+    // Fade the outgoing view out, swap visibility once it's invisible,
+    // then fade the incoming view in. Short enough not to feel laggy.
+    const outgoing = isWeek ? [dayTabs, periodsList, viewingLabel] : [weekGrid];
+    outgoing.forEach(el => el && el.classList.add('view-fade'));
 
-    if (isWeek) renderWeekGrid();
-    else renderPeriods();
+    setTimeout(() => {
+      document.body.classList.toggle('weekview', isWeek);
+      vtDay.classList.toggle('active', !isWeek);
+      vtWeek.classList.toggle('active', isWeek);
+
+      // Day-only UI hides in week mode
+      dayTabs.style.display = isWeek ? 'none' : '';
+      periodsList.style.display = isWeek ? 'none' : '';
+      weekGrid.classList.toggle('show', isWeek);
+      viewingLabel.style.display = isWeek ? 'none' : '';
+      // the add panel belongs to day view; close it when switching to week
+      if (isWeek) addPanel.classList.remove('show');
+
+      if (isWeek) renderWeekGrid();
+      else renderPeriods();
+
+      // let the new content paint once at opacity:0, then fade in
+      requestAnimationFrame(() => {
+        [dayTabs, periodsList, viewingLabel, weekGrid].forEach(el => el && el.classList.remove('view-fade'));
+      });
+    }, 140);
   }
 
   vtDay.addEventListener('click', () => setView('day'));
@@ -2316,6 +2435,7 @@
   function pad(n){ return String(n).padStart(2,'0'); }
 
   let lastNowSig = '';
+  let lastCurId = '';
   function tick(){
     const now = new Date();
     const nowMin = now.getHours()*60 + now.getMinutes() + now.getSeconds()/60;
@@ -2379,6 +2499,14 @@
     const pastN = tlist.filter(p => nmin >= toMinutes(p.end)).length;
     const nowSig = tk + '|' + curId + '|' + pastN;
     if (nowSig !== lastNowSig){
+      // Ping only when a *new* period just became current, not when one
+      // simply ended with nothing starting, and not on the very first
+      // render (lastNowSig === '') where "current" just means "we loaded
+      // mid-class", not "a class just started".
+      if (curId && curId !== lastCurId && lastNowSig !== ''){
+        playPeriodStartPing();
+      }
+      lastCurId = curId;
       lastNowSig = nowSig;
       if (currentView === 'week') renderWeekGrid();
       else if (viewingDay === tk) renderPeriods();
@@ -2939,6 +3067,63 @@ Wed: OFF
     } catch (err){
       console.error('Share sync failed:', err);
     }
+  }
+
+  // ══ Sound ═════════════════════════════════════════════════════
+  // Muted by default on purpose, this only turns on if someone
+  // deliberately flips it in Settings.
+  const SOUND_KEY = 's2_sound';
+  function getSoundPref(){
+    try{ return localStorage.getItem(SOUND_KEY) === 'on'; } catch(e){ return false; }
+  }
+  function setSoundPref(on){
+    try{ localStorage.setItem(SOUND_KEY, on ? 'on' : 'off'); } catch(e){}
+  }
+
+  let audioCtx = null;
+  function playPeriodStartPing(){
+    if (!getSoundPref()) return;
+    try{
+      // Lazily create the context, and only on a real trigger. Browsers
+      // block audio until a user gesture anyway, but this keeps it from
+      // being created at all for people who never turn sound on.
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      const t0 = audioCtx.currentTime;
+      // two soft sine notes, short and unobtrusive
+      [660, 880].forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        const start = t0 + i * 0.11;
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(0.12, start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.32);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start(start);
+        osc.stop(start + 0.34);
+      });
+    } catch(e){
+      // Web Audio can fail quietly on some managed/locked-down devices.
+      // Not worth surfacing to the user, sound is a nice-to-have.
+    }
+  }
+
+  const soundToggle = document.getElementById('soundToggle');
+  if (soundToggle){
+    soundToggle.classList.toggle('on', getSoundPref());
+    soundToggle.setAttribute('aria-checked', getSoundPref() ? 'true' : 'false');
+    soundToggle.addEventListener('click', () => {
+      const next = !getSoundPref();
+      setSoundPref(next);
+      soundToggle.classList.toggle('on', next);
+      soundToggle.setAttribute('aria-checked', next ? 'true' : 'false');
+      // unlock/warm up the audio context on this direct user gesture,
+      // and give a tiny confirmation ping so the toggle feels real
+      if (next) playPeriodStartPing();
+    });
   }
 
   // ══ Theme ═════════════════════════════════════════════════════
