@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+
+  .<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -509,6 +510,89 @@
   .pv-private-sub{ color:var(--text-dim); font-size:0.86rem; line-height:1.5; }
 
   /* header buttons */
+  /* notification bell */
+  .bell-btn{
+    width:32px; height:32px; border-radius:50%; padding:0; flex-shrink:0;
+    background:none; border:1px solid var(--line); cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--text-dim); position:relative;
+    transition:border-color 0.2s ease, color 0.2s ease;
+  }
+  .bell-btn:hover{ border-color:var(--amber); color:var(--text); }
+  .bell-btn svg{ width:16px; height:16px; display:block; }
+  .bell-badge{
+    position:absolute; top:-3px; right:-3px;
+    min-width:16px; height:16px; padding:0 4px; border-radius:8px;
+    background:var(--amber); color:var(--on-amber);
+    font-family:'JetBrains Mono', monospace; font-size:0.6rem; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+    border:2px solid var(--ink);
+  }
+  .bell-badge[hidden]{ display:none; }
+
+  /* notification list */
+  .notif-list{ padding:8px 0; }
+  .notif-item{
+    display:flex; align-items:flex-start; gap:12px;
+    padding:14px 22px; border-bottom:1px solid var(--line-soft);
+  }
+  .notif-item:last-child{ border-bottom:none; }
+  .notif-av{
+    width:34px; height:34px; border-radius:50%; flex-shrink:0;
+    background:var(--avatar-bg); border:1px solid var(--line);
+    overflow:hidden; display:flex; align-items:center; justify-content:center;
+  }
+  .notif-av svg{ width:100%; height:100%; display:block; }
+  .notif-body{ flex:1; min-width:0; }
+  .notif-text{ font-size:0.88rem; line-height:1.45; }
+  .notif-text strong{ font-weight:700; }
+  .notif-meta{
+    font-family:'JetBrains Mono', monospace; font-size:0.68rem;
+    color:var(--text-dim); margin-top:4px;
+  }
+  .notif-empty{
+    text-align:center; padding:44px 24px; color:var(--text-dim);
+    font-size:0.88rem; line-height:1.6;
+  }
+  .notif-off{
+    margin:16px 22px 22px; padding:16px;
+    border:1px solid var(--line); border-radius:10px;
+    background:var(--ink-2);
+  }
+  .notif-off-title{ font-weight:700; font-size:0.9rem; margin-bottom:6px; }
+  .notif-off-sub{ font-size:0.82rem; color:var(--text-dim); line-height:1.5; margin-bottom:14px; }
+  .notif-section-label{
+    font-family:'JetBrains Mono', monospace; font-size:0.66rem;
+    letter-spacing:0.1em; text-transform:uppercase; color:var(--text-dim);
+    padding:16px 22px 6px;
+  }
+  .notif-actions{ display:flex; gap:8px; margin-top:9px; }
+  .notif-accept, .notif-decline{
+    padding:7px 14px; border-radius:8px; font-size:0.8rem; font-weight:600;
+    cursor:pointer; font-family:inherit; border:1px solid var(--line);
+    transition:opacity 0.2s ease, border-color 0.2s ease;
+  }
+  .notif-accept{ background:var(--amber); color:var(--on-amber); border-color:var(--amber); }
+  .notif-decline{ background:none; color:var(--text-dim); }
+  .notif-decline:hover{ color:var(--text); border-color:var(--text-dim); }
+  .notif-accept:disabled, .notif-decline:disabled{ opacity:0.5; cursor:default; }
+
+  /* friend button on a profile */
+  .pv-friend-btn{
+    margin-top:18px; padding:11px 22px; border-radius:10px;
+    background:var(--amber); color:var(--on-amber); border:1px solid var(--amber);
+    font-weight:700; font-size:0.88rem; cursor:pointer; font-family:inherit;
+    transition:opacity 0.2s ease;
+  }
+  .pv-friend-btn:hover{ opacity:0.92; }
+  .pv-friend-btn.ghost{
+    background:none; color:var(--text-dim); border-color:var(--line);
+  }
+  .pv-friend-btn.ghost:hover{ color:var(--text); border-color:var(--text-dim); }
+  .pv-friend-btn:disabled{ opacity:0.55; cursor:default; }
+  .pv-friend-row{ display:flex; gap:9px; justify-content:center; }
+  .pv-friend-row .pv-friend-btn{ margin-top:18px; }
+
   /* topbar avatar button */
   .topbar-av{
     width:32px; height:32px; border-radius:50%; padding:0; flex-shrink:0;
@@ -1182,6 +1266,14 @@
     <div class="daytrack-title">Today's progress</div>
     <div class="daytrack-right">
       <div class="daytrack-now" id="clockNow">--:--</div>
+      <button class="bell-btn" id="openNotifs" aria-label="Notifications">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+        <span class="bell-badge" id="bellBadge" hidden></span>
+      </button>
       <button class="topbar-av" id="topbarAvatar" aria-label="Settings"></button>
       <button class="logout-btn" onclick="handleLogout()">Log out</button>
     </div>
@@ -1328,6 +1420,18 @@
             <div class="set-hint" style="margin:0;">You always appear offline and the app stops recording when you were last active.</div>
           </div>
           <button class="switch" id="hideStatusToggle" role="switch" aria-checked="false">
+            <span class="switch-knob"></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="set-section">
+        <div class="set-row">
+          <div>
+            <div class="set-label" style="margin-bottom:4px;">Find classmates</div>
+            <div class="set-hint" style="margin:0;">Shares your class names and times so the app can tell you who else is in them. Rooms, teachers, and anything else stay private. Off unless you turn it on, and turning it off removes what was shared.</div>
+          </div>
+          <button class="switch" id="matchToggle" role="switch" aria-checked="false">
             <span class="switch-knob"></span>
           </button>
         </div>
@@ -1596,6 +1700,17 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="notifModal">
+  <div class="modal people-modal">
+    <button class="modal-close" id="closeNotifs" aria-label="Close">✕</button>
+    <div class="set-head">
+      <div class="set-title">Notifications</div>
+      <div class="set-sub">Classmates who share a class with you.</div>
+    </div>
+    <div id="notifBody"></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="profileModal">
   <div class="modal profile-modal">
     <button class="modal-close" id="closeProfile" aria-label="Close">✕</button>
@@ -1721,7 +1836,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut, deleteUser, updateProfile } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBmD7gtaHTmrIE4Pl9q1746s-zoWvx6XAI",
@@ -1835,7 +1950,8 @@
   let profile = {
     name: '', status: '', bio: '', gender: '',
     avatar: 'larry', isPublic: false,
-    hideStatus: false, lastActive: null, manualPresence: 'auto'
+    hideStatus: false, lastActive: null, manualPresence: 'auto',
+    matchEnabled: false
   };
   let tickStarted = false;
   let dirty = false;
@@ -1863,6 +1979,9 @@
     currentUser = user;
     await loadProfile();
     await loadSchedule();
+    // let the schedule paint first, then quietly check for friend
+    // requests and shared classes
+    setTimeout(refreshMatchBadge, 1200);
   });
 
   let introSeen = false;
@@ -1929,13 +2048,19 @@
   function normalizeWeek(w){
     const out = emptyWeek();
     DAYS.forEach(d => {
-      if (Array.isArray(w[d])) out[d] = w[d].map(p => ({
-        id: p.id || freshId(),
-        name: p.name || '',
-        start: p.start || '',
-        end: p.end || '',
-        room: p.room || ''
-      }));
+      if (Array.isArray(w[d])) out[d] = w[d].map(p => {
+        const period = {
+          id: p.id || freshId(),
+          name: p.name || '',
+          start: p.start || '',
+          end: p.end || '',
+          room: p.room || ''
+        };
+        // colors are optional, only carry the key when one is set so
+        // uncolored periods don't get a stray empty field
+        if (p.color) period.color = p.color;
+        return period;
+      });
     });
     return out;
   }
@@ -1951,6 +2076,8 @@
     setDirty(false);
     // push the same week to the public copy if sharing is on
     syncShareIfActive();
+    // and refresh what classmate matching sees, so it can't go stale
+    if (profile.matchEnabled) syncSharedClasses();
   }
 
   window.handleLogout = function(){
@@ -3325,6 +3452,16 @@ Wed: OFF
     });
   });
 
+  const matchToggle = document.getElementById('matchToggle');
+  matchToggle.addEventListener('click', async () => {
+    profile.matchEnabled = !profile.matchEnabled;
+    matchToggle.classList.toggle('on', profile.matchEnabled);
+    matchToggle.setAttribute('aria-checked', profile.matchEnabled ? 'true' : 'false');
+    await syncSharedClasses();
+    if (profile.matchEnabled) refreshMatchBadge();
+    else bellBadge.hidden = true;
+  });
+
   hideStatusToggle.addEventListener('click', () => {
     profile.hideStatus = !profile.hideStatus;
     hideStatusToggle.classList.toggle('on', profile.hideStatus);
@@ -3341,6 +3478,8 @@ Wed: OFF
     publicToggle.setAttribute('aria-checked', profile.isPublic ? 'true' : 'false');
     hideStatusToggle.classList.toggle('on', !!profile.hideStatus);
     hideStatusToggle.setAttribute('aria-checked', profile.hideStatus ? 'true' : 'false');
+    matchToggle.classList.toggle('on', !!profile.matchEnabled);
+    matchToggle.setAttribute('aria-checked', profile.matchEnabled ? 'true' : 'false');
     statusCount.textContent = (profile.status || '').length;
     bioCount.textContent = (profile.bio || '').length;
     setEmail.textContent = currentUser ? currentUser.email : '';
@@ -3390,7 +3529,8 @@ Wed: OFF
           isPublic: d.isPublic === true,
           hideStatus: d.hideStatus === true,
           lastActive: d.lastActive || null,
-          manualPresence: ['auto','online','idle','offline'].includes(d.manualPresence) ? d.manualPresence : 'auto'
+          manualPresence: ['auto','online','idle','offline'].includes(d.manualPresence) ? d.manualPresence : 'auto',
+          matchEnabled: d.matchEnabled === true
         };
       } else {
         profile.name = currentUser.displayName || '';
@@ -3430,6 +3570,8 @@ Wed: OFF
         isPublic: profile.isPublic,
         hideStatus: profile.hideStatus,
         manualPresence: profile.manualPresence || 'auto',
+        matchEnabled: !!profile.matchEnabled,
+        sharedClasses: profile.matchEnabled ? buildSharedClasses() : [],
         lastActive: profile.hideStatus ? null : (profile.lastActive || new Date().toISOString()),
         updatedAt: new Date().toISOString()
       });
@@ -3522,7 +3664,7 @@ Wed: OFF
     peopleList.innerHTML = '<div class="people-empty">Loading people...</div>';
     try{
       await Promise.race([
-        fetchPeople(),
+        Promise.all([fetchPeople(), loadFriendships()]),
         new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000))
       ]);
       renderPeople('');
@@ -3542,6 +3684,345 @@ Wed: OFF
   closePeople.addEventListener('click', closePeopleModal);
   peopleModal.addEventListener('click', (e) => { if (e.target === peopleModal) closePeopleModal(); });
 
+  // ══ Friends ═══════════════════════════════════════════════════
+  // A friendship is one doc in `friendships` with a sorted pair id, so
+  // there's exactly one doc per pair no matter who asked first, and
+  // either person can find it without a compound query.
+  let myFriendships = [];   // raw docs involving me
+  let friendUids = new Set();       // accepted
+  let incomingReqs = [];            // pending, addressed to me
+  let outgoingUids = new Set();     // pending, sent by me
+
+  function pairId(a, b){ return [a, b].sort().join('__'); }
+
+  async function loadFriendships(){
+    if (!currentUser) return;
+    const me = currentUser.uid;
+    // two cheap equality queries beat one compound index
+    const [asA, asB] = await Promise.all([
+      getDocs(query(collection(db, "friendships"), where("a", "==", me))),
+      getDocs(query(collection(db, "friendships"), where("b", "==", me)))
+    ]);
+
+    myFriendships = [];
+    asA.forEach(d => myFriendships.push({ id: d.id, ...d.data() }));
+    asB.forEach(d => myFriendships.push({ id: d.id, ...d.data() }));
+
+    friendUids = new Set();
+    incomingReqs = [];
+    outgoingUids = new Set();
+
+    myFriendships.forEach(f => {
+      const other = f.a === me ? f.b : f.a;
+      if (f.status === 'accepted'){
+        friendUids.add(other);
+      } else if (f.status === 'pending'){
+        if (f.requestedBy === me) outgoingUids.add(other);
+        else incomingReqs.push({ ...f, other });
+      }
+    });
+  }
+
+  // 'none' | 'friends' | 'sent' | 'incoming' | 'self'
+  function friendStateFor(uid){
+    if (!currentUser || uid === currentUser.uid) return 'self';
+    if (friendUids.has(uid)) return 'friends';
+    if (outgoingUids.has(uid)) return 'sent';
+    if (incomingReqs.some(r => r.other === uid)) return 'incoming';
+    return 'none';
+  }
+
+  async function sendFriendRequest(uid){
+    if (!currentUser) return;
+    const me = currentUser.uid;
+    const id = pairId(me, uid);
+    const [a, b] = [me, uid].sort();
+    await setDoc(doc(db, "friendships", id), {
+      a, b,
+      status: 'pending',
+      requestedBy: me,
+      createdAt: new Date().toISOString()
+    });
+    await loadFriendships();
+  }
+
+  async function respondToRequest(uid, accept){
+    if (!currentUser) return;
+    const id = pairId(currentUser.uid, uid);
+    if (accept){
+      await updateDoc(doc(db, "friendships", id), {
+        status: 'accepted',
+        acceptedAt: new Date().toISOString()
+      });
+    } else {
+      // declining deletes the doc so the sender can try again later
+      await deleteDoc(doc(db, "friendships", id));
+    }
+    await loadFriendships();
+  }
+
+  async function removeFriend(uid){
+    if (!currentUser) return;
+    await deleteDoc(doc(db, "friendships", pairId(currentUser.uid, uid)));
+    await loadFriendships();
+  }
+
+  // ══ Classmate matching ════════════════════════════════════════
+  // Only class name + day + time get shared, and only when the person
+  // turns "Find classmates" on. Rooms, teachers and colors never leave
+  // their own schedules doc.
+
+  // Class names are free text, so "AP Chem", "ap chemistry" and
+  // "AP  Chemistry" all need to land on the same key. This won't be
+  // perfect, but it catches the common cases.
+  function normalizeClassName(name){
+    let n = String(name || '').toLowerCase().trim();
+    n = n.replace(/[^a-z0-9\s]/g, ' ');      // punctuation out
+    n = n.replace(/\s+/g, ' ');               // collapse whitespace
+    const expand = {
+      'chem':'chemistry', 'bio':'biology', 'calc':'calculus',
+      'lit':'literature', 'hist':'history', 'geo':'geography',
+      'psych':'psychology', 'econ':'economics', 'alg':'algebra',
+      'geom':'geometry', 'trig':'trigonometry', 'phys':'physics',
+      'gov':'government', 'lang':'language', 'comp':'computer',
+      'sci':'science', 'math':'mathematics', 'pe':'physical education',
+      'eng':'english'
+    };
+    n = n.split(' ').map(w => expand[w] || w).join(' ');
+    return n.trim();
+  }
+
+  // Flatten the week into the minimal shape we're willing to share.
+  function buildSharedClasses(){
+    const out = [];
+    DAYS.forEach(day => {
+      (week[day] || []).forEach(p => {
+        const key = normalizeClassName(p.name);
+        if (!key) return;
+        out.push({ key, label: p.name, day, start: p.start, end: p.end });
+      });
+    });
+    return out;
+  }
+
+  // Writes or clears the shared list depending on the toggle. Called on
+  // toggle flip and after any schedule save, so it can't drift stale.
+  async function syncSharedClasses(){
+    if (!currentUser) return;
+    try{
+      await setDoc(doc(db, "profiles", currentUser.uid), {
+        matchEnabled: !!profile.matchEnabled,
+        // deleteField would need another import; an empty array reads
+        // the same to every consumer and keeps the write simple.
+        sharedClasses: profile.matchEnabled ? buildSharedClasses() : []
+      }, { merge: true });
+    } catch (err){
+      console.error('Could not sync shared classes:', err);
+    }
+  }
+
+  // Compares my classes against everyone else who opted in.
+  function computeMatches(){
+    if (!profile.matchEnabled) return [];
+    const mine = buildSharedClasses();
+    if (!mine.length) return [];
+
+    const myKeys = new Map();
+    mine.forEach(c => {
+      if (!myKeys.has(c.key)) myKeys.set(c.key, c);
+    });
+
+    const matches = [];
+    allPeople.forEach(person => {
+      if (person.uid === (currentUser && currentUser.uid)) return;
+      if (!person.matchEnabled || !person.sharedClasses.length) return;
+      // friends only, so turning matching on doesn't expose you to
+      // the whole school at once
+      if (!friendUids.has(person.uid)) return;
+
+      const seen = new Set();
+      person.sharedClasses.forEach(theirs => {
+        const mineHit = myKeys.get(theirs.key);
+        if (!mineHit) return;
+        // one row per class per person, not one per meeting time
+        if (seen.has(theirs.key)) return;
+        seen.add(theirs.key);
+        matches.push({
+          uid: person.uid,
+          name: person.name,
+          avatar: person.avatar,
+          label: mineHit.label,
+          day: theirs.day,
+          start: theirs.start,
+          sameSlot: theirs.day === mineHit.day && theirs.start === mineHit.start
+        });
+      });
+    });
+
+    // people you share a same-slot class with are the most useful, so
+    // float those first, then group the rest alphabetically
+    matches.sort((a,b) => {
+      if (a.sameSlot !== b.sameSlot) return a.sameSlot ? -1 : 1;
+      return a.name.localeCompare(b.name) || a.label.localeCompare(b.label);
+    });
+    return matches;
+  }
+
+  // ══ Notifications ═════════════════════════════════════════════
+  const notifModal = document.getElementById('notifModal');
+  const openNotifs = document.getElementById('openNotifs');
+  const closeNotifs = document.getElementById('closeNotifs');
+  const notifBody = document.getElementById('notifBody');
+  const bellBadge = document.getElementById('bellBadge');
+
+  // Remembering which matches have already been seen is a local nicety,
+  // no reason to sync it across devices.
+  const SEEN_KEY = 's2_seen_matches';
+  function getSeen(){
+    try{ return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || '[]')); }
+    catch(e){ return new Set(); }
+  }
+  function markAllSeen(matches){
+    try{
+      localStorage.setItem(SEEN_KEY, JSON.stringify(matches.map(m => m.uid + '|' + m.label)));
+    } catch(e){}
+  }
+
+  function updateBell(matches){
+    const seen = getSeen();
+    const unreadMatches = matches.filter(m => !seen.has(m.uid + '|' + m.label)).length;
+    // friend requests always count as unread until they're acted on
+    const total = unreadMatches + incomingReqs.length;
+    if (total > 0){
+      bellBadge.textContent = total > 9 ? '9+' : String(total);
+      bellBadge.hidden = false;
+    } else {
+      bellBadge.hidden = true;
+    }
+  }
+
+  function renderNotifs(matches){
+    let html = '';
+
+    // ── incoming friend requests come first, they need an action ──
+    if (incomingReqs.length){
+      html += '<div class="notif-section-label">Friend requests</div><div class="notif-list">';
+      incomingReqs.forEach(r => {
+        const p = allPeople.find(x => x.uid === r.other);
+        const name = p ? p.name : 'Someone';
+        const av = p ? p.avatar : 'larry';
+        html += `
+          <div class="notif-item">
+            <div class="notif-av">${avatarSvg(av)}</div>
+            <div class="notif-body">
+              <div class="notif-text"><strong>${escapeHtml(name)}</strong> wants to be friends</div>
+              <div class="notif-actions">
+                <button class="notif-accept" data-accept="${r.other}">Accept</button>
+                <button class="notif-decline" data-decline="${r.other}">Decline</button>
+              </div>
+            </div>
+          </div>`;
+      });
+      html += '</div>';
+    }
+
+    // ── then class matches ──
+    if (!profile.matchEnabled){
+      html +=
+        '<div class="notif-off">' +
+        '<div class="notif-off-title">Find classmates is off</div>' +
+        '<div class="notif-off-sub">Turn it on in Settings and the app will tell you which classes you share with your friends. ' +
+        'It only shares class names and times, never rooms or teachers.</div>' +
+        '<button class="btn-primary" id="notifGoSettings">Open Settings</button>' +
+        '</div>';
+    } else if (!matches.length){
+      html += '<div class="notif-empty">' +
+        (friendUids.size
+          ? 'No shared classes with your friends yet.'
+          : 'Add friends from the People list, then anyone sharing a class with you shows up here.') +
+        '</div>';
+    } else {
+      html += '<div class="notif-section-label">Shared classes</div><div class="notif-list">' +
+        matches.map(m => `
+          <div class="notif-item">
+            <div class="notif-av">${avatarSvg(m.avatar)}</div>
+            <div class="notif-body">
+              <div class="notif-text"><strong>${escapeHtml(m.name)}</strong> has ${escapeHtml(m.label)} with you</div>
+              <div class="notif-meta">${DAY_FULL[m.day] || m.day} ${fmtTime(m.start)}${m.sameSlot ? ' · same period' : ''}</div>
+            </div>
+          </div>`).join('') + '</div>';
+    }
+
+    notifBody.innerHTML = html;
+
+    const go = document.getElementById('notifGoSettings');
+    if (go) go.addEventListener('click', () => { closeNotifModal(); openSettingsModal(); });
+
+    notifBody.querySelectorAll('[data-accept]').forEach(b => {
+      b.addEventListener('click', async () => {
+        b.disabled = true;
+        try{
+          await respondToRequest(b.dataset.accept, true);
+          await openNotifModal();
+        } catch(err){
+          console.error('Could not accept request:', err);
+          b.disabled = false;
+        }
+      });
+    });
+    notifBody.querySelectorAll('[data-decline]').forEach(b => {
+      b.addEventListener('click', async () => {
+        b.disabled = true;
+        try{
+          await respondToRequest(b.dataset.decline, false);
+          await openNotifModal();
+        } catch(err){
+          console.error('Could not decline request:', err);
+          b.disabled = false;
+        }
+      });
+    });
+  }
+
+  async function openNotifModal(){
+    notifModal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    notifBody.innerHTML = '<div class="notif-empty">Checking...</div>';
+
+    try{
+      await Promise.race([
+        Promise.all([fetchPeople(), loadFriendships()]),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000))
+      ]);
+      const matches = computeMatches();
+      renderNotifs(matches);
+      markAllSeen(matches);
+      updateBell(matches);
+    } catch (err){
+      console.error('Could not load notifications:', err);
+      notifBody.innerHTML =
+        '<div class="notif-empty">Couldn\'t check right now. Bad connection, maybe.</div>';
+    }
+  }
+
+  function closeNotifModal(){
+    notifModal.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  openNotifs.addEventListener('click', openNotifModal);
+  closeNotifs.addEventListener('click', closeNotifModal);
+  notifModal.addEventListener('click', (e) => { if (e.target === notifModal) closeNotifModal(); });
+
+  // Quiet background check so the badge is meaningful without the
+  // person having to open the menu first.
+  async function refreshMatchBadge(){
+    try{
+      await Promise.all([fetchPeople(), loadFriendships()]);
+      updateBell(computeMatches());
+    } catch(e){ /* badge is optional, stay quiet */ }
+  }
+
   async function fetchPeople(){
     // No try/catch here on purpose: loadPeople handles failures and
     // shows a retry. Swallowing the error here would render a
@@ -3560,7 +4041,9 @@ Wed: OFF
           isPublic: data.isPublic === true,
           hideStatus: data.hideStatus === true,
           lastActive: data.lastActive || null,
-          manualPresence: ['auto','online','idle','offline'].includes(data.manualPresence) ? data.manualPresence : 'auto'
+          manualPresence: ['auto','online','idle','offline'].includes(data.manualPresence) ? data.manualPresence : 'auto',
+          matchEnabled: data.matchEnabled === true,
+          sharedClasses: Array.isArray(data.sharedClasses) ? data.sharedClasses : []
         });
       });
     allPeople.sort((a,b) => a.name.localeCompare(b.name));
@@ -3641,6 +4124,23 @@ Wed: OFF
       else seen = lastSeenText(p.lastActive);
     }
 
+    // Friend button works whether or not their profile is public,
+    // since friending is how you'd get to see more of someone anyway.
+    const fState = friendStateFor(p.uid);
+    let friendBtn = '';
+    if (fState === 'none'){
+      friendBtn = `<button class="pv-friend-btn" data-addfriend="${p.uid}">Add friend</button>`;
+    } else if (fState === 'sent'){
+      friendBtn = `<button class="pv-friend-btn ghost" disabled>Request sent</button>`;
+    } else if (fState === 'incoming'){
+      friendBtn = `<div class="pv-friend-row">
+        <button class="pv-friend-btn" data-accept="${p.uid}">Accept</button>
+        <button class="pv-friend-btn ghost" data-decline="${p.uid}">Decline</button>
+      </div>`;
+    } else if (fState === 'friends'){
+      friendBtn = `<button class="pv-friend-btn ghost" data-unfriend="${p.uid}">Friends ✓</button>`;
+    }
+
     if (visible){
       profileView.innerHTML = `
         <div class="pv-av-wrap">
@@ -3652,6 +4152,7 @@ Wed: OFF
         ${p.status ? `<div class="pv-status">${escapeHtml(p.status)}</div>` : ''}
         ${p.bio ? `<div class="pv-bio">${escapeHtml(p.bio)}</div>` : ''}
         ${p.gender ? `<div class="pv-meta">${escapeHtml(p.gender)}</div>` : ''}
+        ${friendBtn}
         ${isMe && !p.isPublic ? '<div class="pv-meta" style="margin-top:10px;">Only you can see this. Turn on public in settings.</div>' : ''}
         ${isMe && p.hideStatus ? '<div class="pv-meta" style="margin-top:10px;">Your activity is hidden, so everyone sees you as offline.</div>' : ''}
       `;
@@ -3668,8 +4169,45 @@ Wed: OFF
           <div class="pv-private-title">This account is private</div>
           <div class="pv-private-sub">Only their name and activity are visible.</div>
         </div>
+        ${friendBtn}
       `;
     }
+
+    // wire whichever friend action ended up rendered
+    const rewire = async (fn) => {
+      try{
+        await fn();
+        await fetchPeople();
+        // re-open with the refreshed record so the button reflects
+        // the new state
+        const updated = allPeople.find(x => x.uid === p.uid) || p;
+        showProfile(updated);
+        updateBell(computeMatches());
+      } catch(err){
+        console.error('Friend action failed:', err);
+      }
+    };
+    const addBtn = profileView.querySelector('[data-addfriend]');
+    if (addBtn) addBtn.addEventListener('click', () => {
+      addBtn.disabled = true;
+      rewire(() => sendFriendRequest(addBtn.dataset.addfriend));
+    });
+    const accBtn = profileView.querySelector('[data-accept]');
+    if (accBtn) accBtn.addEventListener('click', () => {
+      accBtn.disabled = true;
+      rewire(() => respondToRequest(accBtn.dataset.accept, true));
+    });
+    const decBtn = profileView.querySelector('[data-decline]');
+    if (decBtn) decBtn.addEventListener('click', () => {
+      decBtn.disabled = true;
+      rewire(() => respondToRequest(decBtn.dataset.decline, false));
+    });
+    const unBtn = profileView.querySelector('[data-unfriend]');
+    if (unBtn) unBtn.addEventListener('click', () => {
+      unBtn.disabled = true;
+      rewire(() => removeFriend(unBtn.dataset.unfriend));
+    });
+
     profileModal.classList.add('show');
   }
   function closeProfileModal(){ profileModal.classList.remove('show'); }
@@ -3917,3 +4455,4 @@ Wed: OFF
 
 </body>
 </html>
+  
