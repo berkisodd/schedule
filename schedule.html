@@ -1,5 +1,5 @@
 
-  .<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -592,6 +592,87 @@
   .pv-friend-btn:disabled{ opacity:0.55; cursor:default; }
   .pv-friend-row{ display:flex; gap:9px; justify-content:center; }
   .pv-friend-row .pv-friend-btn{ margin-top:18px; }
+
+  /* ── Chat ─────────────────────────────────────────────────── */
+  .chat-modal{
+    max-width:460px; width:100%; height:min(620px, 86vh);
+    display:flex; flex-direction:column; padding:0; overflow:hidden;
+  }
+  .chat-head{
+    display:flex; align-items:center; gap:11px;
+    padding:16px 18px; border-bottom:1px solid var(--line); flex-shrink:0;
+  }
+  .chat-back{
+    background:none; border:none; color:var(--text-dim); cursor:pointer;
+    font-size:1.5rem; line-height:1; padding:0 4px; display:none;
+  }
+  .chat-av{
+    width:34px; height:34px; border-radius:50%; flex-shrink:0;
+    background:var(--avatar-bg); border:1px solid var(--line);
+    overflow:hidden; display:flex; align-items:center; justify-content:center;
+  }
+  .chat-av svg{ width:100%; height:100%; display:block; }
+  .chat-head-name{ font-weight:700; font-size:0.98rem; flex:1; min-width:0;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .chat-close{ position:static; flex-shrink:0; }
+
+  .chat-scroll{
+    flex:1; overflow-y:auto; padding:18px;
+    display:flex; flex-direction:column; gap:8px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .msg{
+    max-width:76%; padding:9px 13px; border-radius:15px;
+    font-size:0.9rem; line-height:1.45; word-wrap:break-word;
+    white-space:pre-wrap;
+  }
+  .msg.mine{
+    align-self:flex-end; background:var(--amber); color:var(--on-amber);
+    border-bottom-right-radius:5px;
+  }
+  .msg.theirs{
+    align-self:flex-start; background:var(--ink-2);
+    border:1px solid var(--line); border-bottom-left-radius:5px;
+  }
+  .msg-time{
+    font-family:'JetBrains Mono', monospace; font-size:0.62rem;
+    color:var(--text-dim); align-self:center; margin:8px 0 2px;
+  }
+  .chat-empty{
+    margin:auto; text-align:center; color:var(--text-dim);
+    font-size:0.86rem; line-height:1.6; padding:20px;
+  }
+
+  .chat-composer{
+    display:flex; gap:9px; padding:13px 16px;
+    border-top:1px solid var(--line); flex-shrink:0;
+  }
+  .chat-composer input{
+    flex:1; min-width:0; padding:11px 14px; border-radius:20px;
+    border:1px solid var(--line); background:var(--ink-2); color:var(--text);
+    font-size:0.92rem; font-family:inherit;
+  }
+  .chat-composer input:focus{ outline:none; border-color:var(--amber); }
+  .chat-send{
+    width:38px; height:38px; border-radius:50%; flex-shrink:0; border:none;
+    background:var(--amber); color:var(--on-amber); cursor:pointer;
+    font-size:1.1rem; font-weight:700; line-height:1;
+    transition:opacity 0.2s ease;
+  }
+  .chat-send:hover{ opacity:0.9; }
+  .chat-send:disabled{ opacity:0.4; cursor:default; }
+
+  /* unread pip on a person row in the People list */
+  .person-unread{
+    min-width:18px; height:18px; padding:0 5px; border-radius:9px;
+    background:var(--amber); color:var(--on-amber);
+    font-family:'JetBrains Mono', monospace; font-size:0.62rem; font-weight:700;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+
+  @media (max-width:520px){
+    .chat-modal{ height:100vh; max-width:100%; border-radius:0; }
+  }
 
   /* topbar avatar button */
   .topbar-av{
@@ -1711,6 +1792,22 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="chatModal">
+  <div class="modal chat-modal">
+    <div class="chat-head">
+      <button class="chat-back" id="chatBack" aria-label="Back">‹</button>
+      <div class="chat-av" id="chatAv"></div>
+      <div class="chat-head-name" id="chatName">Chat</div>
+      <button class="modal-close chat-close" id="closeChat" aria-label="Close">✕</button>
+    </div>
+    <div class="chat-scroll" id="chatScroll"></div>
+    <form class="chat-composer" id="chatForm">
+      <input type="text" id="chatInput" placeholder="Message" autocomplete="off" maxlength="2000">
+      <button type="submit" class="chat-send" id="chatSend" aria-label="Send">↑</button>
+    </form>
+  </div>
+</div>
+
 <div class="modal-overlay" id="profileModal">
   <div class="modal profile-modal">
     <button class="modal-close" id="closeProfile" aria-label="Close">✕</button>
@@ -1836,7 +1933,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut, deleteUser, updateProfile } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where, updateDoc, onSnapshot, addDoc, orderBy, limit, writeBatch } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBmD7gtaHTmrIE4Pl9q1746s-zoWvx6XAI",
@@ -1982,6 +2079,7 @@
     // let the schedule paint first, then quietly check for friend
     // requests and shared classes
     setTimeout(refreshMatchBadge, 1200);
+    setTimeout(listenForUnread, 1400);
   });
 
   let introSeen = false;
@@ -2081,6 +2179,10 @@
   }
 
   window.handleLogout = function(){
+    // stop live listeners before auth clears, otherwise they fire
+    // against a signed-out user and throw permission errors
+    if (chatUnsub){ chatUnsub(); chatUnsub = null; }
+    if (unreadUnsub){ unreadUnsub(); unreadUnsub = null; }
     signOut(auth);
   };
 
@@ -3684,6 +3786,78 @@ Wed: OFF
   closePeople.addEventListener('click', closePeopleModal);
   peopleModal.addEventListener('click', (e) => { if (e.target === peopleModal) closePeopleModal(); });
 
+  // ══ Messaging ═════════════════════════════════════════════════
+  // Conversations reuse the friendship pair id, so a chat between two
+  // people always lives at the same path and needs no lookup. Messages
+  // are a subcollection under it.
+  let chatUnsub = null;        // active onSnapshot for the open chat
+  let unreadUnsub = null;      // background listener for unread counts
+  let openChatUid = null;
+  let unreadByUid = new Map();
+
+  function convoId(a, b){ return pairId(a, b); }
+
+  async function sendMessage(toUid, text){
+    if (!currentUser) return;
+    const body = String(text || '').trim();
+    if (!body) return;
+    const id = convoId(currentUser.uid, toUid);
+    const [a, b] = [currentUser.uid, toUid].sort();
+
+    // The parent doc gives the rules something to check against and
+    // gives the inbox listener a cheap place to read from.
+    await setDoc(doc(db, "conversations", id), {
+      a, b,
+      lastMessage: body.slice(0, 120),
+      lastFrom: currentUser.uid,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+
+    await addDoc(collection(db, "conversations", id, "messages"), {
+      from: currentUser.uid,
+      to: toUid,
+      text: body.slice(0, 2000),
+      read: false,
+      createdAt: new Date().toISOString()
+    });
+  }
+
+  // Live listener for the open conversation. Returns an unsubscribe.
+  function listenToChat(otherUid, onMessages){
+    if (!currentUser) return () => {};
+    const id = convoId(currentUser.uid, otherUid);
+    const q = query(
+      collection(db, "conversations", id, "messages"),
+      orderBy("createdAt", "asc"),
+      limit(200)
+    );
+    return onSnapshot(q, (snap) => {
+      const msgs = [];
+      snap.forEach(d => msgs.push({ id: d.id, ...d.data() }));
+      onMessages(msgs);
+    }, (err) => {
+      console.error('Chat listener failed:', err);
+    });
+  }
+
+  // Marks their messages to me as read. Batched so a long backlog is
+  // one network round trip instead of one write per message.
+  async function markChatRead(otherUid, msgs){
+    if (!currentUser) return;
+    const unread = msgs.filter(m => m.to === currentUser.uid && !m.read);
+    if (!unread.length) return;
+    const id = convoId(currentUser.uid, otherUid);
+    try{
+      const batch = writeBatch(db);
+      unread.forEach(m => {
+        batch.update(doc(db, "conversations", id, "messages", m.id), { read: true });
+      });
+      await batch.commit();
+    } catch (err){
+      console.error('Could not mark messages read:', err);
+    }
+  }
+
   // ══ Friends ═══════════════════════════════════════════════════
   // A friendship is one doc in `friendships` with a sorted pair id, so
   // there's exactly one doc per pair no matter who asked first, and
@@ -3891,8 +4065,10 @@ Wed: OFF
   function updateBell(matches){
     const seen = getSeen();
     const unreadMatches = matches.filter(m => !seen.has(m.uid + '|' + m.label)).length;
+    let unreadMsgs = 0;
+    unreadByUid.forEach(v => { unreadMsgs += v ? 1 : 0; });
     // friend requests always count as unread until they're acted on
-    const total = unreadMatches + incomingReqs.length;
+    const total = unreadMatches + incomingReqs.length + unreadMsgs;
     if (total > 0){
       bellBadge.textContent = total > 9 ? '9+' : String(total);
       bellBadge.hidden = false;
@@ -4023,6 +4199,130 @@ Wed: OFF
     } catch(e){ /* badge is optional, stay quiet */ }
   }
 
+  // ══ Chat UI ═══════════════════════════════════════════════════
+  const chatModal = document.getElementById('chatModal');
+  const chatScroll = document.getElementById('chatScroll');
+  const chatForm = document.getElementById('chatForm');
+  const chatInput = document.getElementById('chatInput');
+  const chatSend = document.getElementById('chatSend');
+  const chatName = document.getElementById('chatName');
+  const chatAv = document.getElementById('chatAv');
+  const closeChat = document.getElementById('closeChat');
+  const chatBack = document.getElementById('chatBack');
+
+  function fmtMsgTime(iso){
+    try{
+      const d = new Date(iso);
+      const now = new Date();
+      const sameDay = d.toDateString() === now.toDateString();
+      const t = d.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' });
+      return sameDay ? t : d.toLocaleDateString([], { month:'short', day:'numeric' }) + ' ' + t;
+    } catch(e){ return ''; }
+  }
+
+  function renderMessages(msgs){
+    if (!msgs.length){
+      chatScroll.innerHTML = '<div class="chat-empty">No messages yet.<br>Say something.</div>';
+      return;
+    }
+    // stick to the bottom only if the person was already near it, so
+    // reading back through history doesn't get yanked away
+    const nearBottom = chatScroll.scrollHeight - chatScroll.scrollTop - chatScroll.clientHeight < 90;
+
+    let html = '';
+    let lastStamp = 0;
+    msgs.forEach(m => {
+      const t = new Date(m.createdAt).getTime();
+      // a time divider when there's a real gap in the conversation
+      if (!lastStamp || t - lastStamp > 15 * 60 * 1000){
+        html += `<div class="msg-time">${fmtMsgTime(m.createdAt)}</div>`;
+      }
+      lastStamp = t;
+      const mine = currentUser && m.from === currentUser.uid;
+      html += `<div class="msg ${mine ? 'mine' : 'theirs'}">${escapeHtml(m.text)}</div>`;
+    });
+    chatScroll.innerHTML = html;
+
+    if (nearBottom) chatScroll.scrollTop = chatScroll.scrollHeight;
+  }
+
+  function openChat(person){
+    if (!currentUser) return;
+    openChatUid = person.uid;
+    chatName.textContent = person.name || 'Chat';
+    chatAv.innerHTML = avatarSvg(person.avatar);
+    chatScroll.innerHTML = '<div class="chat-empty">Loading...</div>';
+    chatInput.value = '';
+    chatModal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+
+    if (chatUnsub) chatUnsub();
+    chatUnsub = listenToChat(person.uid, (msgs) => {
+      renderMessages(msgs);
+      // reading the thread clears its unread state
+      markChatRead(person.uid, msgs);
+      unreadByUid.set(person.uid, 0);
+      updateBell(computeMatches());
+    });
+
+    setTimeout(() => chatInput.focus(), 80);
+  }
+
+  function closeChatModal(){
+    if (chatUnsub){ chatUnsub(); chatUnsub = null; }
+    openChatUid = null;
+    chatModal.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  closeChat.addEventListener('click', closeChatModal);
+  chatBack.addEventListener('click', closeChatModal);
+  chatModal.addEventListener('click', (e) => { if (e.target === chatModal) closeChatModal(); });
+
+  chatForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const text = chatInput.value.trim();
+    if (!text || !openChatUid) return;
+    chatInput.value = '';
+    chatSend.disabled = true;
+    try{
+      await sendMessage(openChatUid, text);
+    } catch (err){
+      console.error('Could not send message:', err);
+      // put it back so the person doesn't lose what they typed
+      chatInput.value = text;
+    } finally {
+      chatSend.disabled = false;
+      chatInput.focus();
+    }
+  });
+
+  // Background listener so unread counts show without opening anything.
+  // Scoped to conversations I'm part of.
+  function listenForUnread(){
+    if (!currentUser) return;
+    if (unreadUnsub){ unreadUnsub(); unreadUnsub = null; }
+    const me = currentUser.uid;
+    const qs = [
+      query(collection(db, "conversations"), where("a", "==", me)),
+      query(collection(db, "conversations"), where("b", "==", me))
+    ];
+    const stops = qs.map(q => onSnapshot(q, (snap) => {
+      snap.forEach(d => {
+        const c = d.data();
+        const other = c.a === me ? c.b : c.a;
+        // a conversation counts as unread when the last message came
+        // from them and I'm not currently looking at that thread
+        const isUnread = c.lastFrom && c.lastFrom !== me && openChatUid !== other;
+        unreadByUid.set(other, isUnread ? 1 : 0);
+      });
+      updateBell(computeMatches());
+      if (peopleModal.classList.contains('show')) renderPeople(peopleSearch.value);
+    }, (err) => console.error('Unread listener failed:', err)));
+
+    unreadUnsub = () => stops.forEach(s => s());
+  }
+
   async function fetchPeople(){
     // No try/catch here on purpose: loadPeople handles failures and
     // shows a retry. Swallowing the error here would render a
@@ -4103,6 +4403,7 @@ Wed: OFF
           <div class="person-name">${escapeHtml(p.name)}${isMe ? ' (you)' : ''}</div>
           <div class="person-status">${escapeHtml(sub)}</div>
         </div>
+        ${unreadByUid.get(p.uid) ? '<div class="person-unread">1</div>' : ''}
         ${p.isPublic ? '' : '<div class="person-tag">Private</div>'}
       `;
       btn.addEventListener('click', () => showProfile(p));
@@ -4138,7 +4439,10 @@ Wed: OFF
         <button class="pv-friend-btn ghost" data-decline="${p.uid}">Decline</button>
       </div>`;
     } else if (fState === 'friends'){
-      friendBtn = `<button class="pv-friend-btn ghost" data-unfriend="${p.uid}">Friends ✓</button>`;
+      friendBtn = `<div class="pv-friend-row">
+        <button class="pv-friend-btn" data-message="${p.uid}">Message</button>
+        <button class="pv-friend-btn ghost" data-unfriend="${p.uid}">Friends ✓</button>
+      </div>`;
     }
 
     if (visible){
@@ -4206,6 +4510,12 @@ Wed: OFF
     if (unBtn) unBtn.addEventListener('click', () => {
       unBtn.disabled = true;
       rewire(() => removeFriend(unBtn.dataset.unfriend));
+    });
+    const msgBtn = profileView.querySelector('[data-message]');
+    if (msgBtn) msgBtn.addEventListener('click', () => {
+      closeProfileModal();
+      closePeopleModal();
+      openChat(p);
     });
 
     profileModal.classList.add('show');
@@ -4455,4 +4765,3 @@ Wed: OFF
 
 </body>
 </html>
-  
