@@ -352,14 +352,97 @@
   @media (prefers-reduced-motion: reduce){
     *{ animation:none !important; transition:none !important; }
   }
+
+  /* ── Early access lock screen ─────────────────────────────── */
+  .lock-screen{
+    position:fixed; inset:0; z-index:100;
+    background:var(--ink); display:flex; align-items:center; justify-content:center;
+    padding:24px;
+  }
+  .lock-screen.hide{ display:none; }
+  /* everything else stays in the DOM but is inert while locked,
+     so unlocking doesn't need to rebuild the page */
+  .lock-screen ~ *{ }
+  body.locked .wrap{ display:none; }
+
+  .lock-inner{ width:100%; max-width:380px; text-align:center; }
+  .lock-eyebrow{
+    font-family:'JetBrains Mono', monospace; font-size:0.72rem;
+    letter-spacing:0.14em; text-transform:uppercase; color:var(--text-dim);
+    margin-bottom:14px;
+  }
+  .lock-title{
+    font-size:1.5rem; font-weight:800; letter-spacing:-0.02em;
+    margin-bottom:6px;
+  }
+  .lock-sub{
+    font-size:0.9rem; color:var(--text-dim); margin-bottom:30px; line-height:1.5;
+  }
+
+  .lock-clock{
+    display:block; width:100%; max-width:340px; height:auto;
+    margin:0 auto 8px; overflow:visible;
+  }
+  .lock-clock .dc-on{ fill:var(--amber); }
+  .lock-clock .dc-off{ fill:var(--line); }
+  .lock-clock-label{
+    font-family:'JetBrains Mono', monospace; font-size:0.7rem;
+    letter-spacing:0.1em; text-transform:uppercase; color:var(--text-dim);
+    margin-bottom:34px;
+  }
+
+  .lock-field{ text-align:left; margin-bottom:14px; }
+  .lock-field label{
+    display:block; font-size:0.78rem; font-weight:600; color:var(--text-dim);
+    margin-bottom:7px;
+  }
+  .lock-field input{
+    width:100%; padding:13px 14px; border-radius:10px;
+    border:1px solid var(--line); background:var(--ink-2); color:var(--text);
+    font-size:0.95rem; font-family:inherit;
+  }
+  .lock-field input:focus{ outline:none; border-color:var(--amber); }
+  .lock-msg{
+    min-height:18px; font-size:0.8rem; color:var(--error);
+    margin-bottom:10px; text-align:left;
+  }
+  .lock-submit{
+    width:100%; padding:13px 16px; border-radius:10px; border:none;
+    background:var(--amber); color:var(--on-amber); font-weight:700;
+    font-size:0.95rem; cursor:pointer; font-family:inherit;
+    transition:opacity 0.2s ease, transform 0.1s ease;
+  }
+  .lock-submit:hover{ opacity:0.92; }
+  .lock-submit:active{ transform:scale(0.98); }
 </style>
 </head>
 <body>
+
+<div class="lock-screen" id="lockScreen">
+  <div class="lock-inner">
+    <div class="lock-eyebrow">Schedule 2.0</div>
+    <div class="lock-title">Not open yet</div>
+    <div class="lock-sub">Launching September 10 at noon.</div>
+
+    <svg class="lock-clock" id="lockClock" viewBox="0 0 10 10" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+    <div class="lock-clock-label" id="lockClockLabel">days to go</div>
+
+    <form id="lockForm" novalidate>
+      <div class="lock-field">
+        <label for="lockPassword">Early access password</label>
+        <input type="password" id="lockPassword" placeholder="••••••••" autocomplete="off">
+      </div>
+      <div class="lock-msg" id="lockMsg"></div>
+      <button type="submit" class="lock-submit">Unlock</button>
+    </form>
+  </div>
+</div>
 
 <div class="rail"><div class="rail-fill"><div class="rail-marker"></div></div></div>
 <div class="backdrop-grid"></div>
 
 <div class="wrap">
+
   <div class="eyebrow">Period 3 of 7 · Live</div>
   <h1>Schedule 2.0</h1>
   <div class="sub">Remember that old schedule app Berk made? Here's the new one.</div>
@@ -409,7 +492,7 @@
     </div>
   </div>
 
-  <div class="changelog">
+  <div class="changelog" id="changelogWrap" hidden>
     <button class="changelog-head" id="changelogToggle">
       <span class="changelog-title">What's new</span>
       <span class="changelog-version">v2.5.3</span>
@@ -546,6 +629,130 @@
     </div>
   </div>
 </div>
+
+<script>
+  // ══ Early access lock ═══════════════════════════════════════════
+  // Gates the real login page behind a countdown + password until
+  // launch. Client-side only, so it's not real security, just a
+  // "not open yet" wall for casual visitors before Sept 10.
+  (function initLock(){
+    const LAUNCH = new Date('2026-09-10T12:00:00').getTime();
+    const UNLOCK_KEY = 's2_early_access';
+    const PASSWORD = 'Schedulefan12';
+
+    const lockScreen = document.getElementById('lockScreen');
+    const lockForm = document.getElementById('lockForm');
+    const lockPassword = document.getElementById('lockPassword');
+    const lockMsg = document.getElementById('lockMsg');
+    const lockClock = document.getElementById('lockClock');
+    const lockClockLabel = document.getElementById('lockClockLabel');
+    const changelogWrap = document.getElementById('changelogWrap');
+
+    function alreadyUnlocked(){
+      try{ return sessionStorage.getItem(UNLOCK_KEY) === 'yes'; } catch(e){ return false; }
+    }
+    function markUnlocked(){
+      try{ sessionStorage.setItem(UNLOCK_KEY, 'yes'); } catch(e){}
+    }
+
+    function reveal(){
+      lockScreen.classList.add('hide');
+      document.body.classList.remove('locked');
+      changelogWrap.hidden = false;
+    }
+
+    const launched = Date.now() >= LAUNCH;
+
+    // Past launch, or already unlocked earlier this session: skip the
+    // wall entirely, no point showing a countdown that already hit zero.
+    if (launched || alreadyUnlocked()){
+      reveal();
+      return;
+    }
+
+    document.body.classList.add('locked');
+
+    // ── dot matrix rendering, same glyph set as the schedule page ──
+    const DOT_GLYPHS = {
+      '0':["01110","10001","10011","10101","11001","10001","01110"],
+      '1':["00100","01100","00100","00100","00100","00100","01110"],
+      '2':["01110","10001","00001","00010","00100","01000","11111"],
+      '3':["11111","00010","00100","00010","00001","10001","01110"],
+      '4':["00010","00110","01010","10010","11111","00010","00010"],
+      '5':["11111","10000","11110","00001","00001","10001","01110"],
+      '6':["00110","01000","10000","11110","10001","10001","01110"],
+      '7':["11111","00001","00010","00100","01000","01000","01000"],
+      '8':["01110","10001","10001","01110","10001","10001","01110"],
+      '9':["01110","10001","10001","01111","00001","00010","01100"],
+      ':':["00000","00100","00100","00000","00100","00100","00000"],
+      '-':["00000","00000","00000","01110","00000","00000","00000"]
+    };
+
+    function renderDots(text){
+      const rows = 7, dot = 1, gap = 0.62, step = dot + gap;
+      let x = 0;
+      const cells = [];
+      for (const ch of text){
+        const g = DOT_GLYPHS[ch];
+        if (!g){ x += step * 2; continue; }
+        const cols = g[0].length;
+        for (let r = 0; r < rows; r++){
+          for (let c = 0; c < cols; c++){
+            const on = g[r][c] === '1';
+            cells.push(`<circle cx="${(x + c*step + dot/2).toFixed(2)}" cy="${(r*step + dot/2).toFixed(2)}" r="${dot/2}" class="${on ? 'dc-on' : 'dc-off'}"/>`);
+          }
+        }
+        x += cols*step + step;
+      }
+      const w = Math.max(x - step, step);
+      const h = rows*step - gap;
+      lockClock.setAttribute('viewBox', `0 0 ${w.toFixed(2)} ${h.toFixed(2)}`);
+      lockClock.innerHTML = cells.join('');
+    }
+
+    let lastText = null;
+    function tick(){
+      const msLeft = LAUNCH - Date.now();
+      if (msLeft <= 0){ reveal(); return; }
+
+      const totalSecs = Math.floor(msLeft / 1000);
+      const days = Math.floor(totalSecs / 86400);
+      const hours = Math.floor((totalSecs % 86400) / 3600);
+      const mins = Math.floor((totalSecs % 3600) / 60);
+      const secs = totalSecs % 60;
+
+      let text, label;
+      if (days >= 1){
+        text = String(days);
+        label = days === 1 ? 'day to go' : 'days to go';
+      } else {
+        const pad = n => String(n).padStart(2,'0');
+        text = `${pad(hours)}:${pad(mins)}:${pad(secs)}`;
+        label = 'until launch';
+      }
+
+      if (text !== lastText){
+        lastText = text;
+        renderDots(text);
+        lockClockLabel.textContent = label;
+      }
+    }
+    tick();
+    setInterval(tick, 1000);
+
+    lockForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (lockPassword.value === PASSWORD){
+        markUnlocked();
+        reveal();
+      } else {
+        lockMsg.textContent = "That's not it. Try again.";
+        lockPassword.value = '';
+        lockPassword.focus();
+      }
+    });
+  })();
+</script>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
