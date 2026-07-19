@@ -537,6 +537,8 @@
     padding:14px 22px; border-bottom:1px solid var(--line-soft);
   }
   .notif-item:last-child{ border-bottom:none; }
+  .notif-tap{ cursor:pointer; transition:background 0.15s ease; }
+  .notif-tap:hover{ background:var(--ink-2); }
   .notif-av{
     width:34px; height:34px; border-radius:50%; flex-shrink:0;
     background:var(--avatar-bg); border:1px solid var(--line);
@@ -3797,6 +3799,24 @@ Wed: OFF
 
   function convoId(a, b){ return pairId(a, b); }
 
+  // Read-state lives locally. The rules deliberately stop the recipient
+  // from editing the conversation doc, so "have I seen this" is tracked
+  // per device like the class-match seen list. Cross-device unread being
+  // slightly off is a fine trade for zero extra writes.
+  const CHAT_SEEN_KEY = 's2_chat_seen';
+  function getChatSeenMap(){
+    try{ return JSON.parse(localStorage.getItem(CHAT_SEEN_KEY) || '{}'); }
+    catch(e){ return {}; }
+  }
+  function setChatSeen(uid, iso){
+    try{
+      const m = getChatSeenMap();
+      // never move the marker backwards
+      if (!m[uid] || iso > m[uid]) m[uid] = iso;
+      localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify(m));
+    } catch(e){}
+  }
+
   async function sendMessage(toUid, text){
     if (!currentUser) return;
     const body = String(text || '').trim();
@@ -3823,7 +3843,7 @@ Wed: OFF
   }
 
   // Live listener for the open conversation. Returns an unsubscribe.
-  function listenToChat(otherUid, onMessages){
+  function listenToChat(otherUid, onMessages, onError){
     if (!currentUser) return () => {};
     const id = convoId(currentUser.uid, otherUid);
     const q = query(
@@ -3837,6 +3857,7 @@ Wed: OFF
       onMessages(msgs);
     }, (err) => {
       console.error('Chat listener failed:', err);
+      if (onError) onError(err);
     });
   }
 
@@ -4080,7 +4101,29 @@ Wed: OFF
   function renderNotifs(matches){
     let html = '';
 
-    // ── incoming friend requests come first, they need an action ──
+    // ── unread messages first, they're the most immediate ──
+    const unreadPeople = [];
+    unreadByUid.forEach((v, uid) => {
+      if (!v) return;
+      const p = allPeople.find(x => x.uid === uid);
+      if (p) unreadPeople.push(p);
+    });
+    if (unreadPeople.length){
+      html += '<div class="notif-section-label">Messages</div><div class="notif-list">';
+      unreadPeople.forEach(p => {
+        html += `
+          <div class="notif-item notif-tap" data-openchat="${p.uid}" role="button" tabindex="0">
+            <div class="notif-av">${avatarSvg(p.avatar)}</div>
+            <div class="notif-body">
+              <div class="notif-text"><strong>${escapeHtml(p.name)}</strong> sent you a message</div>
+              <div class="notif-meta">Tap to open the chat</div>
+            </div>
+          </div>`;
+      });
+      html += '</div>';
+    }
+
+    // ── incoming friend requests, they need an action ──
     if (incomingReqs.length){
       html += '<div class="notif-section-label">Friend requests</div><div class="notif-list">';
       incomingReqs.forEach(r => {
@@ -4112,11 +4155,13 @@ Wed: OFF
         '<button class="btn-primary" id="notifGoSettings">Open Settings</button>' +
         '</div>';
     } else if (!matches.length){
-      html += '<div class="notif-empty">' +
-        (friendUids.size
-          ? 'No shared classes with your friends yet.'
-          : 'Add friends from the People list, then anyone sharing a class with you shows up here.') +
-        '</div>';
+      if (!html){
+        html += '<div class="notif-empty">' +
+          (friendUids.size
+            ? 'No shared classes with your friends yet.'
+            : 'Add friends from the People list, then anyone sharing a class with you shows up here.') +
+          '</div>';
+      }
     } else {
       html += '<div class="notif-section-label">Shared classes</div><div class="notif-list">' +
         matches.map(m => `
@@ -4133,6 +4178,15 @@ Wed: OFF
 
     const go = document.getElementById('notifGoSettings');
     if (go) go.addEventListener('click', () => { closeNotifModal(); openSettingsModal(); });
+
+    notifBody.querySelectorAll('[data-openchat]').forEach(row => {
+      row.addEventListener('click', () => {
+        const p = allPeople.find(x => x.uid === row.dataset.openchat);
+        if (!p) return;
+        closeNotifModal();
+        openChat(p);
+      });
+    });
 
     notifBody.querySelectorAll('[data-accept]').forEach(b => {
       b.addEventListener('click', async () => {
@@ -4246,7 +4300,25 @@ Wed: OFF
     if (nearBottom) chatScroll.scrollTop = chatScroll.scrollHeight;
   }
 
-  function openChat(person){
+  // The rules check the parent conversation doc on every message read,
+  // so it has to exist before the listener attaches. Without this, a
+  // brand new chat errored with permission denied and sat on
+  // "Loading..." forever.
+  async function ensureConvo(otherUid){
+    const id = convoId(currentUser.uid, otherUid);
+    const snap = await getDoc(doc(db, "conversations", id));
+    if (!snap.exists()){
+      const [a, b] = [currentUser.uid, otherUid].sort();
+      await setDoc(doc(db, "conversations", id), {
+        a, b,
+        lastMessage: '',
+        lastFrom: currentUser.uid,
+        updatedAt: new Date().toISOString()
+      });
+    }
+  }
+
+  async function openChat(person){
     if (!currentUser) return;
     openChatUid = person.uid;
     chatName.textContent = person.name || 'Chat';
@@ -4256,13 +4328,28 @@ Wed: OFF
     chatModal.classList.add('show');
     document.body.style.overflow = 'hidden';
 
-    if (chatUnsub) chatUnsub();
+    if (chatUnsub){ chatUnsub(); chatUnsub = null; }
+
+    try{
+      await ensureConvo(person.uid);
+    } catch (err){
+      console.error('Could not open conversation:', err);
+      chatScroll.innerHTML = '<div class="chat-empty">Couldn\'t open this chat. Bad connection, maybe.<br>Close and try again.</div>';
+      return;
+    }
+
     chatUnsub = listenToChat(person.uid, (msgs) => {
       renderMessages(msgs);
       // reading the thread clears its unread state
       markChatRead(person.uid, msgs);
+      // remember how far we've read, so the badge doesn't resurrect
+      // this conversation as unread on the next refresh
+      if (msgs.length) setChatSeen(person.uid, msgs[msgs.length - 1].createdAt);
+      else setChatSeen(person.uid, new Date().toISOString());
       unreadByUid.set(person.uid, 0);
       updateBell(computeMatches());
+    }, () => {
+      chatScroll.innerHTML = '<div class="chat-empty">Lost the connection to this chat.<br>Close and reopen to retry.</div>';
     });
 
     setTimeout(() => chatInput.focus(), 80);
@@ -4308,12 +4395,15 @@ Wed: OFF
       query(collection(db, "conversations"), where("b", "==", me))
     ];
     const stops = qs.map(q => onSnapshot(q, (snap) => {
+      const seenMap = getChatSeenMap();
       snap.forEach(d => {
         const c = d.data();
         const other = c.a === me ? c.b : c.a;
-        // a conversation counts as unread when the last message came
-        // from them and I'm not currently looking at that thread
-        const isUnread = c.lastFrom && c.lastFrom !== me && openChatUid !== other;
+        // unread means: their message, newer than what I've seen on
+        // this device, and I'm not currently looking at that thread
+        const theirs = c.lastFrom && c.lastFrom !== me;
+        const newer = !seenMap[other] || (c.updatedAt && c.updatedAt > seenMap[other]);
+        const isUnread = theirs && newer && openChatUid !== other;
         unreadByUid.set(other, isUnread ? 1 : 0);
       });
       updateBell(computeMatches());
