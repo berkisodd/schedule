@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -594,6 +593,13 @@
   .pv-friend-btn:disabled{ opacity:0.55; cursor:default; }
   .pv-friend-row{ display:flex; gap:9px; justify-content:center; }
   .pv-friend-row .pv-friend-btn{ margin-top:18px; }
+  .pv-report{
+    margin-top:14px; background:none; border:none; cursor:pointer;
+    font-family:inherit; font-size:0.76rem; color:var(--text-dim);
+    text-decoration:underline; padding:4px;
+  }
+  .pv-report:hover{ color:var(--error); }
+  .pv-report:disabled{ text-decoration:none; cursor:default; }
 
   /* ── Chat ─────────────────────────────────────────────────── */
   .chat-modal{
@@ -675,6 +681,101 @@
   @media (max-width:520px){
     .chat-modal{ height:100vh; max-width:100%; border-radius:0; }
   }
+
+  /* ── Announcement banner ──────────────────────────────────── */
+  .ann-bar{
+    position:sticky; top:0; z-index:45;
+    display:flex; align-items:flex-start; gap:12px;
+    padding:12px 18px; background:var(--amber); color:var(--on-amber);
+    font-size:0.86rem; line-height:1.45;
+  }
+  .ann-text{ flex:1; min-width:0; }
+  .ann-x{
+    background:none; border:none; color:var(--on-amber); cursor:pointer;
+    font-size:0.95rem; padding:0 2px; flex-shrink:0; opacity:0.8;
+  }
+  .ann-x:hover{ opacity:1; }
+
+  /* ── Admin panel ──────────────────────────────────────────── */
+  .admin-modal{ max-width:560px; }
+  .admin-tabs{
+    display:flex; gap:4px; padding:0 22px; border-bottom:1px solid var(--line);
+    overflow-x:auto;
+  }
+  .admin-tab{
+    background:none; border:none; cursor:pointer; font-family:inherit;
+    padding:11px 12px; font-size:0.83rem; font-weight:600;
+    color:var(--text-dim); border-bottom:2px solid transparent;
+    white-space:nowrap; transition:color 0.2s ease, border-color 0.2s ease;
+  }
+  .admin-tab:hover{ color:var(--text); }
+  .admin-tab.active{ color:var(--amber); border-bottom-color:var(--amber); }
+  .admin-body{ padding:18px 22px 24px; max-height:60vh; overflow-y:auto; }
+
+  .adm-row{
+    display:flex; align-items:center; gap:11px;
+    padding:11px 0; border-bottom:1px solid var(--line-soft);
+  }
+  .adm-row:last-child{ border-bottom:none; }
+  .adm-av{
+    width:32px; height:32px; border-radius:50%; flex-shrink:0;
+    background:var(--avatar-bg); border:1px solid var(--line);
+    overflow:hidden; display:flex; align-items:center; justify-content:center;
+  }
+  .adm-av svg{ width:100%; height:100%; display:block; }
+  .adm-info{ flex:1; min-width:0; }
+  .adm-name{ font-size:0.88rem; font-weight:600; }
+  .adm-meta{
+    font-family:'JetBrains Mono', monospace; font-size:0.66rem;
+    color:var(--text-dim); margin-top:2px;
+  }
+  .adm-actions{ display:flex; gap:6px; flex-shrink:0; }
+  .adm-btn{
+    padding:6px 10px; border-radius:7px; font-size:0.74rem; font-weight:600;
+    cursor:pointer; font-family:inherit;
+    background:none; border:1px solid var(--line); color:var(--text-dim);
+    transition:color 0.2s ease, border-color 0.2s ease;
+  }
+  .adm-btn:hover{ color:var(--text); border-color:var(--text-dim); }
+  .adm-btn.danger:hover{ color:var(--error); border-color:var(--error); }
+  .adm-btn.on{ background:var(--amber); border-color:var(--amber); color:var(--on-amber); }
+  .adm-btn:disabled{ opacity:0.5; cursor:default; }
+
+  .adm-empty{
+    text-align:center; padding:34px 10px; color:var(--text-dim); font-size:0.86rem;
+  }
+  .adm-field{ margin-bottom:14px; }
+  .adm-field label{
+    display:block; font-size:0.78rem; font-weight:600;
+    color:var(--text-dim); margin-bottom:6px;
+  }
+  .adm-field input, .adm-field textarea{
+    width:100%; padding:11px 13px; border-radius:9px;
+    border:1px solid var(--line); background:var(--ink-2); color:var(--text);
+    font-size:0.9rem; font-family:inherit; resize:vertical;
+  }
+  .adm-field input:focus, .adm-field textarea:focus{
+    outline:none; border-color:var(--amber);
+  }
+  .adm-note{
+    font-size:0.78rem; color:var(--text-dim); line-height:1.55; margin-top:10px;
+  }
+  .adm-warn{
+    border:1px solid var(--error); border-radius:9px;
+    padding:13px; margin-top:14px; font-size:0.8rem; line-height:1.55;
+    color:var(--text-dim);
+  }
+  .adm-stat{
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:10px 0; border-bottom:1px solid var(--line-soft);
+  }
+  .adm-stat-num{
+    font-family:'JetBrains Mono', monospace; font-weight:700; font-size:1.05rem;
+  }
+
+  /* admin entry only shows for admins */
+  .admin-only{ display:none; }
+  body.is-admin .admin-only{ display:flex; }
 
   /* topbar avatar button */
   .topbar-av{
@@ -1385,6 +1486,7 @@
       </div>
       <button class="btn-import" id="openImport">⚡ Import</button>
       <button class="btn-people" id="openPeople">People</button>
+      <button class="btn-settings admin-only" id="openAdmin">Admin</button>
       <button class="btn-settings" id="openSettings">Settings</button>
       <button class="btn-share" id="openShare">Share</button>
       <button class="btn-add" id="toggleAdd">+ Add period</button>
@@ -1794,6 +1896,23 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="adminModal">
+  <div class="modal admin-modal">
+    <button class="modal-close" id="closeAdmin" aria-label="Close">✕</button>
+    <div class="set-head">
+      <div class="set-title">Admin</div>
+      <div class="set-sub">Moderation and school wide settings.</div>
+    </div>
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-atab="users">Users</button>
+      <button class="admin-tab" data-atab="reports">Reports</button>
+      <button class="admin-tab" data-atab="announce">Announce</button>
+      <button class="admin-tab" data-atab="system">System</button>
+    </div>
+    <div class="admin-body" id="adminBody"></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="chatModal">
   <div class="modal chat-modal">
     <div class="chat-head">
@@ -2073,15 +2192,182 @@
     return JS_DAY_TO_KEY[new Date().getDay()];
   }
 
+  // ══ Announcements ═════════════════════════════════════════════
+  // One active announcement at a time, dismissible per device. Expired
+  // ones are filtered on read so nothing has to sweep them.
+  const ANN_SEEN_KEY = 's2_ann_dismissed';
+
+  async function loadAnnouncement(){
+    try{
+      const snap = await getDocs(collection(db, "announcements"));
+      const now = Date.now();
+      const live = [];
+      snap.forEach(d => {
+        const a = { id: d.id, ...d.data() };
+        if (a.expiresAt && new Date(a.expiresAt).getTime() < now) return;
+        live.push(a);
+      });
+      if (!live.length) return;
+      live.sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+      const a = live[0];
+
+      let dismissed = [];
+      try{ dismissed = JSON.parse(localStorage.getItem(ANN_SEEN_KEY) || '[]'); } catch(e){}
+      if (dismissed.includes(a.id)) return;
+
+      const bar = document.createElement('div');
+      bar.className = 'ann-bar';
+      bar.innerHTML =
+        `<div class="ann-text"><strong>${escapeHtml(a.title || 'Announcement')}</strong>` +
+        (a.body ? ` ${escapeHtml(a.body)}` : '') + '</div>' +
+        '<button class="ann-x" aria-label="Dismiss">✕</button>';
+      bar.querySelector('.ann-x').addEventListener('click', () => {
+        bar.remove();
+        try{
+          dismissed.push(a.id);
+          localStorage.setItem(ANN_SEEN_KEY, JSON.stringify(dismissed.slice(-30)));
+        } catch(e){}
+      });
+      document.body.insertBefore(bar, document.body.firstChild);
+      document.body.classList.add('has-ann');
+    } catch (err){
+      console.error('Could not load announcement:', err);
+    }
+  }
+
+  // ══ Reporting ═════════════════════════════════════════════════
+  async function reportUser(uid, name, reason){
+    if (!currentUser) return;
+    await addDoc(collection(db, "reports"), {
+      reportedUid: uid,
+      reportedName: name || '',
+      reportedBy: currentUser.uid,
+      reporterName: profile.name || '',
+      reason: String(reason || '').slice(0, 500),
+      createdAt: new Date().toISOString(),
+      handled: false
+    });
+  }
+
+  // ══ Daily cleanup ═════════════════════════════════════════════
+  // No Cloud Functions on the free plan, so the first admin to open the
+  // app each day sweeps old messages. Throttled by a local date stamp so
+  // it runs once a day, not on every page load.
+  const CLEANUP_KEY = 's2_last_cleanup';
+  const MSG_TTL_DAYS = 30;
+
+  async function runDailyCleanup(){
+    if (!isAdmin) return;
+    const today = new Date().toISOString().slice(0,10);
+    try{
+      if (localStorage.getItem(CLEANUP_KEY) === today) return;
+    } catch(e){}
+
+    const cutoff = new Date(Date.now() - MSG_TTL_DAYS * 86400000).toISOString();
+    let removed = 0;
+    try{
+      const convos = await getDocs(collection(db, "conversations"));
+      for (const c of convos.docs){
+        const old = await getDocs(query(
+          collection(db, "conversations", c.id, "messages"),
+          where("createdAt", "<", cutoff),
+          limit(400)
+        ));
+        if (old.empty) continue;
+        const batch = writeBatch(db);
+        old.forEach(m => batch.delete(m.ref));
+        await batch.commit();
+        removed += old.size;
+      }
+      try{ localStorage.setItem(CLEANUP_KEY, today); } catch(e){}
+      if (removed) console.log(`Cleanup removed ${removed} messages older than ${MSG_TTL_DAYS} days.`);
+    } catch (err){
+      console.error('Cleanup failed:', err);
+    }
+  }
+
+  // ══ Admin, bans and maintenance ═══════════════════════════════
+  let isAdmin = false;
+  let myBan = null;       // { type:'full'|'messaging', until:iso|null, reason }
+
+  async function loadAdminFlag(){
+    if (!currentUser) return false;
+    try{
+      const snap = await getDoc(doc(db, "admins", currentUser.uid));
+      isAdmin = snap.exists();
+    } catch(e){ isAdmin = false; }
+    return isAdmin;
+  }
+
+  // A ban with a past expiry is treated as gone. Expiry is checked on
+  // read rather than swept by a job, so timeouts lift themselves.
+  function banActive(b){
+    if (!b) return false;
+    if (!b.until) return true;               // no expiry means permanent
+    return new Date(b.until).getTime() > Date.now();
+  }
+
+  async function loadMyBan(){
+    if (!currentUser) return null;
+    try{
+      const snap = await getDoc(doc(db, "bans", currentUser.uid));
+      myBan = snap.exists() && banActive(snap.data()) ? snap.data() : null;
+    } catch(e){ myBan = null; }
+    return myBan;
+  }
+
+  async function loadMaintenance(){
+    try{
+      const snap = await getDoc(doc(db, "config", "app"));
+      return snap.exists() ? snap.data() : {};
+    } catch(e){ return {}; }
+  }
+
+  function showGate(title, body){
+    document.body.innerHTML =
+      '<div style="position:fixed;inset:0;display:flex;align-items:center;' +
+      'justify-content:center;padding:28px;background:var(--ink);color:var(--text);' +
+      'font-family:Inter,system-ui,sans-serif;text-align:center;">' +
+      '<div style="max-width:400px;">' +
+      '<div style="font-size:1.4rem;font-weight:800;margin-bottom:10px;">' + title + '</div>' +
+      '<div style="font-size:0.92rem;color:var(--text-dim);line-height:1.6;">' + body + '</div>' +
+      '</div></div>';
+  }
+
   onAuthStateChanged(auth, async (user) => {
     if (!user) { window.location.href = "login.html"; return; }
     currentUser = user;
+
+    // Admin check first, because admins need to get past maintenance
+    // to be able to turn it back off.
+    await loadAdminFlag();
+
+    const cfg = await loadMaintenance();
+    if (cfg.maintenance === true && !isAdmin){
+      showGate('Down for maintenance',
+        escapeHtml(cfg.maintenanceMessage || 'Schedule is being worked on. Check back soon.'));
+      return;
+    }
+
+    await loadMyBan();
+    if (myBan && myBan.type === 'full'){
+      const until = myBan.until
+        ? 'This lifts on ' + new Date(myBan.until).toLocaleString() + '.'
+        : 'This does not expire.';
+      showGate('Account suspended',
+        (myBan.reason ? escapeHtml(myBan.reason) + '<br><br>' : '') + until);
+      return;
+    }
+
     await loadProfile();
     await loadSchedule();
+    if (isAdmin) document.body.classList.add('is-admin');
     // let the schedule paint first, then quietly check for friend
     // requests and shared classes
     setTimeout(refreshMatchBadge, 1200);
     setTimeout(listenForUnread, 1400);
+    setTimeout(loadAnnouncement, 900);
+    if (isAdmin) setTimeout(runDailyCleanup, 4000);
   });
 
   let introSeen = false;
@@ -3819,6 +4105,14 @@ Wed: OFF
 
   async function sendMessage(toUid, text){
     if (!currentUser) return;
+    // messaging bans and timeouts are checked here as well as in the
+    // rules, so the person gets a clear message instead of a silent fail
+    if (myBan && (myBan.type === 'messaging' || myBan.type === 'full')){
+      const until = myBan.until
+        ? ' until ' + new Date(myBan.until).toLocaleString()
+        : '';
+      throw new Error('You cannot send messages' + until + '.');
+    }
     const body = String(text || '').trim();
     if (!body) return;
     const id = convoId(currentUser.uid, toUid);
@@ -4253,6 +4547,303 @@ Wed: OFF
     } catch(e){ /* badge is optional, stay quiet */ }
   }
 
+  // ══ Admin panel ═══════════════════════════════════════════════
+  const adminModal = document.getElementById('adminModal');
+  const adminBody = document.getElementById('adminBody');
+  const closeAdmin = document.getElementById('closeAdmin');
+  let adminTab = 'users';
+  let banMap = new Map();
+
+  const TIMEOUTS = [
+    { label: '1h',  ms: 3600000 },
+    { label: '1d',  ms: 86400000 },
+    { label: '1w',  ms: 604800000 }
+  ];
+
+  async function loadBans(){
+    banMap = new Map();
+    try{
+      const snap = await getDocs(collection(db, "bans"));
+      snap.forEach(d => {
+        const b = d.data();
+        if (banActive(b)) banMap.set(d.id, b);
+      });
+    } catch (err){ console.error('Could not load bans:', err); }
+  }
+
+  async function setBan(uid, type, ms, reason){
+    const until = ms ? new Date(Date.now() + ms) : null;
+    await setDoc(doc(db, "bans", uid), {
+      type,
+      // ISO string for humans and the app, epoch millis for the rules,
+      // which can't parse date strings
+      until: until ? until.toISOString() : null,
+      untilMs: until ? until.getTime() : null,
+      reason: reason || '',
+      setBy: currentUser.uid,
+      createdAt: new Date().toISOString()
+    });
+    await loadBans();
+  }
+  async function clearBan(uid){
+    await deleteDoc(doc(db, "bans", uid));
+    await loadBans();
+  }
+
+  function banLabel(b){
+    if (!b) return '';
+    const kind = b.type === 'full' ? 'Suspended' : 'Muted';
+    if (!b.until) return kind + ' · permanent';
+    return kind + ' · until ' + new Date(b.until).toLocaleString();
+  }
+
+  async function renderAdminUsers(){
+    adminBody.innerHTML = '<div class="adm-empty">Loading...</div>';
+    await Promise.all([fetchPeople(), loadBans()]);
+    if (!allPeople.length){ adminBody.innerHTML = '<div class="adm-empty">No users yet.</div>'; return; }
+
+    adminBody.innerHTML = allPeople.map(p => {
+      const b = banMap.get(p.uid);
+      return `
+        <div class="adm-row">
+          <div class="adm-av">${avatarSvg(p.avatar)}</div>
+          <div class="adm-info">
+            <div class="adm-name">${escapeHtml(p.name || 'Unnamed')}</div>
+            <div class="adm-meta">${b ? escapeHtml(banLabel(b)) : 'Active'}</div>
+          </div>
+          <div class="adm-actions">
+            ${b
+              ? `<button class="adm-btn" data-unban="${p.uid}">Lift</button>`
+              : TIMEOUTS.map(t => `<button class="adm-btn" data-mute="${p.uid}" data-ms="${t.ms}">${t.label}</button>`).join('') +
+                `<button class="adm-btn danger" data-suspend="${p.uid}">Ban</button>`
+            }
+          </div>
+        </div>`;
+    }).join('');
+
+    adminBody.querySelectorAll('[data-mute]').forEach(b => {
+      b.addEventListener('click', async () => {
+        b.disabled = true;
+        await setBan(b.dataset.mute, 'messaging', Number(b.dataset.ms), 'Timed out by an admin');
+        renderAdminUsers();
+      });
+    });
+    adminBody.querySelectorAll('[data-suspend]').forEach(b => {
+      b.addEventListener('click', async () => {
+        if (!confirm('Suspend this account entirely? They will be locked out of the app.')) return;
+        b.disabled = true;
+        await setBan(b.dataset.suspend, 'full', null, 'Suspended by an admin');
+        renderAdminUsers();
+      });
+    });
+    adminBody.querySelectorAll('[data-unban]').forEach(b => {
+      b.addEventListener('click', async () => {
+        b.disabled = true;
+        await clearBan(b.dataset.unban);
+        renderAdminUsers();
+      });
+    });
+  }
+
+  async function renderAdminReports(){
+    adminBody.innerHTML = '<div class="adm-empty">Loading...</div>';
+    let reports = [];
+    try{
+      const snap = await getDocs(collection(db, "reports"));
+      snap.forEach(d => reports.push({ id: d.id, ...d.data() }));
+    } catch (err){
+      adminBody.innerHTML = '<div class="adm-empty">Could not load reports.</div>';
+      return;
+    }
+    reports = reports.filter(r => !r.handled)
+                     .sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+    if (!reports.length){ adminBody.innerHTML = '<div class="adm-empty">No open reports.</div>'; return; }
+
+    adminBody.innerHTML = reports.map(r => `
+      <div class="adm-row">
+        <div class="adm-info">
+          <div class="adm-name">${escapeHtml(r.reportedName || 'Unknown')}</div>
+          <div class="adm-meta">by ${escapeHtml(r.reporterName || 'someone')} · ${new Date(r.createdAt).toLocaleString()}</div>
+          ${r.reason ? `<div class="adm-meta" style="margin-top:5px;color:var(--text);">${escapeHtml(r.reason)}</div>` : ''}
+        </div>
+        <div class="adm-actions">
+          <button class="adm-btn" data-mutereport="${r.reportedUid}" data-rid="${r.id}">Mute 1d</button>
+          <button class="adm-btn" data-dismiss="${r.id}">Dismiss</button>
+        </div>
+      </div>`).join('');
+
+    adminBody.querySelectorAll('[data-mutereport]').forEach(b => {
+      b.addEventListener('click', async () => {
+        b.disabled = true;
+        await setBan(b.dataset.mutereport, 'messaging', 86400000, 'Timed out after a report');
+        await updateDoc(doc(db, "reports", b.dataset.rid), { handled: true });
+        renderAdminReports();
+      });
+    });
+    adminBody.querySelectorAll('[data-dismiss]').forEach(b => {
+      b.addEventListener('click', async () => {
+        b.disabled = true;
+        await updateDoc(doc(db, "reports", b.dataset.dismiss), { handled: true });
+        renderAdminReports();
+      });
+    });
+  }
+
+  async function renderAdminAnnounce(){
+    adminBody.innerHTML = '<div class="adm-empty">Loading...</div>';
+    let anns = [];
+    try{
+      const snap = await getDocs(collection(db, "announcements"));
+      snap.forEach(d => anns.push({ id: d.id, ...d.data() }));
+    } catch(e){}
+    anns.sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+
+    adminBody.innerHTML = `
+      <div class="adm-field">
+        <label for="annTitle">Title</label>
+        <input type="text" id="annTitle" placeholder="Early dismissal Friday" maxlength="80">
+      </div>
+      <div class="adm-field">
+        <label for="annBody">Message</label>
+        <textarea id="annBody" rows="3" placeholder="Buses leave at 12:30." maxlength="300"></textarea>
+      </div>
+      <div class="adm-field">
+        <label for="annExpires">Hide after (optional)</label>
+        <input type="date" id="annExpires">
+      </div>
+      <button class="btn-primary" id="annPost">Post announcement</button>
+      <div class="adm-note">Shows as a banner at the top of the app for everyone. People can dismiss it.</div>
+      ${anns.length ? '<div style="margin-top:22px;">' + anns.map(a => {
+        const expired = a.expiresAt && new Date(a.expiresAt).getTime() < Date.now();
+        return `
+          <div class="adm-row">
+            <div class="adm-info">
+              <div class="adm-name">${escapeHtml(a.title || 'Untitled')}</div>
+              <div class="adm-meta">${expired ? 'Expired' : 'Live'}${a.expiresAt ? ' · until ' + new Date(a.expiresAt).toLocaleDateString() : ''}</div>
+            </div>
+            <div class="adm-actions">
+              <button class="adm-btn danger" data-delann="${a.id}">Delete</button>
+            </div>
+          </div>`;
+      }).join('') + '</div>' : ''}
+    `;
+
+    document.getElementById('annPost').addEventListener('click', async () => {
+      const title = document.getElementById('annTitle').value.trim();
+      const body = document.getElementById('annBody').value.trim();
+      const exp = document.getElementById('annExpires').value;
+      if (!title){ alert('Give it a title.'); return; }
+      await addDoc(collection(db, "announcements"), {
+        title, body,
+        expiresAt: exp ? new Date(exp + 'T23:59:59').toISOString() : null,
+        createdBy: currentUser.uid,
+        createdAt: new Date().toISOString()
+      });
+      renderAdminAnnounce();
+    });
+    adminBody.querySelectorAll('[data-delann]').forEach(b => {
+      b.addEventListener('click', async () => {
+        b.disabled = true;
+        await deleteDoc(doc(db, "announcements", b.dataset.delann));
+        renderAdminAnnounce();
+      });
+    });
+  }
+
+  async function renderAdminSystem(){
+    adminBody.innerHTML = '<div class="adm-empty">Loading...</div>';
+    const cfg = await loadMaintenance();
+    const on = cfg.maintenance === true;
+
+    // most active = most recently active, which is what lastActive gives
+    // us without adding any tracking. Bans load here too so the muted
+    // count is right even if this tab opens first.
+    await Promise.all([fetchPeople(), loadBans()]);
+    const active = allPeople
+      .filter(p => p.lastActive)
+      .sort((a,b) => (b.lastActive || '').localeCompare(a.lastActive || ''))
+      .slice(0, 5);
+
+    adminBody.innerHTML = `
+      <div class="adm-stat"><span>Total users</span><span class="adm-stat-num">${allPeople.length}</span></div>
+      <div class="adm-stat"><span>Active today</span><span class="adm-stat-num">${
+        allPeople.filter(p => p.lastActive && Date.now() - new Date(p.lastActive).getTime() < 86400000).length
+      }</span></div>
+      <div class="adm-stat"><span>Currently muted or banned</span><span class="adm-stat-num">${banMap.size}</span></div>
+
+      <div style="margin-top:20px;">
+        <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--text-dim);margin-bottom:8px;">Most recently active</label>
+        ${active.length ? active.map(p => `
+          <div class="adm-row">
+            <div class="adm-av">${avatarSvg(p.avatar)}</div>
+            <div class="adm-info">
+              <div class="adm-name">${escapeHtml(p.name || 'Unnamed')}</div>
+              <div class="adm-meta">${lastSeenText(p.lastActive) || 'recently'}</div>
+            </div>
+          </div>`).join('') : '<div class="adm-empty">Nobody yet.</div>'}
+      </div>
+
+      <div class="adm-field" style="margin-top:24px;">
+        <label for="maintMsg">Maintenance message</label>
+        <input type="text" id="maintMsg" maxlength="160"
+               value="${escapeHtml(cfg.maintenanceMessage || 'Schedule is being worked on. Check back soon.')}">
+      </div>
+      <button class="adm-btn ${on ? 'on' : ''}" id="maintToggle" style="padding:10px 16px;font-size:0.85rem;">
+        ${on ? 'Maintenance is ON, tap to turn off' : 'Turn maintenance on'}
+      </button>
+      <div class="adm-warn">
+        Maintenance locks everyone out except admins. You will still be able to get in
+        and turn it back off from this panel.
+      </div>
+    `;
+
+    document.getElementById('maintToggle').addEventListener('click', async () => {
+      const msg = document.getElementById('maintMsg').value.trim();
+      await setDoc(doc(db, "config", "app"), {
+        maintenance: !on,
+        maintenanceMessage: msg,
+        updatedBy: currentUser.uid,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      renderAdminSystem();
+    });
+  }
+
+  function renderAdminTab(){
+    if (adminTab === 'users') return renderAdminUsers();
+    if (adminTab === 'reports') return renderAdminReports();
+    if (adminTab === 'announce') return renderAdminAnnounce();
+    return renderAdminSystem();
+  }
+
+  document.querySelectorAll('.admin-tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.admin-tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      adminTab = t.dataset.atab;
+      renderAdminTab();
+    });
+  });
+
+  function openAdminPanel(){
+    if (!isAdmin) return;
+    adminModal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    renderAdminTab();
+  }
+  const openAdminBtn = document.getElementById('openAdmin');
+  if (openAdminBtn) openAdminBtn.addEventListener('click', openAdminPanel);
+  closeAdmin.addEventListener('click', () => {
+    adminModal.classList.remove('show');
+    document.body.style.overflow = '';
+  });
+  adminModal.addEventListener('click', (e) => {
+    if (e.target === adminModal){
+      adminModal.classList.remove('show');
+      document.body.style.overflow = '';
+    }
+  });
+
   // ══ Chat UI ═══════════════════════════════════════════════════
   const chatModal = document.getElementById('chatModal');
   const chatScroll = document.getElementById('chatScroll');
@@ -4378,6 +4969,11 @@ Wed: OFF
       console.error('Could not send message:', err);
       // put it back so the person doesn't lose what they typed
       chatInput.value = text;
+      const note = document.createElement('div');
+      note.className = 'chat-empty';
+      note.textContent = err && err.message ? err.message : 'Could not send that.';
+      chatScroll.appendChild(note);
+      chatScroll.scrollTop = chatScroll.scrollHeight;
     } finally {
       chatSend.disabled = false;
       chatInput.focus();
@@ -4547,6 +5143,7 @@ Wed: OFF
         ${p.bio ? `<div class="pv-bio">${escapeHtml(p.bio)}</div>` : ''}
         ${p.gender ? `<div class="pv-meta">${escapeHtml(p.gender)}</div>` : ''}
         ${friendBtn}
+        ${isMe ? '' : `<div><button class="pv-report" data-report="${p.uid}">Report</button></div>`}
         ${isMe && !p.isPublic ? '<div class="pv-meta" style="margin-top:10px;">Only you can see this. Turn on public in settings.</div>' : ''}
         ${isMe && p.hideStatus ? '<div class="pv-meta" style="margin-top:10px;">Your activity is hidden, so everyone sees you as offline.</div>' : ''}
       `;
@@ -4606,6 +5203,18 @@ Wed: OFF
       closeProfileModal();
       closePeopleModal();
       openChat(p);
+    });
+    const repBtn = profileView.querySelector('[data-report]');
+    if (repBtn) repBtn.addEventListener('click', async () => {
+      const reason = prompt('What is going on? This goes to an admin.');
+      if (reason === null) return;
+      repBtn.disabled = true;
+      repBtn.textContent = 'Reported';
+      try{ await reportUser(p.uid, p.name, reason); }
+      catch(err){
+        console.error('Could not send report:', err);
+        repBtn.textContent = 'Could not report';
+      }
     });
 
     profileModal.classList.add('show');
