@@ -702,17 +702,9 @@
     display:flex; align-items:center; justify-content:center;
     padding:28px; background:var(--ink); color:var(--text);
     font-family:'Inter', system-ui, sans-serif; text-align:center;
-    overflow:hidden;
-  }
-  .gate-screen::before{
-    content:''; position:absolute; inset:0; opacity:0.5;
-    background-image: radial-gradient(var(--line) 1px, transparent 1px);
-    background-size:26px 26px;
-    -webkit-mask-image: radial-gradient(ellipse at center, black, transparent 72%);
-    mask-image: radial-gradient(ellipse at center, black, transparent 72%);
   }
   .gate-logout{
-    position:absolute; top:20px; right:20px; z-index:2;
+    position:absolute; top:20px; right:20px;
     padding:9px 16px; border-radius:9px;
     background:none; border:1px solid var(--line); color:var(--text-dim);
     font-family:'JetBrains Mono', monospace; font-size:0.78rem; font-weight:600;
@@ -720,106 +712,90 @@
   }
   .gate-logout:hover{ color:var(--text); border-color:var(--text-dim); }
 
-  .gate-card{ max-width:400px; position:relative; z-index:1; }
-  .gate-title{ font-size:1.4rem; font-weight:800; margin-bottom:10px; }
-  .gate-body{ font-size:0.92rem; color:var(--text-dim); line-height:1.6; }
+  .gate-card{ max-width:380px; }
+  .gate-icon{ font-size:2.4rem; margin-bottom:14px; }
 
-  /* maintenance: the machine runs, seizes, then coughs sparks and smoke.
-     One ~4s cycle, looped, so it keeps retelling the story. */
+  /* maintenance: real interlocking gears (10 teeth / 7 teeth so they
+     read as distinct parts), spin happily, seize together, spark, smoke */
   .machine{
-    position:relative; width:150px; height:120px;
+    position:relative; width:158px; height:128px;
     margin:0 auto 26px; color:var(--amber);
-    animation:machineShudder 4s ease-in-out infinite;
+    animation:machineShudder 4.2s ease-in-out infinite;
   }
-  /* the whole rig lurches when it jams, then goes still */
   @keyframes machineShudder{
-    0%, 44%{ transform:translate(0,0) rotate(0deg); }
-    46%{ transform:translate(-2px,1px) rotate(-0.6deg); }
-    48%{ transform:translate(2px,-1px) rotate(0.6deg); }
-    50%{ transform:translate(-1px,0) rotate(-0.3deg); }
-    52%, 100%{ transform:translate(0,0) rotate(0deg); }
+    0%, 45%{ transform:translate(0,0) rotate(0deg); }
+    47%{ transform:translate(-2px,1px) rotate(-0.7deg); }
+    49%{ transform:translate(2px,-1px) rotate(0.7deg); }
+    51%{ transform:translate(-1px,0) rotate(-0.3deg); }
+    53%, 100%{ transform:translate(0,0) rotate(0deg); }
   }
-
-  .cog{ position:absolute; width:78px; height:78px; }
-  .cog-big{ left:10px; top:14px; animation:cogRun 4s cubic-bezier(.3,0,.7,1) infinite; }
-  /* the small cog meshes, so it spins the other way and seizes together */
+  .cog{ position:absolute; width:84px; height:84px; filter:drop-shadow(0 2px 3px rgba(0,0,0,.4)); }
+  .cog-big{ left:8px; top:16px; animation:cogRun 4.2s cubic-bezier(.35,0,.6,1) infinite; }
   .cog-small{
-    right:8px; top:44px; width:52px; height:52px; opacity:0.85;
-    animation:cogRunRev 4s cubic-bezier(.3,0,.7,1) infinite;
+    right:6px; top:40px; width:58px; height:58px; opacity:0.92;
+    animation:cogRunRev 4.2s cubic-bezier(.35,0,.6,1) infinite;
   }
-  /* spins up fast, drags to a halt at the jam (~45%), dead still after */
+  /* spins up, drags into the jam around 45%, tiny recoil, then dead still */
   @keyframes cogRun{
     0%{ transform:rotate(0deg); }
-    40%{ transform:rotate(680deg); }
-    45%{ transform:rotate(710deg); }   /* grinds down */
-    47%{ transform:rotate(704deg); }   /* recoils */
-    100%{ transform:rotate(704deg); }  /* stopped */
+    42%{ transform:rotate(720deg); }
+    47%{ transform:rotate(752deg); }
+    49%{ transform:rotate(745deg); }
+    100%{ transform:rotate(745deg); }
   }
   @keyframes cogRunRev{
-    0%{ transform:rotate(0deg); }
-    40%{ transform:rotate(-680deg); }
-    45%{ transform:rotate(-710deg); }
-    47%{ transform:rotate(-704deg); }
-    100%{ transform:rotate(-704deg); }
+    0%{ transform:rotate(-9deg); }
+    42%{ transform:rotate(-729deg); }
+    47%{ transform:rotate(-761deg); }
+    49%{ transform:rotate(-754deg); }
+    100%{ transform:rotate(-754deg); }
   }
-
-  /* sparks fly at the moment of the jam, then nothing */
-  .sparks{
-    position:absolute; left:46px; top:40px; width:2px; height:2px;
-    pointer-events:none;
-  }
+  .sparks{ position:absolute; left:50px; top:44px; width:2px; height:2px; pointer-events:none; }
   .spark{
     position:absolute; left:0; top:0; width:3.5px; height:3.5px; border-radius:50%;
     background:#FFE08A; box-shadow:0 0 7px 2px #FFB443;
-    opacity:0; animation:spark 4s linear infinite;
+    opacity:0; animation:spark 4.2s linear infinite;
   }
-  .spark:nth-child(1){ --sx:34px;  --sy:-26px; animation-delay:0s; }
-  .spark:nth-child(2){ --sx:42px;  --sy:4px;   animation-delay:0.05s; }
-  .spark:nth-child(3){ --sx:28px;  --sy:22px;  animation-delay:0.1s; }
-  .spark:nth-child(4){ --sx:-24px; --sy:-18px; animation-delay:0.03s; }
-  .spark:nth-child(5){ --sx:38px;  --sy:-8px;  animation-delay:0.14s; }
-  .spark:nth-child(6){ --sx:16px;  --sy:30px;  animation-delay:0.08s; }
+  .spark:nth-child(1){ --sx:36px;  --sy:-24px; animation-delay:0s; }
+  .spark:nth-child(2){ --sx:44px;  --sy:6px;   animation-delay:0.05s; }
+  .spark:nth-child(3){ --sx:30px;  --sy:24px;  animation-delay:0.1s; }
+  .spark:nth-child(4){ --sx:-22px; --sy:-18px; animation-delay:0.03s; }
+  .spark:nth-child(5){ --sx:40px;  --sy:-6px;  animation-delay:0.14s; }
+  .spark:nth-child(6){ --sx:14px;  --sy:30px;  animation-delay:0.08s; }
   @keyframes spark{
-    0%, 44%{ opacity:0; transform:translate(0,0) scale(1); }
-    45%{ opacity:1; transform:translate(0,0) scale(1.2); }
-    58%{ opacity:0; transform:translate(var(--sx), var(--sy)) scale(0.3); }
+    0%, 45%{ opacity:0; transform:translate(0,0) scale(1); }
+    47%{ opacity:1; transform:translate(0,0) scale(1.3); }
+    60%{ opacity:0; transform:translate(var(--sx), var(--sy)) scale(0.3); }
     100%{ opacity:0; }
   }
-
-  /* smoke starts drifting up once it's dead and keeps going */
-  .smoke{
-    position:absolute; left:44px; top:2px; width:46px; height:64px;
-    pointer-events:none;
-  }
+  .smoke{ position:absolute; left:46px; top:4px; width:48px; height:68px; pointer-events:none; }
   .puff{
-    position:absolute; bottom:0; left:10px;
-    width:17px; height:17px; border-radius:50%;
+    position:absolute; bottom:0; left:12px;
+    width:18px; height:18px; border-radius:50%;
     background:var(--slate); opacity:0; filter:blur(2.5px);
   }
-  .puff-1{ animation:puff 4s ease-out infinite; animation-delay:0.5s; }
-  .puff-2{ animation:puff 4s ease-out infinite; animation-delay:1.1s; left:2px; }
-  .puff-3{ animation:puff 4s ease-out infinite; animation-delay:1.7s; left:20px; }
+  .puff-1{ animation:puff 4.2s ease-out infinite; animation-delay:0.55s; }
+  .puff-2{ animation:puff 4.2s ease-out infinite; animation-delay:1.15s; left:2px; }
+  .puff-3{ animation:puff 4.2s ease-out infinite; animation-delay:1.75s; left:22px; }
   @keyframes puff{
-    0%, 46%{ opacity:0; transform:translateY(0) scale(0.4); }
-    52%{ opacity:0.5; transform:translateY(-10px) scale(0.7); }
-    100%{ opacity:0; transform:translateY(-44px) scale(1.5); }
+    0%, 48%{ opacity:0; transform:translateY(0) scale(0.4); }
+    54%{ opacity:0.5; transform:translateY(-10px) scale(0.7); }
+    100%{ opacity:0; transform:translateY(-46px) scale(1.5); }
   }
-
-  .gate-suspended .gate-lock{
-    font-size:2.6rem; margin-bottom:14px;
-    animation:lockShake 2.6s ease-in-out infinite;
-  }
+  .gate-suspended .gate-icon{ animation:lockShake 2.6s ease-in-out infinite; }
   @keyframes lockShake{
     0%, 92%, 100%{ transform:rotate(0deg); }
     93%{ transform:rotate(-8deg); } 95%{ transform:rotate(8deg); }
     97%{ transform:rotate(-5deg); } 99%{ transform:rotate(5deg); }
   }
-
   @media (prefers-reduced-motion: reduce){
-    .machine, .cog, .spark, .puff, .gate-suspended .gate-lock{ animation:none; }
-    .cog-big{ transform:rotate(704deg); }
-    .cog-small{ transform:rotate(-704deg); }
+    .machine, .cog, .spark, .puff, .gate-suspended .gate-icon{ animation:none; }
+    .cog-big{ transform:rotate(745deg); }
+    .cog-small{ transform:rotate(-754deg); }
   }
+  .gate-title{ font-size:1.4rem; font-weight:800; margin-bottom:10px; }
+  .gate-body{ font-size:0.92rem; color:var(--text-dim); line-height:1.6; }
+
 
   /* ── Admin panel ──────────────────────────────────────────── */
   .admin-modal{ max-width:560px; }
@@ -2464,12 +2440,12 @@
                 <span class="puff puff-3"></span>
               </div>
               <svg class="cog cog-big" viewBox="0 0 100 100" aria-hidden="true">
-                <path fill="currentColor" d="M50 0l6.7 3.4 7.4-1.1 4.8 5.7 7.2 2.2 2.2 7.2 5.7 4.8-1.1 7.4L92.6 50l-3.4 6.7 1.1 7.4-5.7 4.8-2.2 7.2-7.2 2.2-4.8 5.7-7.4-1.1L50 92.6l-6.7-3.4-7.4 1.1-4.8-5.7-7.2-2.2-2.2-7.2-5.7-4.8 1.1-7.4L7.4 50l3.4-6.7-1.1-7.4 5.7-4.8 2.2-7.2 7.2-2.2 4.8-5.7 7.4 1.1z"/>
-                <circle cx="50" cy="50" r="17" fill="var(--ink)"/>
+                <path fill="currentColor" d="M 50.00,4.00 L 59.75,5.05 L 57.00,17.75 L 69.40,23.30 L 77.04,12.79 L 84.31,19.36 L 74.62,28.02 L 81.38,39.80 L 93.75,35.79 L 95.77,45.38 L 82.83,46.69 L 81.38,60.20 L 93.75,64.21 L 89.74,73.17 L 78.51,66.62 L 69.40,76.70 L 77.04,87.21 L 68.53,92.10 L 63.30,80.20 L 50.00,83.00 L 50.00,96.00 L 40.25,94.95 L 43.00,82.25 L 30.60,76.70 L 22.96,87.21 L 15.69,80.64 L 25.38,71.98 L 18.62,60.20 L 6.25,64.21 L 4.23,54.62 L 17.17,53.31 L 18.62,39.80 L 6.25,35.79 L 10.26,26.83 L 21.49,33.38 L 30.60,23.30 L 22.96,12.79 L 31.47,7.90 L 36.70,19.80 L 50.00,17.00 Z"/>
+                <circle cx="50" cy="50" r="15" fill="var(--ink)"/>
               </svg>
               <svg class="cog cog-small" viewBox="0 0 100 100" aria-hidden="true">
-                <path fill="currentColor" d="M50 0l6.7 3.4 7.4-1.1 4.8 5.7 7.2 2.2 2.2 7.2 5.7 4.8-1.1 7.4L92.6 50l-3.4 6.7 1.1 7.4-5.7 4.8-2.2 7.2-7.2 2.2-4.8 5.7-7.4-1.1L50 92.6l-6.7-3.4-7.4 1.1-4.8-5.7-7.2-2.2-2.2-7.2-5.7-4.8 1.1-7.4L7.4 50l3.4-6.7-1.1-7.4 5.7-4.8 2.2-7.2 7.2-2.2 4.8-5.7 7.4 1.1z"/>
-                <circle cx="50" cy="50" r="17" fill="var(--ink)"/>
+                <path fill="currentColor" d="M 50.00,4.00 L 63.82,6.13 L 59.31,20.43 L 74.24,30.67 L 85.96,21.32 L 92.92,33.45 L 78.92,38.85 L 80.22,56.90 L 94.85,60.24 L 89.70,73.24 L 76.75,65.66 L 63.45,77.93 L 69.96,91.44 L 56.58,95.53 L 54.44,80.68 L 36.55,77.93 L 30.04,91.44 L 18.51,83.53 L 28.78,72.60 L 19.78,56.90 L 5.15,60.24 L 4.15,46.29 L 19.10,47.50 L 25.76,30.67 L 14.04,21.32 L 24.32,11.84 L 32.69,24.28 L 50.00,19.00 Z"/>
+                <circle cx="50" cy="50" r="14" fill="var(--ink)"/>
               </svg>
               <div class="sparks">
                 <span class="spark"></span><span class="spark"></span>
@@ -2477,7 +2453,7 @@
                 <span class="spark"></span><span class="spark"></span>
               </div>
             </div>
-          ` : `<div class="gate-lock">🔒</div>`}
+          ` : `<div class="gate-icon">🔒</div>`}
           <div class="gate-title">${title}</div>
           <div class="gate-body">${body}</div>
         </div>
