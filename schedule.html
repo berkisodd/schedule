@@ -4597,12 +4597,18 @@ Wed: OFF
     return kind + ' · until ' + new Date(b.until).toLocaleString();
   }
 
-  async function renderAdminUsers(){
-    adminBody.innerHTML = '<div class="adm-empty">Loading...</div>';
-    await Promise.all([fetchPeople(), loadBans()]);
-    if (!allPeople.length){ adminBody.innerHTML = '<div class="adm-empty">No users yet.</div>'; return; }
+  // Tabs used to refetch from Firestore on every single tap, so
+  // switching away and back showed "Loading..." again for data we
+  // already had. Each tab now keeps its last result and paints it
+  // immediately, then quietly refreshes underneath.
+  const adminCache = { users:null, reports:null, announce:null, system:null };
+  function invalidateAdmin(...keys){ keys.forEach(k => { adminCache[k] = null; }); }
 
-    adminBody.innerHTML = allPeople.map(p => {
+  function paintAdminUsers(){
+    const people = adminCache.users || [];
+    if (!people.length){ adminBody.innerHTML = '<div class="adm-empty">No users yet.</div>'; return; }
+
+    adminBody.innerHTML = people.map(p => {
       const b = banMap.get(p.uid);
       return `
         <div class="adm-row">
@@ -4625,7 +4631,8 @@ Wed: OFF
       b.addEventListener('click', async () => {
         b.disabled = true;
         await setBan(b.dataset.mute, 'messaging', Number(b.dataset.ms), 'Timed out by an admin');
-        renderAdminUsers();
+        invalidateAdmin('system');
+        paintAdminUsers();
       });
     });
     adminBody.querySelectorAll('[data-suspend]').forEach(b => {
@@ -4633,30 +4640,33 @@ Wed: OFF
         if (!confirm('Suspend this account entirely? They will be locked out of the app.')) return;
         b.disabled = true;
         await setBan(b.dataset.suspend, 'full', null, 'Suspended by an admin');
-        renderAdminUsers();
+        invalidateAdmin('system');
+        paintAdminUsers();
       });
     });
     adminBody.querySelectorAll('[data-unban]').forEach(b => {
       b.addEventListener('click', async () => {
         b.disabled = true;
         await clearBan(b.dataset.unban);
-        renderAdminUsers();
+        invalidateAdmin('system');
+        paintAdminUsers();
       });
     });
   }
 
-  async function renderAdminReports(){
-    adminBody.innerHTML = '<div class="adm-empty">Loading...</div>';
-    let reports = [];
-    try{
-      const snap = await getDocs(collection(db, "reports"));
-      snap.forEach(d => reports.push({ id: d.id, ...d.data() }));
-    } catch (err){
-      adminBody.innerHTML = '<div class="adm-empty">Could not load reports.</div>';
-      return;
-    }
-    reports = reports.filter(r => !r.handled)
-                     .sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  async function renderAdminUsers(){
+    const cached = !!adminCache.users;
+    if (cached) paintAdminUsers();
+    else adminBody.innerHTML = '<div class="adm-empty">Loading...</div>';
+
+    await Promise.all([fetchPeople(), loadBans()]);
+    adminCache.users = allPeople.slice();
+    // don't repaint over a different tab if they've already moved on
+    if (adminTab === 'users') paintAdminUsers();
+  }
+
+  function paintAdminReports(){
+    const reports = adminCache.reports || [];
     if (!reports.length){ adminBody.innerHTML = '<div class="adm-empty">No open reports.</div>'; return; }
 
     adminBody.innerHTML = reports.map(r => `
@@ -4677,26 +4687,53 @@ Wed: OFF
         b.disabled = true;
         await setBan(b.dataset.mutereport, 'messaging', 86400000, 'Timed out after a report');
         await updateDoc(doc(db, "reports", b.dataset.rid), { handled: true });
-        renderAdminReports();
+        // drop it locally so the row goes away without a refetch
+        adminCache.reports = (adminCache.reports || []).filter(x => x.id !== b.dataset.rid);
+        invalidateAdmin('users', 'system');
+        paintAdminReports();
       });
     });
     adminBody.querySelectorAll('[data-dismiss]').forEach(b => {
       b.addEventListener('click', async () => {
         b.disabled = true;
         await updateDoc(doc(db, "reports", b.dataset.dismiss), { handled: true });
-        renderAdminReports();
+        adminCache.reports = (adminCache.reports || []).filter(x => x.id !== b.dataset.dismiss);
+        paintAdminReports();
       });
     });
   }
 
-  async function renderAdminAnnounce(){
-    adminBody.innerHTML = '<div class="adm-empty">Loading...</div>';
-    let anns = [];
+  async function renderAdminReports(){
+    const cached = !!adminCache.reports;
+    if (cached) paintAdminReports();
+    else adminBody.innerHTML = '<div class="adm-empty">Loading...</div>';
+
+    let reports = [];
     try{
-      const snap = await getDocs(collection(db, "announcements"));
-      snap.forEach(d => anns.push({ id: d.id, ...d.data() }));
-    } catch(e){}
-    anns.sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+      const snap = await getDocs(collection(db, "reports"));
+      snap.forEach(d => reports.push({ id: d.id, ...d.data() }));
+    } catch (err){
+      console.error('Could not load reports:', err);
+      if (!cached && adminTab === 'reports'){
+        adminBody.innerHTML = '<div class="adm-empty">Could not load reports.</div>';
+      }
+      return;
+    }
+    adminCache.reports = reports
+      .filter(r => !r.handled)
+      .sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+    if (adminTab === 'reports') paintAdminReports();
+  }
+
+  function paintAdminAnnounce(){
+    const anns = adminCache.announce || [];
+    // hold onto anything half typed so a background refresh doesn't
+    // wipe the form out from under them
+    const prev = {
+      title: (document.getElementById('annTitle') || {}).value || '',
+      body:  (document.getElementById('annBody')  || {}).value || '',
+      exp:   (document.getElementById('annExpires') || {}).value || ''
+    };
 
     adminBody.innerHTML = `
       <div class="adm-field">
@@ -4728,52 +4765,84 @@ Wed: OFF
       }).join('') + '</div>' : ''}
     `;
 
+    document.getElementById('annTitle').value = prev.title;
+    document.getElementById('annBody').value = prev.body;
+    document.getElementById('annExpires').value = prev.exp;
+
     document.getElementById('annPost').addEventListener('click', async () => {
+      const btn = document.getElementById('annPost');
       const title = document.getElementById('annTitle').value.trim();
       const body = document.getElementById('annBody').value.trim();
       const exp = document.getElementById('annExpires').value;
       if (!title){ alert('Give it a title.'); return; }
-      await addDoc(collection(db, "announcements"), {
-        title, body,
-        expiresAt: exp ? new Date(exp + 'T23:59:59').toISOString() : null,
-        createdBy: currentUser.uid,
-        createdAt: new Date().toISOString()
-      });
-      renderAdminAnnounce();
+      btn.disabled = true;
+      btn.textContent = 'Posting...';
+      try{
+        const ref = await addDoc(collection(db, "announcements"), {
+          title, body,
+          expiresAt: exp ? new Date(exp + 'T23:59:59').toISOString() : null,
+          createdBy: currentUser.uid,
+          createdAt: new Date().toISOString()
+        });
+        // clear the form, then show it in the list right away
+        document.getElementById('annTitle').value = '';
+        document.getElementById('annBody').value = '';
+        document.getElementById('annExpires').value = '';
+        adminCache.announce = [{
+          id: ref.id, title, body,
+          expiresAt: exp ? new Date(exp + 'T23:59:59').toISOString() : null,
+          createdAt: new Date().toISOString()
+        }].concat(adminCache.announce || []);
+        paintAdminAnnounce();
+      } catch (err){
+        console.error('Could not post announcement:', err);
+        btn.disabled = false;
+        btn.textContent = 'Post announcement';
+        alert('Could not post that. Try again.');
+      }
     });
+
     adminBody.querySelectorAll('[data-delann]').forEach(b => {
       b.addEventListener('click', async () => {
         b.disabled = true;
         await deleteDoc(doc(db, "announcements", b.dataset.delann));
-        renderAdminAnnounce();
+        adminCache.announce = (adminCache.announce || []).filter(x => x.id !== b.dataset.delann);
+        paintAdminAnnounce();
       });
     });
   }
 
-  async function renderAdminSystem(){
-    adminBody.innerHTML = '<div class="adm-empty">Loading...</div>';
-    const cfg = await loadMaintenance();
-    const on = cfg.maintenance === true;
+  async function renderAdminAnnounce(){
+    const cached = !!adminCache.announce;
+    if (cached) paintAdminAnnounce();
+    else adminBody.innerHTML = '<div class="adm-empty">Loading...</div>';
 
-    // most active = most recently active, which is what lastActive gives
-    // us without adding any tracking. Bans load here too so the muted
-    // count is right even if this tab opens first.
-    await Promise.all([fetchPeople(), loadBans()]);
-    const active = allPeople
-      .filter(p => p.lastActive)
-      .sort((a,b) => (b.lastActive || '').localeCompare(a.lastActive || ''))
-      .slice(0, 5);
+    let anns = [];
+    try{
+      const snap = await getDocs(collection(db, "announcements"));
+      snap.forEach(d => anns.push({ id: d.id, ...d.data() }));
+    } catch(e){
+      console.error('Could not load announcements:', e);
+      if (cached) return;
+    }
+    adminCache.announce = anns.sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+    if (adminTab === 'announce') paintAdminAnnounce();
+  }
+
+  function paintAdminSystem(){
+    const d = adminCache.system;
+    if (!d){ adminBody.innerHTML = '<div class="adm-empty">Loading...</div>'; return; }
+    const on = d.cfg.maintenance === true;
+    const typed = (document.getElementById('maintMsg') || {}).value;
 
     adminBody.innerHTML = `
-      <div class="adm-stat"><span>Total users</span><span class="adm-stat-num">${allPeople.length}</span></div>
-      <div class="adm-stat"><span>Active today</span><span class="adm-stat-num">${
-        allPeople.filter(p => p.lastActive && Date.now() - new Date(p.lastActive).getTime() < 86400000).length
-      }</span></div>
+      <div class="adm-stat"><span>Total users</span><span class="adm-stat-num">${d.total}</span></div>
+      <div class="adm-stat"><span>Active today</span><span class="adm-stat-num">${d.activeToday}</span></div>
       <div class="adm-stat"><span>Currently muted or banned</span><span class="adm-stat-num">${banMap.size}</span></div>
 
       <div style="margin-top:20px;">
         <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--text-dim);margin-bottom:8px;">Most recently active</label>
-        ${active.length ? active.map(p => `
+        ${d.active.length ? d.active.map(p => `
           <div class="adm-row">
             <div class="adm-av">${avatarSvg(p.avatar)}</div>
             <div class="adm-info">
@@ -4785,8 +4854,7 @@ Wed: OFF
 
       <div class="adm-field" style="margin-top:24px;">
         <label for="maintMsg">Maintenance message</label>
-        <input type="text" id="maintMsg" maxlength="160"
-               value="${escapeHtml(cfg.maintenanceMessage || 'Schedule is being worked on. Check back soon.')}">
+        <input type="text" id="maintMsg" maxlength="160">
       </div>
       <button class="adm-btn ${on ? 'on' : ''}" id="maintToggle" style="padding:10px 16px;font-size:0.85rem;">
         ${on ? 'Maintenance is ON, tap to turn off' : 'Turn maintenance on'}
@@ -4797,16 +4865,56 @@ Wed: OFF
       </div>
     `;
 
+    // keep whatever they had typed, otherwise fall back to what is saved
+    document.getElementById('maintMsg').value =
+      (typed !== undefined && typed !== '') ? typed
+        : (d.cfg.maintenanceMessage || 'Schedule is being worked on. Check back soon.');
+
     document.getElementById('maintToggle').addEventListener('click', async () => {
+      const btn = document.getElementById('maintToggle');
       const msg = document.getElementById('maintMsg').value.trim();
-      await setDoc(doc(db, "config", "app"), {
-        maintenance: !on,
-        maintenanceMessage: msg,
-        updatedBy: currentUser.uid,
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
-      renderAdminSystem();
+      btn.disabled = true;
+      try{
+        await setDoc(doc(db, "config", "app"), {
+          maintenance: !on,
+          maintenanceMessage: msg,
+          updatedBy: currentUser.uid,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+        adminCache.system = Object.assign({}, d, {
+          cfg: Object.assign({}, d.cfg, { maintenance: !on, maintenanceMessage: msg })
+        });
+        paintAdminSystem();
+      } catch (err){
+        console.error('Could not change maintenance:', err);
+        btn.disabled = false;
+        alert('Could not change that. Try again.');
+      }
     });
+  }
+
+  async function renderAdminSystem(){
+    const cached = !!adminCache.system;
+    if (cached) paintAdminSystem();
+    else adminBody.innerHTML = '<div class="adm-empty">Loading...</div>';
+
+    const cfg = await loadMaintenance();
+    // most active = most recently active, which is what lastActive gives
+    // us without adding any tracking. Bans load here too so the muted
+    // count is right even if this tab opens first.
+    await Promise.all([fetchPeople(), loadBans()]);
+
+    adminCache.system = {
+      cfg: cfg,
+      total: allPeople.length,
+      activeToday: allPeople.filter(p => p.lastActive &&
+        Date.now() - new Date(p.lastActive).getTime() < 86400000).length,
+      active: allPeople
+        .filter(p => p.lastActive)
+        .sort((a,b) => (b.lastActive || '').localeCompare(a.lastActive || ''))
+        .slice(0, 5)
+    };
+    if (adminTab === 'system') paintAdminSystem();
   }
 
   function renderAdminTab(){
