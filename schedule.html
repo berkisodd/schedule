@@ -23,9 +23,19 @@
   (function(){
     try{
       var pref = localStorage.getItem('s2_theme') || 'system';
-      var dark = pref === 'dark' || (pref === 'system' &&
-        window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      var fixed = ['dark','light','amoled','midnight','paper'];
+      var themeAttr;
+      if (pref === 'system'){
+        var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        themeAttr = dark ? 'dark' : 'light';
+      } else {
+        themeAttr = fixed.indexOf(pref) !== -1 ? pref : 'dark';
+      }
+      document.documentElement.setAttribute('data-theme', themeAttr);
+      var accent = localStorage.getItem('s2_accent');
+      if (accent && accent !== 'default'){
+        document.documentElement.setAttribute('data-accent', accent);
+      }
     } catch(e){
       document.documentElement.setAttribute('data-theme', 'dark');
     }
@@ -54,6 +64,14 @@
     --radius:10px;
     --radius-lg:14px;
   }
+  /* Registering --amber as a real color lets it animate smoothly in the
+     aurora/ember themes instead of snapping between keyframes. Browsers
+     without @property just get the snap, which still looks fine. */
+  @property --amber{
+    syntax:'<color>';
+    inherits:true;
+    initial-value:#D97435;
+  }
   html[data-theme="light"]{
     --ink:#FAFAF9;
     --ink-2:#FFFFFF;
@@ -73,6 +91,77 @@
     --on-amber:#FFFFFF;
     --shadow:0 1px 2px rgba(0,0,0,0.05);
     --shadow-lift:0 4px 16px rgba(0,0,0,0.07);
+  }
+
+  /* ══ Base themes ═══════════════════════════════════════════════
+     Each sets the surface + text group. The accent (--amber and its
+     dim/line/on variants) is layered separately by the accent themes
+     below, so any base can pair with any accent. */
+
+  /* AMOLED: true black, for OLED screens. Deeper than the default dark. */
+  html[data-theme="amoled"]{
+    --ink:#000000; --ink-2:#080809; --panel:#0C0C0E;
+    --line:#1C1C1F; --line-soft:#141416;
+    --text:#F4F4F5; --text-dim:#8A8A91; --slate:#4A4A50;
+    --avatar-bg:#000000; --avatar-stroke:#FFFFFF; --on-amber:#000000;
+    --shadow:0 1px 2px rgba(0,0,0,0.6); --shadow-lift:0 4px 20px rgba(0,0,0,0.6);
+  }
+  /* Midnight: cool blue-tinted dark, softer than pure neutral */
+  html[data-theme="midnight"]{
+    --ink:#0B0F1A; --ink-2:#121828; --panel:#141B2D;
+    --line:#232C42; --line-soft:#1A2133;
+    --text:#EAF0FB; --text-dim:#8794AD; --slate:#495066;
+    --avatar-bg:#0B0F1A; --avatar-stroke:#EAF0FB; --on-amber:#0B0F1A;
+    --shadow:0 1px 2px rgba(0,0,0,0.4); --shadow-lift:0 4px 18px rgba(0,0,0,0.45);
+  }
+  /* Paper: warm off-white light variant */
+  html[data-theme="paper"]{
+    --ink:#F4F1EA; --ink-2:#FBF9F3; --panel:#FFFDF8;
+    --line:#E4DECE; --line-soft:#EDE8DC;
+    --text:#211E17; --text-dim:#6E685A; --slate:#B0A992;
+    --error:#B0503F; --good:#3C7A56;
+    --avatar-bg:#211E17; --avatar-stroke:#FBF9F3; --on-amber:#FFFDF8;
+    --shadow:0 1px 2px rgba(120,100,60,0.06); --shadow-lift:0 4px 16px rgba(120,100,60,0.10);
+  }
+
+  /* ══ Accent themes ════════════════════════════════════════════
+     Only touch the accent group, so they compose with any base.
+     Applied via a second attribute, data-accent. */
+  html[data-accent="red"]{    --amber:#E5484D; --amber-dim:#E5484D1A; --amber-line:#E5484D45; }
+  html[data-accent="blue"]{   --amber:#4C8DF5; --amber-dim:#4C8DF51A; --amber-line:#4C8DF545; }
+  html[data-accent="green"]{  --amber:#3F9E6A; --amber-dim:#3F9E6A1A; --amber-line:#3F9E6A45; }
+  html[data-accent="purple"]{ --amber:#9B72E0; --amber-dim:#9B72E01A; --amber-line:#9B72E045; }
+  html[data-accent="cyan"]{   --amber:#2FB6C4; --amber-dim:#2FB6C41A; --amber-line:#2FB6C445; }
+  html[data-accent="pink"]{   --amber:#E86BA8; --amber-dim:#E86BA81A; --amber-line:#E86BA845; }
+
+  /* On light bases, accents need a light on-accent text and white icon
+     text so buttons stay readable */
+  html[data-theme="light"][data-accent], html[data-theme="paper"][data-accent]{ --on-amber:#FFFFFF; }
+
+  /* ══ Animated themes ══════════════════════════════════════════ */
+  /* Aurora: the accent slowly shifts hue through a synth palette */
+  html[data-accent="aurora"]{
+    --amber:#D97435; --amber-dim:#D9743518; --amber-line:#D9743540;
+    animation:auroraShift 14s linear infinite;
+  }
+  @keyframes auroraShift{
+    0%   { --amber:#D97435; }
+    25%  { --amber:#E5484D; }
+    50%  { --amber:#9B72E0; }
+    75%  { --amber:#2FB6C4; }
+    100% { --amber:#D97435; }
+  }
+  /* Ember: the accent gently pulses brightness like a breathing coal */
+  html[data-accent="ember"]{
+    --amber:#D97435; --amber-dim:#D9743518; --amber-line:#D9743540;
+    animation:emberPulse 3.4s ease-in-out infinite;
+  }
+  @keyframes emberPulse{
+    0%,100%{ --amber:#C0641F; }
+    50%    { --amber:#F08A42; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    html[data-accent="aurora"], html[data-accent="ember"]{ animation:none; }
   }
   html{ background:var(--ink); }
   *{margin:0;padding:0;box-sizing:border-box;}
@@ -417,9 +506,9 @@
   .switch.on .switch-knob{ transform:translateX(20px); }
 
   /* theme picker */
-  .theme-picker{ display:flex; gap:8px; }
+  .theme-picker{ display:flex; gap:8px; flex-wrap:wrap; }
   .theme-opt{
-    flex:1; background:var(--ink-2); border:1px solid var(--line);
+    flex:1 1 28%; min-width:80px; background:var(--ink-2); border:1px solid var(--line);
     color:var(--text-dim); font-family:'Inter',sans-serif; font-size:0.84rem;
     font-weight:600; padding:10px 0; border-radius:9px; cursor:pointer;
     transition:all 0.2s ease;
@@ -428,6 +517,25 @@
   .theme-opt.active{
     background:var(--text); border-color:var(--text); color:var(--ink);
   }
+
+  .accent-picker{ display:flex; gap:10px; flex-wrap:wrap; }
+  .accent-opt{
+    width:34px; height:34px; border-radius:50%; cursor:pointer;
+    background:var(--sw, var(--amber)); border:2px solid var(--line);
+    position:relative; transition:transform 0.15s ease, border-color 0.2s ease;
+    padding:0;
+  }
+  .accent-opt:hover{ transform:scale(1.1); }
+  .accent-opt.active{ border-color:var(--text); }
+  .accent-opt.active::after{
+    content:'✓'; position:absolute; inset:0; display:flex; align-items:center;
+    justify-content:center; color:#fff; font-size:0.8rem; font-weight:700;
+    text-shadow:0 1px 2px rgba(0,0,0,0.5);
+  }
+  .accent-opt.aurora{ background:conic-gradient(from 0deg, #D97435, #E5484D, #9B72E0, #2FB6C4, #D97435); }
+  .accent-opt.ember{ background:var(--sw); animation:emberSwatch 3.4s ease-in-out infinite; }
+  @keyframes emberSwatch{ 0%,100%{ background:#C0641F; } 50%{ background:#F08A42; } }
+  @media (prefers-reduced-motion: reduce){ .accent-opt.ember{ animation:none; } }
 
   .set-msg{
     font-family:'JetBrains Mono', monospace; font-size:0.78rem; min-height:18px;
@@ -1797,10 +1905,27 @@
       <div class="set-section">
         <div class="set-label">Theme</div>
         <div class="theme-picker" id="themePicker">
-          <button class="theme-opt" data-theme-pref="light">Light</button>
-          <button class="theme-opt" data-theme-pref="dark">Dark</button>
           <button class="theme-opt" data-theme-pref="system">System</button>
+          <button class="theme-opt" data-theme-pref="dark">Dark</button>
+          <button class="theme-opt" data-theme-pref="light">Light</button>
+          <button class="theme-opt" data-theme-pref="amoled">AMOLED</button>
+          <button class="theme-opt" data-theme-pref="midnight">Midnight</button>
+          <button class="theme-opt" data-theme-pref="paper">Paper</button>
         </div>
+
+        <div class="set-label" style="margin-top:18px;">Accent</div>
+        <div class="accent-picker" id="accentPicker">
+          <button class="accent-opt" data-accent-pref="default" title="Amber" style="--sw:#D97435;"></button>
+          <button class="accent-opt" data-accent-pref="red"    title="Red"    style="--sw:#E5484D;"></button>
+          <button class="accent-opt" data-accent-pref="blue"   title="Blue"   style="--sw:#4C8DF5;"></button>
+          <button class="accent-opt" data-accent-pref="green"  title="Green"  style="--sw:#3F9E6A;"></button>
+          <button class="accent-opt" data-accent-pref="purple" title="Purple" style="--sw:#9B72E0;"></button>
+          <button class="accent-opt" data-accent-pref="cyan"   title="Cyan"   style="--sw:#2FB6C4;"></button>
+          <button class="accent-opt" data-accent-pref="pink"   title="Pink"   style="--sw:#E86BA8;"></button>
+          <button class="accent-opt animated aurora" data-accent-pref="aurora" title="Aurora (animated)"></button>
+          <button class="accent-opt animated ember"  data-accent-pref="ember"  title="Ember (animated)" style="--sw:#F08A42;"></button>
+        </div>
+        <div class="set-hint" style="margin-top:10px;">Aurora and Ember gently animate. Mix any accent with any theme.</div>
       </div>
 
       <div class="set-section">
@@ -3927,23 +4052,52 @@ Wed: OFF
 
   // ══ Theme ═════════════════════════════════════════════════════
   const THEME_KEY = 's2_theme';
+  const ACCENT_KEY = 's2_accent';
+  // Base themes that are just a fixed data-theme value (no system logic)
+  const FIXED_THEMES = ['dark','light','amoled','midnight','paper'];
+
   function getThemePref(){
     try{ return localStorage.getItem(THEME_KEY) || 'system'; } catch(e){ return 'system'; }
   }
+  function getAccentPref(){
+    try{ return localStorage.getItem(ACCENT_KEY) || 'default'; } catch(e){ return 'default'; }
+  }
   function applyTheme(pref){
-    const dark = pref === 'dark' || (pref === 'system' &&
-      window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    let themeAttr;
+    if (pref === 'system'){
+      const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      themeAttr = dark ? 'dark' : 'light';
+    } else {
+      themeAttr = FIXED_THEMES.includes(pref) ? pref : 'dark';
+    }
+    document.documentElement.setAttribute('data-theme', themeAttr);
     document.querySelectorAll('.theme-opt').forEach(b => {
       b.classList.toggle('active', b.dataset.themePref === pref);
+    });
+  }
+  function applyAccent(pref){
+    if (pref && pref !== 'default'){
+      document.documentElement.setAttribute('data-accent', pref);
+    } else {
+      document.documentElement.removeAttribute('data-accent');
+    }
+    document.querySelectorAll('.accent-opt').forEach(b => {
+      b.classList.toggle('active', (b.dataset.accentPref || 'default') === (pref || 'default'));
     });
   }
   function setThemePref(pref){
     try{ localStorage.setItem(THEME_KEY, pref); } catch(e){}
     applyTheme(pref);
   }
+  function setAccentPref(pref){
+    try{ localStorage.setItem(ACCENT_KEY, pref); } catch(e){}
+    applyAccent(pref);
+  }
   document.querySelectorAll('.theme-opt').forEach(btn => {
     btn.addEventListener('click', () => setThemePref(btn.dataset.themePref));
+  });
+  document.querySelectorAll('.accent-opt').forEach(btn => {
+    btn.addEventListener('click', () => setAccentPref(btn.dataset.accentPref));
   });
   // follow the system if that is the chosen mode
   if (window.matchMedia){
@@ -3952,6 +4106,7 @@ Wed: OFF
     });
   }
   applyTheme(getThemePref());
+  applyAccent(getAccentPref());
 
   // ══ Presence (online, idle, offline) ══════════════════════════
   // Status is derived from a lastActive timestamp rather than a live
