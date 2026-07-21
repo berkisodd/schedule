@@ -21,9 +21,19 @@
   (function(){
     try{
       var pref = localStorage.getItem('s2_theme') || 'system';
-      var dark = pref === 'dark' || (pref === 'system' &&
-        window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      var fixed = ['dark','light','amoled','midnight','paper'];
+      var themeAttr;
+      if (pref === 'system'){
+        var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        themeAttr = dark ? 'dark' : 'light';
+      } else {
+        themeAttr = fixed.indexOf(pref) !== -1 ? pref : 'dark';
+      }
+      document.documentElement.setAttribute('data-theme', themeAttr);
+      var accent = localStorage.getItem('s2_accent');
+      if (accent && accent !== 'default'){
+        document.documentElement.setAttribute('data-accent', accent);
+      }
     } catch(e){
       document.documentElement.setAttribute('data-theme', 'dark');
     }
@@ -56,6 +66,35 @@
     --line-soft:#EFEFED;
     --shadow-lift:0 4px 16px rgba(0,0,0,0.07);
   }
+  @property --amber{ syntax:'<color>'; inherits:true; initial-value:#D97435; }
+  html[data-theme="amoled"]{
+    --ink:#000000; --ink-2:#080809; --panel:#0C0C0E; --line:#1C1C1F; --line-soft:#141416;
+    --text:#F4F4F5; --text-dim:#8A8A91; --slate:#4A4A50;
+    --avatar-bg:#000000; --avatar-stroke:#FFFFFF; --on-amber:#000000;
+  }
+  html[data-theme="midnight"]{
+    --ink:#0B0F1A; --ink-2:#121828; --panel:#141B2D; --line:#232C42; --line-soft:#1A2133;
+    --text:#EAF0FB; --text-dim:#8794AD; --slate:#495066;
+    --avatar-bg:#0B0F1A; --avatar-stroke:#EAF0FB; --on-amber:#0B0F1A;
+  }
+  html[data-theme="paper"]{
+    --ink:#F4F1EA; --ink-2:#FBF9F3; --panel:#FFFDF8; --line:#E4DECE; --line-soft:#EDE8DC;
+    --text:#211E17; --text-dim:#6E685A; --slate:#B0A992; --error:#B0503F; --good:#3C7A56;
+    --avatar-bg:#211E17; --avatar-stroke:#FBF9F3; --on-amber:#FFFDF8;
+    --shadow-lift:0 4px 16px rgba(120,100,60,0.10);
+  }
+  html[data-accent="red"]{    --amber:#E5484D; --amber-dim:#E5484D1A; --amber-line:#E5484D45; }
+  html[data-accent="blue"]{   --amber:#4C8DF5; --amber-dim:#4C8DF51A; --amber-line:#4C8DF545; }
+  html[data-accent="green"]{  --amber:#3F9E6A; --amber-dim:#3F9E6A1A; --amber-line:#3F9E6A45; }
+  html[data-accent="purple"]{ --amber:#9B72E0; --amber-dim:#9B72E01A; --amber-line:#9B72E045; }
+  html[data-accent="cyan"]{   --amber:#2FB6C4; --amber-dim:#2FB6C41A; --amber-line:#2FB6C445; }
+  html[data-accent="pink"]{   --amber:#E86BA8; --amber-dim:#E86BA81A; --amber-line:#E86BA845; }
+  html[data-theme="light"][data-accent], html[data-theme="paper"][data-accent]{ --on-amber:#FFFFFF; }
+  html[data-accent="aurora"]{ --amber:#D97435; --amber-dim:#D9743518; --amber-line:#D9743540; animation:auroraShift 14s linear infinite; }
+  @keyframes auroraShift{ 0%{ --amber:#D97435; } 25%{ --amber:#E5484D; } 50%{ --amber:#9B72E0; } 75%{ --amber:#2FB6C4; } 100%{ --amber:#D97435; } }
+  html[data-accent="ember"]{ --amber:#D97435; --amber-dim:#D9743518; --amber-line:#D9743540; animation:emberPulse 3.4s ease-in-out infinite; }
+  @keyframes emberPulse{ 0%,100%{ --amber:#C0641F; } 50%{ --amber:#F08A42; } }
+  @media (prefers-reduced-motion: reduce){ html[data-accent="aurora"], html[data-accent="ember"]{ animation:none; } }
   html{ background:var(--ink); }
 
   *{margin:0;padding:0;box-sizing:border-box;}
@@ -445,7 +484,7 @@
 
   <div class="eyebrow">Period 3 of 7 · Live</div>
   <h1>Schedule 2.0</h1>
-  <div class="sub">Remember that old schedule app Berk made? Here's the new one, made by Berk.</div>
+  <div class="sub">Remember that old schedule app Berk made? Here's the new one.</div>
 
   <div class="panel">
     <div class="tabs">
@@ -495,14 +534,69 @@
   <div class="changelog" id="changelogWrap" hidden>
     <button class="changelog-head" id="changelogToggle">
       <span class="changelog-title">What's new</span>
-      <span class="changelog-version">v2.5.8</span>
+      <span class="changelog-version">v2.6</span>
       <span class="changelog-arrow" id="changelogArrow">▾</span>
     </button>
     <div class="changelog-body" id="changelogBody">
       <div class="cl-entry">
         <div class="cl-ver">
-          <span class="cl-num">2.5.8</span>
+          <span class="cl-num">2.6</span>
           <span class="cl-tag new">Latest</span>
+        </div>
+        <ul class="cl-list">
+          <li>Themes: pick from Dark, Light, AMOLED, Midnight, and Paper</li>
+          <li>Accent colors, swap amber for red, blue, green, purple, cyan, or pink</li>
+          <li>Two animated accents, Aurora shifts through colors and Ember gently pulses</li>
+          <li>Mix any accent with any theme, your pick is remembered</li>
+          <li>Faster, steadier loading for the People, notifications, and admin screens</li>
+          <li>Live server connection status up top</li>
+          <li>Polish pass so long names and small screens never break the layout</li>
+        </ul>
+      </div>
+      <div class="cl-entry">
+        <div class="cl-ver">
+          <span class="cl-num">2.5.13</span>
+        </div>
+        <ul class="cl-list">
+          <li>Maintenance animation plays once instead of looping</li>
+        </ul>
+      </div>
+      <div class="cl-entry">
+        <div class="cl-ver">
+          <span class="cl-num">2.5.12</span>
+        </div>
+        <ul class="cl-list">
+          <li>Maintenance screen has real interlocking gears now, they spin, jam, and spark</li>
+        </ul>
+      </div>
+      <div class="cl-entry">
+        <div class="cl-ver">
+          <span class="cl-num">2.5.11</span>
+        </div>
+        <ul class="cl-list">
+          <li>Simplified the maintenance screen back down</li>
+        </ul>
+      </div>
+      <div class="cl-entry">
+        <div class="cl-ver">
+          <span class="cl-num">2.5.10</span>
+        </div>
+        <ul class="cl-list">
+          <li>New maintenance screen, the machine seizes up with sparks and smoke</li>
+        </ul>
+      </div>
+      <div class="cl-entry">
+        <div class="cl-ver">
+          <span class="cl-num">2.5.9</span>
+        </div>
+        <ul class="cl-list">
+          <li>Log out button on the maintenance and suspension screens</li>
+          <li>New animated lock screen look for both</li>
+        </ul>
+      </div>
+      <div class="cl-entry">
+        <div class="cl-ver">
+          <span class="cl-num">2.5.8</span>
         </div>
         <ul class="cl-list">
           <li>Admin panel tabs load instantly instead of refetching every tap</li>
