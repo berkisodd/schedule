@@ -147,11 +147,31 @@
     display:flex; justify-content:space-between; align-items:baseline;
     max-width:820px; margin:0 auto 10px;
   }
+  .daytrack-title-wrap{ display:flex; align-items:center; gap:9px; }
   .daytrack-title{
     font-family:'JetBrains Mono', monospace;
     font-size:0.66rem; letter-spacing:0.18em; text-transform:uppercase;
     color:var(--text-dim); font-weight:400;
   }
+  /* live connection status, reflects the actual Firestore link, not
+     just whether the browser thinks it's online */
+  .conn-status{
+    display:flex; align-items:center; gap:5px;
+    font-family:'JetBrains Mono', monospace; font-size:0.6rem;
+    letter-spacing:0.06em; color:var(--text-dim);
+    padding:2px 7px 2px 5px; border-radius:20px;
+    border:1px solid var(--line-soft); background:var(--ink-2);
+  }
+  .conn-dot{
+    width:6px; height:6px; border-radius:50%; flex-shrink:0;
+    background:var(--slate); transition:background 0.25s ease, box-shadow 0.25s ease;
+  }
+  .conn-status.live .conn-dot{ background:var(--good); box-shadow:0 0 6px var(--good); animation:connPulse 2.2s ease-in-out infinite; }
+  .conn-status.connecting .conn-dot{ background:var(--amber); box-shadow:0 0 6px var(--amber); animation:connBlink 0.9s ease-in-out infinite; }
+  .conn-status.offline .conn-dot{ background:var(--error); box-shadow:0 0 6px var(--error); }
+  .conn-status.offline{ border-color:#D9564E44; color:var(--error); }
+  @keyframes connPulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.55; } }
+  @keyframes connBlink{ 0%,100%{ opacity:1; } 50%{ opacity:0.25; } }
   .daytrack-right{ display:flex; align-items:center; gap:14px; }
   .daytrack-now{
     font-family:'JetBrains Mono', monospace;
@@ -1581,7 +1601,13 @@
 
 <div class="daytrack">
   <div class="daytrack-head">
-    <div class="daytrack-title">Today's progress</div>
+    <div class="daytrack-title-wrap">
+      <div class="daytrack-title">Today's progress</div>
+      <div class="conn-status" id="connStatus" title="Connection to the server">
+        <span class="conn-dot" id="connDot"></span>
+        <span class="conn-label" id="connLabel">Connecting…</span>
+      </div>
+    </div>
     <div class="daytrack-right">
       <div class="daytrack-now" id="clockNow">--:--</div>
       <button class="bell-btn" id="openNotifs" aria-label="Notifications">
@@ -2216,6 +2242,48 @@
   let _readyResolve;
   const appReadyPromise = new Promise(res => { _readyResolve = res; });
   function markAppReady(){ appReady = true; if (_readyResolve){ _readyResolve(); _readyResolve = null; } }
+
+  // ══ Connection status ═══════════════════════════════════════════
+  // Reflects the actual Firestore link, not just navigator.onLine
+  // (which only knows about the network interface, not the backend).
+  // "Live" only lights up once a real snapshot has arrived from the
+  // server, not from the local cache while offline.
+  const connStatus = document.getElementById('connStatus');
+  const connLabel = document.getElementById('connLabel');
+  let connState = 'connecting';
+  let lastServerSnapAt = 0;
+
+  function setConnState(next, label){
+    if (connState === next && connLabel.textContent === label) return;
+    connState = next;
+    connStatus.classList.remove('live','connecting','offline');
+    connStatus.classList.add(next);
+    connLabel.textContent = label;
+  }
+  function reportServerSnapshot(){
+    lastServerSnapAt = Date.now();
+    if (navigator.onLine !== false) setConnState('live', 'Connected');
+  }
+  function reportCacheOnlySnapshot(){
+    // A snapshot came from local cache, not the server. If we haven't
+    // heard from the server in a while, we're effectively offline.
+    if (Date.now() - lastServerSnapAt > 4000) setConnState('offline', 'Offline');
+  }
+  function reportListenerError(){
+    setConnState('offline', 'Offline');
+  }
+
+  window.addEventListener('online', () => setConnState('connecting', 'Reconnecting…'));
+  window.addEventListener('offline', () => setConnState('offline', 'Offline'));
+  if (navigator.onLine === false) setConnState('offline', 'Offline');
+
+  // If nothing confirms a server round trip within a few seconds of
+  // load, don't leave the dot stuck on "Connecting..." forever.
+  setTimeout(() => {
+    if (connState === 'connecting' && Date.now() - lastServerSnapAt > 6000){
+      setConnState('offline', "Can't reach server");
+    }
+  }, 6000);
   // races a promise against a timeout so a stuck read surfaces an error
   // instead of hanging on "Loading..." forever
   function withTimeout(promise, ms){
@@ -4372,11 +4440,14 @@ Wed: OFF
       limit(200)
     );
     return onSnapshot(q, (snap) => {
+      if (snap.metadata.fromCache) reportCacheOnlySnapshot();
+      else reportServerSnapshot();
       const msgs = [];
       snap.forEach(d => msgs.push({ id: d.id, ...d.data() }));
       onMessages(msgs);
     }, (err) => {
       console.error('Chat listener failed:', err);
+      reportListenerError();
       if (onError) onError(err);
     });
   }
@@ -5343,12 +5414,15 @@ Wed: OFF
   function listenForUnread(){
     if (!currentUser) return;
     if (unreadUnsub){ unreadUnsub(); unreadUnsub = null; }
+    if (connState !== 'live') setConnState('connecting', 'Connecting…');
     const me = currentUser.uid;
     const qs = [
       query(collection(db, "conversations"), where("a", "==", me)),
       query(collection(db, "conversations"), where("b", "==", me))
     ];
     const stops = qs.map(q => onSnapshot(q, (snap) => {
+      if (snap.metadata.fromCache) reportCacheOnlySnapshot();
+      else reportServerSnapshot();
       const seenMap = getChatSeenMap();
       snap.forEach(d => {
         const c = d.data();
@@ -5362,7 +5436,7 @@ Wed: OFF
       });
       updateBell(computeMatches());
       if (peopleModal.classList.contains('show')) renderPeople(peopleSearch.value);
-    }, (err) => console.error('Unread listener failed:', err)));
+    }, (err) => { console.error('Unread listener failed:', err); reportListenerError(); }));
 
     unreadUnsub = () => stops.forEach(s => s());
   }
