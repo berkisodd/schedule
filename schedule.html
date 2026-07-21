@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Schedule 2.0</title>
 <meta name="theme-color" content="#0A0A0B">
 <meta name="description" content="Your school schedule, with a live countdown to whatever's next.">
@@ -82,6 +82,7 @@
     background:var(--ink);
     color:var(--text);
     min-height:100vh;
+    min-height:100dvh;
     padding-bottom:90px;
   }
 
@@ -679,7 +680,7 @@
   }
 
   @media (max-width:520px){
-    .chat-modal{ height:100vh; max-width:100%; border-radius:0; }
+    .chat-modal{ height:100dvh; max-width:100%; border-radius:0; }
   }
 
   /* ── Announcement banner ──────────────────────────────────── */
@@ -1498,6 +1499,66 @@
   @media (prefers-reduced-motion: reduce){
     *{ animation:none !important; transition:none !important; }
   }
+  /* ══ UI hardening ═══════════════════════════════════════════════
+     Defensive rules so long names, small screens, and iOS quirks
+     can't break the layout. */
+
+  /* iOS zooms the page when a focused input is under 16px. Keep every
+     text input at 16px on touch screens so the viewport never jumps. */
+  @media (pointer:coarse){
+    input[type="text"], input[type="email"], input[type="password"],
+    input[type="search"], textarea, select,
+    .chat-composer input, .field input{
+      font-size:16px !important;
+    }
+  }
+
+  /* Long names, emails, and class titles truncate instead of blowing
+     out their row. Applied to every single-line label that renders
+     user-typed content. */
+  .adm-name, .adm-meta, .person-name, .person-status,
+  .chat-head-name, .notif-meta, .pv-name,
+  .cls .nm, .period-name{
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    max-width:100%; min-width:0;
+  }
+  /* flex children need min-width:0 to allow shrinking at all */
+  .adm-info, .person-info, .chat-head > div, .notif-body{ min-width:0; }
+
+  /* multi-line user text (bios, messages, announcements) wraps instead
+     of overflowing horizontally */
+  .chat-bubble, .pv-bio, .ann-body, .notif-text, .report-reason{
+    overflow-wrap:anywhere; word-break:break-word;
+  }
+
+  /* keep every modal card inside the screen and scrollable, even on
+     short landscape phones */
+  .modal{
+    max-height:calc(100dvh - 32px);
+    overflow-y:auto;
+    overscroll-behavior:contain;
+  }
+  /* chat manages its own internal scroller, keep the card clipped */
+  .chat-modal{ overflow-y:hidden; }
+
+  /* iPhone notch and home bar: pad fixed chrome by the safe areas */
+  body{
+    padding-left:env(safe-area-inset-left);
+    padding-right:env(safe-area-inset-right);
+  }
+  .daytrack{ padding-top:calc(16px + env(safe-area-inset-top)); }
+  .savebar{ padding-bottom:calc(14px + env(safe-area-inset-bottom)); }
+  .chat-composer{ padding-bottom:calc(13px + env(safe-area-inset-bottom)); }
+
+  /* comfortable touch targets on coarse pointers */
+  @media (pointer:coarse){
+    .adm-btn, .btn-ghost, .pw-toggle, .vt, .admin-tab{
+      min-height:38px;
+    }
+  }
+
+  /* if an image or svg is missing its box, never let it stretch a row */
+  .adm-av svg, .pl-av svg, .person .av svg{ max-width:100%; max-height:100%; }
 </style>
 </head>
 <body>
@@ -3444,15 +3505,29 @@ Wed: OFF
   importModal.addEventListener('click', (e) => { if (e.target === importModal) closeModal(); });
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    if (importModal.classList.contains('show')) closeModal();
-    const profM = document.getElementById('profileModal');
-    const peopM = document.getElementById('peopleModal');
-    const setM = document.getElementById('settingsModal');
-    const shareM = document.getElementById('shareModal');
-    if (profM && profM.classList.contains('show')) profM.classList.remove('show');
-    else if (peopM && peopM.classList.contains('show')){ peopM.classList.remove('show'); document.body.style.overflow=''; }
-    else if (setM && setM.classList.contains('show')){ setM.classList.remove('show'); document.body.style.overflow=''; }
-    else if (shareM && shareM.classList.contains('show')){ shareM.classList.remove('show'); document.body.style.overflow=''; }
+    if (importModal.classList.contains('show')){ closeModal(); return; }
+    // Close the topmost open modal, using each modal's own close path
+    // where one exists so listeners get cleaned up properly.
+    const chatM = document.getElementById('chatModal');
+    if (chatM && chatM.classList.contains('show')){
+      if (typeof closeChatModal === 'function') closeChatModal();
+      else chatM.classList.remove('show');
+    } else {
+      const order = ['profileModal','adminModal','notifModal','peopleModal','settingsModal','shareModal'];
+      for (const id of order){
+        const m = document.getElementById(id);
+        if (m && m.classList.contains('show')){ m.classList.remove('show'); break; }
+      }
+    }
+    // Scroll-lock safety: if no modal is left open, always restore
+    // scrolling, even if some open path forgot to. This is the rescue
+    // hatch for a stranded overflow:hidden.
+    const all = ['chatModal','profileModal','adminModal','notifModal','peopleModal','settingsModal','shareModal'];
+    const anyOpen = all.some(id => {
+      const m = document.getElementById(id);
+      return m && m.classList.contains('show');
+    });
+    if (!anyOpen) document.body.style.overflow = '';
   });
 
   // Copy prompt to clipboard (with fallback for non-secure contexts)
