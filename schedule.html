@@ -36,6 +36,12 @@
       if (accent && accent !== 'default'){
         document.documentElement.setAttribute('data-accent', accent);
       }
+      // iOS home-screen web app only. navigator.standalone is true just
+      // for a page launched from an iPhone/iPad home-screen icon, which
+      // is where the gate logout button needs to sit lower to be reached.
+      if (window.navigator.standalone === true){
+        document.documentElement.classList.add('ios-standalone');
+      }
     } catch(e){
       document.documentElement.setAttribute('data-theme', 'dark');
     }
@@ -833,13 +839,24 @@
     font-family:'Inter', system-ui, sans-serif; text-align:center;
   }
   .gate-logout{
-    position:absolute; top:20px; right:20px;
+    position:fixed;
+    top:calc(16px + env(safe-area-inset-top));
+    left:50%; transform:translateX(-50%);
+    z-index:1000;
     padding:9px 16px; border-radius:9px;
     background:none; border:1px solid var(--line); color:var(--text-dim);
     font-family:'JetBrains Mono', monospace; font-size:0.78rem; font-weight:600;
     cursor:pointer; transition:color 0.2s ease, border-color 0.2s ease;
   }
   .gate-logout:hover{ color:var(--text); border-color:var(--text-dim); }
+
+  /* iPhone home-screen web app: drop the logout button to the bottom
+     center, within easy thumb reach and clear of the notch, so people
+     can always get out of the gate without zooming. */
+  html.ios-standalone .gate-logout{
+    top:auto;
+    bottom:calc(28px + env(safe-area-inset-bottom));
+  }
 
   .gate-card{ max-width:380px; }
   .gate-icon{ font-size:2.4rem; margin-bottom:14px; }
