@@ -931,7 +931,13 @@
     font-family:'JetBrains Mono', monospace; font-size:0.66rem;
     color:var(--text-dim); margin-top:2px;
   }
-  .adm-actions{ display:flex; gap:6px; flex-shrink:0; }
+  .adm-actions{ display:flex; gap:6px; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end; }
+  .adm-badge{
+    display:inline-block; font-family:'JetBrains Mono', monospace; font-size:0.62rem;
+    font-weight:700; color:var(--amber); border:1px solid var(--amber-line);
+    background:var(--amber-dim); border-radius:5px; padding:1px 6px; margin-left:6px;
+    vertical-align:middle; text-transform:uppercase; letter-spacing:0.03em;
+  }
   .adm-btn{
     padding:6px 10px; border-radius:7px; font-size:0.74rem; font-weight:600;
     cursor:pointer; font-family:inherit;
@@ -5054,6 +5060,29 @@ Wed: OFF
     return kind + ' · until ' + new Date(b.until).toLocaleString();
   }
 
+  // Admin status used to only be settable by hand-editing the "admins"
+  // collection in the Firebase console. This mirrors the ban pattern
+  // above so it can be granted/revoked from the Users tab instead.
+  let adminSet = new Set();
+  async function loadAdmins(){
+    adminSet = new Set();
+    try{
+      const snap = await getDocs(collection(db, "admins"));
+      snap.forEach(d => adminSet.add(d.id));
+    } catch (err){ console.error('Could not load admins:', err); }
+  }
+  async function grantAdmin(uid){
+    await setDoc(doc(db, "admins", uid), {
+      grantedBy: currentUser.uid,
+      grantedAt: new Date().toISOString()
+    });
+    await loadAdmins();
+  }
+  async function revokeAdmin(uid){
+    await deleteDoc(doc(db, "admins", uid));
+    await loadAdmins();
+  }
+
   // Tabs used to refetch from Firestore on every single tap, so
   // switching away and back showed "Loading..." again for data we
   // already had. Each tab now keeps its last result and paints it
@@ -5067,11 +5096,12 @@ Wed: OFF
 
     adminBody.innerHTML = people.map(p => {
       const b = banMap.get(p.uid);
+      const admin = adminSet.has(p.uid);
       return `
         <div class="adm-row">
           <div class="adm-av">${avatarSvg(p.avatar)}</div>
           <div class="adm-info">
-            <div class="adm-name">${escapeHtml(p.name || 'Unnamed')}</div>
+            <div class="adm-name">${escapeHtml(p.name || 'Unnamed')}${admin ? ' <span class="adm-badge">Admin</span>' : ''}</div>
             <div class="adm-meta">${b ? escapeHtml(banLabel(b)) : 'Active'}</div>
           </div>
           <div class="adm-actions">
@@ -5079,6 +5109,10 @@ Wed: OFF
               ? `<button class="adm-btn" data-unban="${p.uid}">Lift</button>`
               : TIMEOUTS.map(t => `<button class="adm-btn" data-mute="${p.uid}" data-ms="${t.ms}">${t.label}</button>`).join('') +
                 `<button class="adm-btn danger" data-suspend="${p.uid}">Ban</button>`
+            }
+            ${admin
+              ? `<button class="adm-btn danger" data-revokeadmin="${p.uid}">Remove admin</button>`
+              : `<button class="adm-btn" data-grantadmin="${p.uid}">Make admin</button>`
             }
           </div>
         </div>`;
@@ -5109,6 +5143,42 @@ Wed: OFF
         paintAdminUsers();
       });
     });
+    adminBody.querySelectorAll('[data-grantadmin]').forEach(b => {
+      b.addEventListener('click', async () => {
+        const uid = b.dataset.grantadmin;
+        const person = people.find(x => x.uid === uid);
+        if (!confirm(`Make ${person ? person.name : 'this user'} an admin? They'll get full access to the admin panel.`)) return;
+        b.disabled = true;
+        try{
+          await grantAdmin(uid);
+          paintAdminUsers();
+        } catch(err){
+          console.error('Could not grant admin:', err);
+          b.disabled = false;
+          alert('Could not make them an admin. Try again.');
+        }
+      });
+    });
+    adminBody.querySelectorAll('[data-revokeadmin]').forEach(b => {
+      b.addEventListener('click', async () => {
+        const uid = b.dataset.revokeadmin;
+        if (currentUser && uid === currentUser.uid){
+          alert("You can't remove your own admin access here, to avoid locking everyone out. Have another admin do it.");
+          return;
+        }
+        const person = people.find(x => x.uid === uid);
+        if (!confirm(`Remove admin access from ${person ? person.name : 'this user'}?`)) return;
+        b.disabled = true;
+        try{
+          await revokeAdmin(uid);
+          paintAdminUsers();
+        } catch(err){
+          console.error('Could not revoke admin:', err);
+          b.disabled = false;
+          alert('Could not remove admin access. Try again.');
+        }
+      });
+    });
   }
 
   async function renderAdminUsers(){
@@ -5117,7 +5187,7 @@ Wed: OFF
     else adminBody.innerHTML = '<div class="adm-empty">Loading...</div>';
 
     try{
-      await withTimeout(Promise.all([fetchPeople(), loadBans()]), 8000);
+      await withTimeout(Promise.all([fetchPeople(), loadBans(), loadAdmins()]), 8000);
     } catch(err){
       console.error('Admin users load failed:', err);
       if (adminTab === 'users' && !cached) adminBody.innerHTML = '<div class="adm-empty">Couldn\'t load. Reopen to try again.</div>';
