@@ -833,7 +833,9 @@
     font-family:'Inter', system-ui, sans-serif; text-align:center;
   }
   .gate-logout{
-    position:absolute; top:20px; right:20px;
+    position:absolute;
+    top:calc(20px + env(safe-area-inset-top));
+    right:calc(20px + env(safe-area-inset-right));
     padding:9px 16px; border-radius:9px;
     background:none; border:1px solid var(--line); color:var(--text-dim);
     font-family:'JetBrains Mono', monospace; font-size:0.78rem; font-weight:600;
