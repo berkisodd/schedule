@@ -567,6 +567,22 @@
   .delete-actions{ display:flex; gap:9px; margin-top:10px; }
   .delete-actions button{ flex:1; margin-top:0; padding:10px 0; }
 
+  /* Hold-to-delete: the Lottie is the button, a hint sits below it. */
+  .hold-delete{ margin-top:14px; text-align:center; }
+  .hold-delete-btn{
+    display:inline-block; margin:0 auto; padding:0; border:none; background:none;
+    cursor:pointer; line-height:0; -webkit-tap-highlight-color:transparent;
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+    touch-action:none;
+  }
+  .hold-delete-btn:disabled{ cursor:default; }
+  .hold-delete-anim{ width:min(260px, 82%); margin:0 auto; aspect-ratio:1080/689; }
+  .hold-delete-anim svg{ display:block; }
+  .hold-delete-hint{
+    font-size:0.8rem; color:var(--text-dim); margin-top:8px; line-height:1.4;
+  }
+  .hold-delete-cancel{ margin-top:12px; width:100%; }
+
   /* people list */
   .people-modal{ max-width:460px; }
   .people-body{ padding:20px 24px 26px; display:flex; flex-direction:column; gap:14px; }
@@ -2037,6 +2053,18 @@
         <div class="set-label danger-label">Danger zone</div>
         <div class="set-hint">Deleting your account removes your schedule, profile, and any share links. This cannot be undone.</div>
         <button class="btn-danger" id="deleteAccountBtn">Delete my account</button>
+
+        <!-- Hold-to-delete control (primary). Lottie loads lazily on reveal.
+             The animation is the button; a hint sits below it. -->
+        <div class="hold-delete" id="holdDelete" hidden>
+          <button type="button" class="hold-delete-btn" id="holdDeleteBtn" aria-label="Press and hold to delete your account">
+            <div class="hold-delete-anim" id="holdDeleteAnim" aria-hidden="true"></div>
+          </button>
+          <div class="hold-delete-hint" id="holdDeleteLabel">Press and hold to delete your account</div>
+          <button type="button" class="btn-ghost hold-delete-cancel" id="holdDeleteCancel">Cancel</button>
+        </div>
+
+        <!-- Fallback shown only if the animation library can't load. -->
         <div class="delete-confirm" id="deleteConfirm">
           <div class="set-hint" style="margin-bottom:8px;">Type <strong>DELETE</strong> to confirm.</div>
           <input type="text" class="set-input" id="deleteInput" placeholder="DELETE">
@@ -4460,16 +4488,42 @@ Wed: OFF
   const deleteInput = document.getElementById('deleteInput');
   const cancelDelete = document.getElementById('cancelDelete');
   const confirmDelete = document.getElementById('confirmDelete');
+  const holdDelete = document.getElementById('holdDelete');
+  const holdDeleteBtn = document.getElementById('holdDeleteBtn');
+  const holdDeleteAnim = document.getElementById('holdDeleteAnim');
+  const holdDeleteLabel = document.getElementById('holdDeleteLabel');
+  const holdDeleteCancel = document.getElementById('holdDeleteCancel');
 
-  deleteAccountBtn.addEventListener('click', () => {
+  // The actual deletion, shared by the hold flow and the typed fallback.
+  // Removes public/shared data, then the auth user. Throws on failure so
+  // callers can react (e.g. requires-recent-login).
+  async function runAccountDelete(){
+    if (shareId){
+      try{ await deleteDoc(doc(db, "sharedSchedules", shareId)); } catch(e){ console.error(e); }
+    }
+    try{ await deleteDoc(doc(db, "profiles", currentUser.uid)); } catch(e){ console.error(e); }
+    try{ await deleteDoc(doc(db, "schedules", currentUser.uid)); } catch(e){ console.error(e); }
+    try{ await deleteDoc(doc(db, "users", currentUser.uid)); } catch(e){ console.error(e); }
+    dirty = false; // stop the unsaved changes warning
+    await deleteUser(currentUser);
+  }
+  function deleteErrorText(err){
+    if (err && err.code === 'auth/requires-recent-login'){
+      return 'For safety, log out and log back in, then delete.';
+    }
+    return 'Could not delete the account. Try again.';
+  }
+
+  // ---- Fallback path: type DELETE then confirm ----
+  function showTypedFallback(){
+    holdDelete.hidden = true;
     deleteConfirm.classList.add('show');
     deleteInput.value = '';
     deleteInput.focus();
-  });
+  }
   cancelDelete.addEventListener('click', () => {
     deleteConfirm.classList.remove('show');
   });
-
   confirmDelete.addEventListener('click', async () => {
     if (deleteInput.value.trim().toUpperCase() !== 'DELETE'){
       setMsg.textContent = 'Type DELETE to confirm.';
@@ -4480,29 +4534,141 @@ Wed: OFF
     confirmDelete.disabled = true;
     setMsg.textContent = 'Deleting your account...';
     setMsg.className = 'set-msg';
-
     try{
-      // remove the share link first so nothing public is left behind
-      if (shareId){
-        try{ await deleteDoc(doc(db, "sharedSchedules", shareId)); } catch(e){ console.error(e); }
-      }
-      try{ await deleteDoc(doc(db, "profiles", currentUser.uid)); } catch(e){ console.error(e); }
-      try{ await deleteDoc(doc(db, "schedules", currentUser.uid)); } catch(e){ console.error(e); }
-      try{ await deleteDoc(doc(db, "users", currentUser.uid)); } catch(e){ console.error(e); }
-
-      dirty = false; // stop the unsaved changes warning
-      await deleteUser(currentUser);
+      await runAccountDelete();
       window.location.href = "login.html";
     } catch (err){
       console.error('Delete failed:', err);
       confirmDelete.disabled = false;
-      if (err && err.code === 'auth/requires-recent-login'){
-        setMsg.textContent = 'For safety, log out and log back in, then delete.';
-      } else {
-        setMsg.textContent = 'Could not delete the account. Try again.';
-      }
+      setMsg.textContent = deleteErrorText(err);
       setMsg.className = 'set-msg err';
     }
+  });
+
+  // ---- Primary path: hold to delete, driven by the Lottie ----
+  // Lottie markers: Hold = frames 0..123 (fill), Deleted = 124..291.
+  const HOLD_FILL_END = 123;
+  const HOLD_MS = 2000;          // how long you must hold
+  let lottieLoading = false, lottieReady = false, holdAnim = null;
+  let holdRAF = null, releaseRAF = null, holdStart = 0, holdProgress = 0, deleting = false;
+
+  function loadLottie(){
+    if (window.lottie) return Promise.resolve(window.lottie);
+    if (loadLottie._p) return loadLottie._p;
+    loadLottie._p = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie.min.js';
+      s.onload = () => resolve(window.lottie);
+      s.onerror = () => reject(new Error('lottie failed to load'));
+      document.head.appendChild(s);
+      setTimeout(() => { if (!window.lottie) reject(new Error('lottie load timeout')); }, 8000);
+    });
+    return loadLottie._p;
+  }
+
+  deleteAccountBtn.addEventListener('click', async () => {
+    deleteAccountBtn.style.display = 'none';
+    holdDelete.hidden = false;
+    if (lottieReady || lottieLoading) return;
+    lottieLoading = true;
+    try{
+      const lottie = await loadLottie();
+      holdAnim = lottie.loadAnimation({
+        container: holdDeleteAnim,
+        renderer: 'svg',
+        loop: false,
+        autoplay: false,
+        path: './hold-to-delete.json'
+      });
+      holdAnim.addEventListener('DOMLoaded', () => { holdAnim.goToAndStop(0, true); });
+      lottieReady = true;
+    } catch(err){
+      console.error('Hold-to-delete animation unavailable:', err);
+      // No animation — fall back to the typed confirmation so deletion
+      // is still possible.
+      showTypedFallback();
+    } finally {
+      lottieLoading = false;
+    }
+  });
+
+  function setHoldFrame(p){
+    if (holdAnim && lottieReady) holdAnim.goToAndStop(Math.max(0, Math.min(1, p)) * HOLD_FILL_END, true);
+  }
+  function stopHoldLoop(){ if (holdRAF){ cancelAnimationFrame(holdRAF); holdRAF = null; } }
+
+  function holdTick(now){
+    holdProgress = Math.min(1, (now - holdStart) / HOLD_MS);
+    setHoldFrame(holdProgress);
+    if (holdProgress >= 1){ stopHoldLoop(); completeHold(); return; }
+    holdRAF = requestAnimationFrame(holdTick);
+  }
+  function beginHold(e){
+    if (deleting || !currentUser) return;
+    e.preventDefault();
+    if (releaseRAF){ cancelAnimationFrame(releaseRAF); releaseRAF = null; }
+    holdStart = performance.now() - holdProgress * HOLD_MS; // resume if partially filled
+    holdDeleteBtn.classList.add('holding');
+    stopHoldLoop();
+    holdRAF = requestAnimationFrame(holdTick);
+  }
+  function releaseHold(){
+    if (deleting) return;
+    stopHoldLoop();
+    holdDeleteBtn.classList.remove('holding');
+    // ease the fill back down to empty
+    if (releaseRAF) cancelAnimationFrame(releaseRAF);
+    const from = holdProgress, t0 = performance.now(), dur = Math.max(120, from * 500);
+    (function back(now){
+      if (deleting){ releaseRAF = null; return; }
+      const k = Math.min(1, (now - t0) / dur);
+      holdProgress = from * (1 - k);
+      setHoldFrame(holdProgress);
+      releaseRAF = (k < 1) ? requestAnimationFrame(back) : null;
+    })(t0);
+  }
+  async function completeHold(){
+    if (deleting || !currentUser) return;
+    deleting = true;
+    holdDeleteBtn.classList.remove('holding');
+    holdDeleteBtn.disabled = true;
+    holdDeleteLabel.textContent = 'Deleting…';
+    try{
+      await runAccountDelete();
+      // play the "Deleted" reveal, then leave
+      let left = false;
+      const leave = () => { if (!left){ left = true; window.location.href = 'login.html'; } };
+      if (holdAnim && lottieReady){
+        holdAnim.addEventListener('complete', leave);
+        holdAnim.playSegments([124, 291], true);
+      }
+      setTimeout(leave, 3000); // safety net if 'complete' never fires
+    } catch(err){
+      console.error('Delete failed:', err);
+      deleting = false;
+      holdDeleteBtn.disabled = false;
+      holdDeleteLabel.textContent = 'Press and hold to delete your account';
+      holdProgress = 0; setHoldFrame(0);
+      setMsg.textContent = deleteErrorText(err);
+      setMsg.className = 'set-msg err';
+    }
+  }
+
+  holdDeleteBtn.addEventListener('pointerdown', beginHold);
+  holdDeleteBtn.addEventListener('pointerup', releaseHold);
+  holdDeleteBtn.addEventListener('pointerleave', releaseHold);
+  holdDeleteBtn.addEventListener('pointercancel', releaseHold);
+  // keyboard: holding Space/Enter also works
+  holdDeleteBtn.addEventListener('keydown', (e) => {
+    if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) beginHold(e);
+  });
+  holdDeleteBtn.addEventListener('keyup', (e) => {
+    if (e.key === ' ' || e.key === 'Enter') releaseHold();
+  });
+  holdDeleteCancel.addEventListener('click', () => {
+    releaseHold();
+    holdDelete.hidden = true;
+    deleteAccountBtn.style.display = '';
   });
 
   // ══ People list ═══════════════════════════════════════════════
