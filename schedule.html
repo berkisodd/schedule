@@ -863,11 +863,18 @@
   .gate-logout:hover{ color:var(--text); border-color:var(--text-dim); }
 
   /* Maintenance animation (WebM). Muted + autoplay + loop + playsinline
-     so it plays on iOS without going fullscreen. */
+     so it plays on iOS without going fullscreen. mix-blend-mode:screen
+     drops the video's solid black background out against the dark gate so
+     it doesn't read as a box. */
   .maint-video{
     display:block; width:150px; max-width:60vw; height:auto;
-    margin:0 auto 24px; border-radius:12px;
+    margin:0 auto 24px; mix-blend-mode:screen;
   }
+  /* Keep the maintenance gate dark in any theme so the screen-blend always
+     runs on a dark backdrop (on a light bg it would wash the video out). */
+  .gate-screen.gate-maint{ background:#0A0A0B; color:#F4F4F5; }
+  .gate-maint .gate-body{ color:#8A8A91; }
+  .gate-maint .gate-logout{ color:#8A8A91; border-color:#232326; }
 
   /* iPhone home-screen web app: drop the logout button to the bottom
      center, within easy thumb reach and clear of the notch, so people
