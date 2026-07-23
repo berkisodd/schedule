@@ -635,6 +635,12 @@
     font-family:'JetBrains Mono', monospace; font-size:0.72rem;
     color:var(--text-dim);
   }
+  .pv-admin-note{
+    display:inline-block; margin:2px auto 12px;
+    font-family:'JetBrains Mono', monospace; font-size:0.68rem; font-weight:600;
+    color:var(--amber); border:1px solid var(--amber-line);
+    background:var(--amber-dim); border-radius:6px; padding:4px 9px;
+  }
   .pv-private{
     display:flex; flex-direction:column; align-items:center; gap:10px;
     padding:16px 0 4px;
@@ -5799,7 +5805,11 @@ Wed: OFF
 
   function showProfile(p){
     const isMe = currentUser && p.uid === currentUser.uid;
-    const visible = p.isPublic || isMe;
+    // Admins can see the details of a private account for moderation. The
+    // data is already loaded (profiles are readable by anyone signed in);
+    // this just lifts the UI lock, with an on-screen note so it isn't silent.
+    const adminReveal = !p.isPublic && !isMe && isAdmin;
+    const visible = p.isPublic || isMe || adminReveal;
     const state = isMe ? myPresence() : presenceFrom(p.lastActive, p.hideStatus, p.manualPresence);
 
     // only reveal a last seen time when they have not hidden activity
@@ -5837,6 +5847,7 @@ Wed: OFF
         </div>
         <div class="pv-name">${escapeHtml(p.name)}</div>
         <div class="pv-presence">${presenceDot(state)}<span>${PRESENCE_LABEL[state]}${seen ? ' · ' + escapeHtml(seen) : ''}</span></div>
+        ${adminReveal ? '<div class="pv-admin-note">🔒 Private profile · visible to you as an admin</div>' : ''}
         ${p.status ? `<div class="pv-status">${escapeHtml(p.status)}</div>` : ''}
         ${p.bio ? `<div class="pv-bio">${escapeHtml(p.bio)}</div>` : ''}
         ${p.gender ? `<div class="pv-meta">${escapeHtml(p.gender)}</div>` : ''}

@@ -1,7 +1,7 @@
 // Schedule 2.0 service worker
 // Bump CACHE_VERSION whenever you deploy, so people get the new files
 // instead of a stale cached copy.
-const CACHE_VERSION = 'schedule-v3.0';
+const CACHE_VERSION = 'schedule-v3.1';
 
 const SHELL = [
   './',
