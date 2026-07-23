@@ -818,10 +818,16 @@
   }
 
   /* ── Announcement banner ──────────────────────────────────── */
+  /* Normal top-of-page banner, NOT sticky. Two stacked position:sticky
+     top:0 bars (this and .daytrack) fight on iOS and the announcement
+     gets hidden behind the header with a scroll snap-back. Letting it
+     scroll normally, above the sticky header, fixes that. Safe-area pad
+     keeps it clear of the notch in the iPhone home-screen web app. */
   .ann-bar{
-    position:sticky; top:0; z-index:45;
+    position:relative; z-index:45;
     display:flex; align-items:flex-start; gap:12px;
-    padding:12px 18px; background:var(--amber); color:var(--on-amber);
+    padding:calc(12px + env(safe-area-inset-top)) 18px 12px;
+    background:var(--amber); color:var(--on-amber);
     font-size:0.86rem; line-height:1.45;
   }
   .ann-text{ flex:1; min-width:0; }
