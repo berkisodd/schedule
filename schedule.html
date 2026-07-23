@@ -567,19 +567,29 @@
   .delete-actions{ display:flex; gap:9px; margin-top:10px; }
   .delete-actions button{ flex:1; margin-top:0; padding:10px 0; }
 
-  /* Hold-to-delete: the Lottie is the button, a hint sits below it. */
+  /* Hold-to-delete: always-visible button with a fill that grows as you
+     hold; the Lottie renders above it only if it loads. */
   .hold-delete{ margin-top:14px; text-align:center; }
+  .hold-delete-anim{ width:min(240px, 80%); margin:0 auto 10px; aspect-ratio:1080/689; }
+  .hold-delete-anim[hidden]{ display:none; }
+  .hold-delete-anim svg{ display:block; }
   .hold-delete-btn{
-    display:inline-block; margin:0 auto; padding:0; border:none; background:none;
-    cursor:pointer; line-height:0; -webkit-tap-highlight-color:transparent;
+    position:relative; overflow:hidden; display:block; width:100%; margin:0;
+    padding:13px 0; border:1px solid var(--error); border-radius:9px;
+    background:transparent; color:var(--error);
+    font-family:'Inter',sans-serif; font-weight:700; font-size:0.9rem;
+    cursor:pointer; -webkit-tap-highlight-color:transparent;
     -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
     touch-action:none;
   }
-  .hold-delete-btn:disabled{ cursor:default; }
-  .hold-delete-anim{ width:min(260px, 82%); margin:0 auto; aspect-ratio:1080/689; }
-  .hold-delete-anim svg{ display:block; }
+  .hold-delete-btn:disabled{ opacity:0.75; cursor:default; }
+  .hold-delete-fill{
+    position:absolute; left:0; top:0; bottom:0; width:0%;
+    background:var(--error); opacity:0.22; z-index:0; pointer-events:none;
+  }
+  .hold-delete-label{ position:relative; z-index:1; }
   .hold-delete-hint{
-    font-size:0.8rem; color:var(--text-dim); margin-top:8px; line-height:1.4;
+    font-size:0.78rem; color:var(--text-dim); margin-top:8px; line-height:1.4;
   }
   .hold-delete-cancel{ margin-top:12px; width:100%; }
 
@@ -2054,13 +2064,16 @@
         <div class="set-hint">Deleting your account removes your schedule, profile, and any share links. This cannot be undone.</div>
         <button class="btn-danger" id="deleteAccountBtn">Delete my account</button>
 
-        <!-- Hold-to-delete control (primary). Lottie loads lazily on reveal.
-             The animation is the button; a hint sits below it. -->
+        <!-- Hold-to-delete control (primary). The button is always visible
+             and works on its own; the Lottie renders above it only if it
+             loads. Lottie loads lazily on reveal. -->
         <div class="hold-delete" id="holdDelete" hidden>
-          <button type="button" class="hold-delete-btn" id="holdDeleteBtn" aria-label="Press and hold to delete your account">
-            <div class="hold-delete-anim" id="holdDeleteAnim" aria-hidden="true"></div>
+          <div class="hold-delete-anim" id="holdDeleteAnim" aria-hidden="true" hidden></div>
+          <button type="button" class="hold-delete-btn" id="holdDeleteBtn">
+            <span class="hold-delete-fill" id="holdDeleteFill"></span>
+            <span class="hold-delete-label" id="holdDeleteLabel">Hold to delete account</span>
           </button>
-          <div class="hold-delete-hint" id="holdDeleteLabel">Press and hold to delete your account</div>
+          <div class="hold-delete-hint">Press and hold for 2 seconds</div>
           <button type="button" class="btn-ghost hold-delete-cancel" id="holdDeleteCancel">Cancel</button>
         </div>
 
@@ -4491,6 +4504,7 @@ Wed: OFF
   const holdDelete = document.getElementById('holdDelete');
   const holdDeleteBtn = document.getElementById('holdDeleteBtn');
   const holdDeleteAnim = document.getElementById('holdDeleteAnim');
+  const holdDeleteFill = document.getElementById('holdDeleteFill');
   const holdDeleteLabel = document.getElementById('holdDeleteLabel');
   const holdDeleteCancel = document.getElementById('holdDeleteCancel');
 
@@ -4580,20 +4594,34 @@ Wed: OFF
         autoplay: false,
         path: './hold-to-delete.json'
       });
-      holdAnim.addEventListener('DOMLoaded', () => { holdAnim.goToAndStop(0, true); });
-      lottieReady = true;
+      // Only reveal the animation once it has actually rendered; the button
+      // below stays usable regardless.
+      holdAnim.addEventListener('DOMLoaded', () => {
+        holdDeleteAnim.hidden = false;
+        holdAnim.goToAndStop(0, true);
+        lottieReady = true;
+        setHoldFrame(holdProgress);
+      });
+      holdAnim.addEventListener('data_failed', () => {
+        console.error('Hold-to-delete animation data failed to load');
+        holdDeleteAnim.hidden = true; // keep the plain button
+      });
     } catch(err){
+      // Library itself couldn't load — the button + fill still work fine,
+      // so just leave the animation hidden.
       console.error('Hold-to-delete animation unavailable:', err);
-      // No animation — fall back to the typed confirmation so deletion
-      // is still possible.
-      showTypedFallback();
+      holdDeleteAnim.hidden = true;
     } finally {
       lottieLoading = false;
     }
   });
 
   function setHoldFrame(p){
-    if (holdAnim && lottieReady) holdAnim.goToAndStop(Math.max(0, Math.min(1, p)) * HOLD_FILL_END, true);
+    p = Math.max(0, Math.min(1, p));
+    // the always-visible fill is the reliable feedback
+    if (holdDeleteFill) holdDeleteFill.style.width = (p * 100).toFixed(1) + '%';
+    // the Lottie scrubs along too, when it's available
+    if (holdAnim && lottieReady) holdAnim.goToAndStop(p * HOLD_FILL_END, true);
   }
   function stopHoldLoop(){ if (holdRAF){ cancelAnimationFrame(holdRAF); holdRAF = null; } }
 
@@ -4633,21 +4661,26 @@ Wed: OFF
     holdDeleteBtn.classList.remove('holding');
     holdDeleteBtn.disabled = true;
     holdDeleteLabel.textContent = 'Deleting…';
+    setHoldFrame(1);
     try{
       await runAccountDelete();
-      // play the "Deleted" reveal, then leave
+      holdDeleteLabel.textContent = 'Account deleted';
       let left = false;
       const leave = () => { if (!left){ left = true; window.location.href = 'login.html'; } };
       if (holdAnim && lottieReady){
+        // play the "Deleted" reveal, then leave (with a safety timeout)
         holdAnim.addEventListener('complete', leave);
         holdAnim.playSegments([124, 291], true);
+        setTimeout(leave, 3000);
+      } else {
+        // no animation to show — leave promptly
+        setTimeout(leave, 500);
       }
-      setTimeout(leave, 3000); // safety net if 'complete' never fires
     } catch(err){
       console.error('Delete failed:', err);
       deleting = false;
       holdDeleteBtn.disabled = false;
-      holdDeleteLabel.textContent = 'Press and hold to delete your account';
+      holdDeleteLabel.textContent = 'Hold to delete account';
       holdProgress = 0; setHoldFrame(0);
       setMsg.textContent = deleteErrorText(err);
       setMsg.className = 'set-msg err';
