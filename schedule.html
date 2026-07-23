@@ -2446,11 +2446,18 @@
   window.addEventListener('offline', () => setConnState('offline', 'Offline'));
   if (navigator.onLine === false) setConnState('offline', 'Offline');
 
-  // If nothing confirms a server round trip within a few seconds of
-  // load, don't leave the dot stuck on "Connecting..." forever.
+  // If nothing confirms a server round trip, don't leave the dot stuck on
+  // "Connecting..." forever. A slow first connection is common on cold
+  // loads, so give it one more grace window before showing the scary
+  // "Can't reach server" — otherwise the pill lies while data is still
+  // on its way and users refresh needlessly.
   setTimeout(() => {
     if (connState === 'connecting' && Date.now() - lastServerSnapAt > 6000){
-      setConnState('offline', "Can't reach server");
+      setTimeout(() => {
+        if (connState === 'connecting' && Date.now() - lastServerSnapAt > 6000){
+          setConnState('offline', "Can't reach server");
+        }
+      }, 6000);
     }
   }, 6000);
   // races a promise against a timeout so a stuck read surfaces an error
@@ -2712,6 +2719,10 @@
   async function loadMaintenance(){
     try{
       const snap = await getDoc(doc(db, "config", "app"));
+      // First server read of the session for everyone. A non-cache result
+      // proves Firebase is reachable, so light the pill up now instead of
+      // waiting on the delayed messaging listener.
+      if (!snap.metadata.fromCache) reportServerSnapshot();
       return snap.exists() ? snap.data() : {};
     } catch(e){ return {}; }
   }
@@ -2802,7 +2813,7 @@
     // let the schedule paint first, then quietly check for friend
     // requests and shared classes
     setTimeout(refreshMatchBadge, 1200);
-    setTimeout(listenForUnread, 1400);
+    setTimeout(listenForUnread, 400);
     setTimeout(loadAnnouncement, 900);
     if (isAdmin) setTimeout(runDailyCleanup, 4000);
   });
@@ -2812,6 +2823,8 @@
   async function loadSchedule(){
     try{
       const snap = await getDoc(doc(db, "schedules", currentUser.uid));
+      // A real server round-trip (new users included) confirms the link.
+      if (!snap.metadata.fromCache) reportServerSnapshot();
       if (snap.exists()){
         const data = snap.data();
         introSeen = data.introSeen === true;
