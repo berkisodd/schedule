@@ -570,9 +570,6 @@
   /* Hold-to-delete: always-visible button with a fill that grows as you
      hold; the Lottie renders above it only if it loads. */
   .hold-delete{ margin-top:14px; text-align:center; }
-  .hold-delete-anim{ width:min(240px, 80%); margin:0 auto 10px; aspect-ratio:1080/689; }
-  .hold-delete-anim[hidden]{ display:none; }
-  .hold-delete-anim svg{ display:block; }
   .hold-delete-btn{
     position:relative; overflow:hidden; display:block; width:100%; margin:0;
     padding:13px 0; border:1px solid var(--error); border-radius:9px;
@@ -588,6 +585,14 @@
     background:var(--error); opacity:0.22; z-index:0; pointer-events:none;
   }
   .hold-delete-label{ position:relative; z-index:1; }
+  .hold-delete-anim{ width:min(240px, 80%); margin:0 auto; aspect-ratio:1080/689; }
+  .hold-delete-anim[hidden]{ display:none; }
+  .hold-delete-anim svg{ display:block; }
+  /* once the animation renders it becomes the whole control: drop the
+     plain button's chrome and hide the text/fill fallback. */
+  .hold-delete-btn.has-anim{ border:none; background:none; padding:0; overflow:visible; }
+  .hold-delete-btn.has-anim .hold-delete-fill,
+  .hold-delete-btn.has-anim .hold-delete-label{ display:none; }
   .hold-delete-hint{
     font-size:0.78rem; color:var(--text-dim); margin-top:8px; line-height:1.4;
   }
@@ -2068,8 +2073,8 @@
              and works on its own; the Lottie renders above it only if it
              loads. Lottie loads lazily on reveal. -->
         <div class="hold-delete" id="holdDelete" hidden>
-          <div class="hold-delete-anim" id="holdDeleteAnim" aria-hidden="true" hidden></div>
           <button type="button" class="hold-delete-btn" id="holdDeleteBtn">
+            <div class="hold-delete-anim" id="holdDeleteAnim" aria-hidden="true" hidden></div>
             <span class="hold-delete-fill" id="holdDeleteFill"></span>
             <span class="hold-delete-label" id="holdDeleteLabel">Hold to delete account</span>
           </button>
@@ -4598,6 +4603,7 @@ Wed: OFF
       // below stays usable regardless.
       holdAnim.addEventListener('DOMLoaded', () => {
         holdDeleteAnim.hidden = false;
+        holdDeleteBtn.classList.add('has-anim'); // animation becomes the button
         holdAnim.goToAndStop(0, true);
         lottieReady = true;
         setHoldFrame(holdProgress);
