@@ -2064,6 +2064,15 @@
       <div class="set-msg" id="setMsg"></div>
       <button class="btn-primary set-save" id="saveSettings">Save profile</button>
 
+      <div class="set-section">
+        <div class="set-label">Password</div>
+        <div class="set-hint" style="margin-bottom:10px;">Change the password you log in with.</div>
+        <input type="password" class="set-input" id="curPw" placeholder="Current password" autocomplete="current-password" style="margin-bottom:9px;">
+        <input type="password" class="set-input" id="newPw" placeholder="New password (min 6)" autocomplete="new-password">
+        <div class="set-msg" id="pwMsg"></div>
+        <button class="btn-primary" id="changePwBtn" style="margin-top:10px;">Change password</button>
+      </div>
+
       <div class="danger-zone">
         <div class="set-label danger-label">Danger zone</div>
         <div class="set-hint">Deleting your account removes your schedule, profile, and any share links. This cannot be undone.</div>
@@ -2442,7 +2451,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-  import { getAuth, onAuthStateChanged, signOut, deleteUser, updateProfile } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+  import { getAuth, onAuthStateChanged, signOut, deleteUser, updateProfile, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
   import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where, updateDoc, onSnapshot, addDoc, orderBy, limit, writeBatch } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -4498,6 +4507,42 @@ Wed: OFF
       setMsg.className = 'set-msg err';
     }
     saveSettings.disabled = false;
+  });
+
+  // ── Change password ────────────────────────────────────────
+  const curPw = document.getElementById('curPw');
+  const newPw = document.getElementById('newPw');
+  const pwMsg = document.getElementById('pwMsg');
+  const changePwBtn = document.getElementById('changePwBtn');
+
+  changePwBtn.addEventListener('click', async () => {
+    const oldP = curPw.value;
+    const nextP = newPw.value;
+    pwMsg.className = 'set-msg';
+    if (!oldP || !nextP){ pwMsg.textContent = 'Fill in both fields.'; pwMsg.className = 'set-msg err'; return; }
+    if (nextP.length < 6){ pwMsg.textContent = 'New password must be at least 6 characters.'; pwMsg.className = 'set-msg err'; return; }
+    if (nextP === oldP){ pwMsg.textContent = 'New password matches the current one.'; pwMsg.className = 'set-msg err'; return; }
+    if (!currentUser || !currentUser.email) return;
+
+    changePwBtn.disabled = true;
+    pwMsg.textContent = 'Updating…';
+    try{
+      // reauthenticate with the current password, then set the new one
+      const cred = EmailAuthProvider.credential(currentUser.email, oldP);
+      await reauthenticateWithCredential(currentUser, cred);
+      await updatePassword(currentUser, nextP);
+      curPw.value = ''; newPw.value = '';
+      pwMsg.textContent = 'Password changed.'; pwMsg.className = 'set-msg ok';
+    } catch(err){
+      console.error('Change password failed:', err);
+      const code = (err && err.code) || '';
+      if (code.includes('wrong-password') || code.includes('invalid-credential')) pwMsg.textContent = 'Current password is incorrect.';
+      else if (code.includes('weak-password')) pwMsg.textContent = 'New password is too weak (min 6 characters).';
+      else if (code.includes('too-many-requests')) pwMsg.textContent = 'Too many attempts. Wait a bit and try again.';
+      else pwMsg.textContent = 'Could not change the password. Try again.';
+      pwMsg.className = 'set-msg err';
+    }
+    changePwBtn.disabled = false;
   });
 
   // ── Delete account ─────────────────────────────────────────
