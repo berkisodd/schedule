@@ -343,6 +343,20 @@
   }
   .msg.show{ display:block; }
 
+  .forgot-link{
+    display:inline-block; margin-top:9px;
+    font-family:'JetBrains Mono', monospace; font-size:0.74rem;
+    color:var(--text-dim); text-decoration:none;
+  }
+  .forgot-link:hover{ color:var(--amber); text-decoration:underline; }
+  .signup-warn{
+    border:1px solid var(--amber); border-radius:9px;
+    background:rgba(217,116,53,0.10);
+    padding:11px 13px; margin:0 0 14px;
+    font-size:0.78rem; line-height:1.5; color:var(--text);
+  }
+  .signup-warn[hidden]{ display:none; }
+
   button.submit{
     width:100%;
     background:var(--amber);
@@ -516,6 +530,12 @@
           <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
           <button type="button" class="pw-toggle" id="pwToggle" aria-label="Show password">Show</button>
         </div>
+        <a href="#" class="forgot-link" id="forgotLink" onclick="sendReset();return false;">Forgot password?</a>
+      </div>
+
+      <div class="signup-warn" id="signupWarn" hidden>
+        ⚠️ School-account emails usually can't receive password-reset emails.
+        Save your password somewhere safe — recovery may not be possible.
       </div>
 
       <div class="msg" id="authMsg"></div>
@@ -902,6 +922,7 @@
     getAuth,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
+    sendPasswordResetEmail,
     updateProfile,
     onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
@@ -943,17 +964,42 @@
     document.getElementById('footNote').innerHTML = isSignup
       ? 'Already have an account? <a href="#" onclick="setMode(\'login\');return false;">Log in</a>'
       : 'No account yet? <a href="#" onclick="setMode(\'signup\');return false;">Sign up</a>';
+    // reset link only makes sense when logging in; the warning shows before
+    // creating an account so people know to save their password
+    document.getElementById('signupWarn').hidden = !isSignup;
+    document.getElementById('forgotLink').hidden = isSignup;
     hideMsg();
   }
 
-  function showMsg(text){
+  // Password reset. School-account emails often can't receive these, so the
+  // message is honest about that.
+  window.sendReset = async function(){
+    const email = document.getElementById('email').value.trim();
+    if (!email){
+      showMsg('Enter your email above first, then tap "Forgot password?".');
+      return;
+    }
+    try{
+      await sendPasswordResetEmail(auth, email);
+      showMsg('Reset link sent. Check spam — school accounts often can\'t receive it.', true);
+    } catch(err){
+      const code = (err && err.code) || '';
+      if (code.includes('invalid-email')) showMsg('That doesn\'t look like a valid email.');
+      else if (code.includes('user-not-found')) showMsg('No account found with that email.');
+      else showMsg('Could not send a reset email. Try again.');
+    }
+  };
+
+  function showMsg(text, ok){
     const m = document.getElementById('authMsg');
     m.textContent = text;
+    m.style.color = ok ? 'var(--good, #4FA97F)' : '';
     m.classList.add('show');
   }
   function hideMsg(){
     const m = document.getElementById('authMsg');
     m.classList.remove('show');
+    m.style.color = '';
     m.textContent = '';
   }
 
