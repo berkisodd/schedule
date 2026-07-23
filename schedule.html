@@ -949,6 +949,15 @@
   }
   .adm-av svg{ width:100%; height:100%; display:block; }
   .adm-info{ flex:1; min-width:0; }
+  /* avatar + name is a button that opens the person's profile, so an
+     admin can tell who is who. Closing the profile drops back to this
+     panel, which stays open underneath. */
+  .adm-view{
+    flex:1; min-width:0; display:flex; align-items:center; gap:11px;
+    background:none; border:none; padding:0; margin:0; cursor:pointer;
+    font:inherit; color:inherit; text-align:left;
+  }
+  .adm-view:hover .adm-name{ color:var(--amber); }
   .adm-name{ font-size:0.88rem; font-weight:600; }
   .adm-meta{
     font-family:'JetBrains Mono', monospace; font-size:0.66rem;
@@ -5122,11 +5131,13 @@ Wed: OFF
       const admin = adminSet.has(p.uid);
       return `
         <div class="adm-row">
-          <div class="adm-av">${avatarSvg(p.avatar)}</div>
-          <div class="adm-info">
-            <div class="adm-name">${escapeHtml(p.name || 'Unnamed')}${admin ? ' <span class="adm-badge">Admin</span>' : ''}</div>
-            <div class="adm-meta">${b ? escapeHtml(banLabel(b)) : 'Active'}</div>
-          </div>
+          <button class="adm-view" data-viewprofile="${p.uid}" aria-label="View ${escapeHtml(p.name || 'Unnamed')}'s profile">
+            <div class="adm-av">${avatarSvg(p.avatar)}</div>
+            <div class="adm-info">
+              <div class="adm-name">${escapeHtml(p.name || 'Unnamed')}${admin ? ' <span class="adm-badge">Admin</span>' : ''}</div>
+              <div class="adm-meta">${b ? escapeHtml(banLabel(b)) : 'Active'}</div>
+            </div>
+          </button>
           <div class="adm-actions">
             ${b
               ? `<button class="adm-btn" data-unban="${p.uid}">Lift</button>`
@@ -5141,6 +5152,13 @@ Wed: OFF
         </div>`;
     }).join('');
 
+    adminBody.querySelectorAll('[data-viewprofile]').forEach(b => {
+      b.addEventListener('click', () => {
+        const person = people.find(x => x.uid === b.dataset.viewprofile);
+        // Opens over the admin panel; closing the profile returns here.
+        if (person) showProfile(person);
+      });
+    });
     adminBody.querySelectorAll('[data-mute]').forEach(b => {
       b.addEventListener('click', async () => {
         b.disabled = true;
