@@ -21,7 +21,7 @@
   (function(){
     try{
       var pref = localStorage.getItem('s2_theme') || 'system';
-      var fixed = ['dark','light','amoled','midnight','paper'];
+      var fixed = ['dark','light','amoled','midnight','paper','forest','dusk','ocean','rose'];
       var themeAttr;
       if (pref === 'system'){
         var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -83,13 +83,35 @@
     --avatar-bg:#211E17; --avatar-stroke:#FBF9F3; --on-amber:#FFFDF8;
     --shadow-lift:0 4px 16px rgba(120,100,60,0.10);
   }
+  html[data-theme="forest"]{
+    --ink:#0A1310; --ink-2:#0F1C17; --panel:#12211B; --line:#1F3529; --line-soft:#182A21;
+    --text:#E8F2EB; --text-dim:#87A08F; --slate:#47604F;
+    --avatar-bg:#0A1310; --avatar-stroke:#E8F2EB; --on-amber:#0A1310;
+  }
+  html[data-theme="dusk"]{
+    --ink:#140F1B; --ink-2:#1D1628; --panel:#221A2F; --line:#342847; --line-soft:#281F38;
+    --text:#F0EAF7; --text-dim:#9C8FB3; --slate:#584B6B;
+    --avatar-bg:#140F1B; --avatar-stroke:#F0EAF7; --on-amber:#140F1B;
+  }
+  html[data-theme="ocean"]{
+    --ink:#07161A; --ink-2:#0C2027; --panel:#0F2730; --line:#1B3C48; --line-soft:#153039;
+    --text:#E4F2F6; --text-dim:#82A3AD; --slate:#456670;
+    --avatar-bg:#07161A; --avatar-stroke:#E4F2F6; --on-amber:#07161A;
+  }
+  html[data-theme="rose"]{
+    --ink:#FAF0F1; --ink-2:#FEF7F8; --panel:#FFFBFB; --line:#EDD9DC; --line-soft:#F4E6E8;
+    --text:#26191C; --text-dim:#7A6267; --slate:#C0A7AC; --error:#B54250; --good:#3C7A56;
+    --avatar-bg:#26191C; --avatar-stroke:#FEF7F8; --on-amber:#FFFBFB;
+    --shadow-lift:0 4px 16px rgba(120,60,80,0.10);
+  }
   html[data-accent="red"]{    --amber:#E5484D; --amber-dim:#E5484D1A; --amber-line:#E5484D45; }
   html[data-accent="blue"]{   --amber:#4C8DF5; --amber-dim:#4C8DF51A; --amber-line:#4C8DF545; }
   html[data-accent="green"]{  --amber:#3F9E6A; --amber-dim:#3F9E6A1A; --amber-line:#3F9E6A45; }
   html[data-accent="purple"]{ --amber:#9B72E0; --amber-dim:#9B72E01A; --amber-line:#9B72E045; }
   html[data-accent="cyan"]{   --amber:#2FB6C4; --amber-dim:#2FB6C41A; --amber-line:#2FB6C445; }
   html[data-accent="pink"]{   --amber:#E86BA8; --amber-dim:#E86BA81A; --amber-line:#E86BA845; }
-  html[data-theme="light"][data-accent], html[data-theme="paper"][data-accent]{ --on-amber:#FFFFFF; }
+  html[data-theme="light"][data-accent], html[data-theme="paper"][data-accent],
+  html[data-theme="rose"][data-accent]{ --on-amber:#FFFFFF; }
   html[data-accent="aurora"]{ --amber:#D97435; --amber-dim:#D9743518; --amber-line:#D9743540; animation:auroraShift 14s linear infinite; }
   @keyframes auroraShift{ 0%{ --amber:#D97435; } 25%{ --amber:#E5484D; } 50%{ --amber:#9B72E0; } 75%{ --amber:#2FB6C4; } 100%{ --amber:#D97435; } }
   html[data-accent="ember"]{ --amber:#D97435; --amber-dim:#D9743518; --amber-line:#D9743540; animation:emberPulse 3.4s ease-in-out infinite; }
@@ -554,14 +576,25 @@
   <div class="changelog" id="changelogWrap" hidden>
     <button class="changelog-head" id="changelogToggle">
       <span class="changelog-title">What's new</span>
-      <span class="changelog-version">v2.6.2</span>
+      <span class="changelog-version">v2.6.3</span>
       <span class="changelog-arrow" id="changelogArrow">▾</span>
     </button>
     <div class="changelog-body" id="changelogBody">
       <div class="cl-entry">
         <div class="cl-ver">
-          <span class="cl-num">2.6.2</span>
+          <span class="cl-num">2.6.3</span>
           <span class="cl-tag new">Latest</span>
+        </div>
+        <ul class="cl-list">
+          <li>Four new themes, Forest, Dusk, Ocean, and Rose</li>
+          <li>The app now updates itself, no more reinstalling to get the newest version</li>
+          <li>Animations load from the app itself, so they work offline and on locked down networks</li>
+          <li>Fixed the uploading message showing when nothing was uploading</li>
+        </ul>
+      </div>
+      <div class="cl-entry">
+        <div class="cl-ver">
+          <span class="cl-num">2.6.2</span>
         </div>
         <ul class="cl-list">
           <li>Upload your own profile picture, it's shrunk down automatically so it stays small</li>
@@ -1122,12 +1155,40 @@
     }
   });
 
-  // Register the service worker so the app works offline once installed.
+</script>
+
+<!-- Service worker registration lives in its own plain script on purpose.
+     It used to sit at the end of the module above, which imports Firebase
+     from a CDN: if that CDN was slow, blocked or down, the whole module
+     failed and the worker never registered, leaving the app permanently
+     stuck on an old cached version with no way to update itself. -->
+<script>
+  // updateViaCache:'none' matters too: without it the browser can serve the
+  // worker script itself from its HTTP cache, so a new version is never
+  // even noticed.
   if ('serviceWorker' in navigator){
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./service-worker.js').catch(() => {
-        // Not fatal. The app still works, it just won't run offline.
-      });
+    var hadController = !!navigator.serviceWorker.controller;
+    var refreshing = false;
+
+    // When a new worker takes over, this page is still running the older
+    // HTML/JS it loaded with. Reload once so the two never disagree.
+    navigator.serviceWorker.addEventListener('controllerchange', function(){
+      if (!hadController || refreshing) return;
+      refreshing = true;
+      window.location.reload();
+    });
+
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('./service-worker.js', { updateViaCache: 'none' })
+        .then(function(reg){
+          reg.update().catch(function(){});
+          document.addEventListener('visibilitychange', function(){
+            if (document.visibilityState === 'visible') reg.update().catch(function(){});
+          });
+        })
+        .catch(function(){
+          // Not fatal. The app still works, it just won't run offline.
+        });
     });
   }
 </script>
