@@ -1,7 +1,7 @@
 // Schedule 2.0 service worker
 // Bump CACHE_VERSION whenever you deploy, so people get the new files
 // instead of a stale cached copy.
-const CACHE_VERSION = 'schedule-v4.2';
+const CACHE_VERSION = 'schedule-v4.3';
 
 const SHELL = [
   './',
@@ -12,7 +12,8 @@ const SHELL = [
   './icon-192.png',
   './icon-512.png',
   './maintenance.webm',
-  './hold-to-delete.json'
+  './hold-to-delete.json',
+  './avatar-upload.json'
 ];
 
 // Install: pre-cache the app shell so it opens instantly and works offline.
