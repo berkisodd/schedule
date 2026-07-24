@@ -23,7 +23,7 @@
   (function(){
     try{
       var pref = localStorage.getItem('s2_theme') || 'system';
-      var fixed = ['dark','light','amoled','midnight','paper'];
+      var fixed = ['dark','light','amoled','midnight','paper','forest','dusk','ocean','rose'];
       var themeAttr;
       if (pref === 'system'){
         var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -120,6 +120,39 @@
     --avatar-bg:#0B0F1A; --avatar-stroke:#EAF0FB; --on-amber:#0B0F1A;
     --shadow:0 1px 2px rgba(0,0,0,0.4); --shadow-lift:0 4px 18px rgba(0,0,0,0.45);
   }
+  /* Forest: deep green dark */
+  html[data-theme="forest"]{
+    --ink:#0A1310; --ink-2:#0F1C17; --panel:#12211B;
+    --line:#1F3529; --line-soft:#182A21;
+    --text:#E8F2EB; --text-dim:#87A08F; --slate:#47604F;
+    --avatar-bg:#0A1310; --avatar-stroke:#E8F2EB; --on-amber:#0A1310;
+    --shadow:0 1px 2px rgba(0,0,0,0.45); --shadow-lift:0 4px 18px rgba(0,0,0,0.5);
+  }
+  /* Dusk: warm plum dark */
+  html[data-theme="dusk"]{
+    --ink:#140F1B; --ink-2:#1D1628; --panel:#221A2F;
+    --line:#342847; --line-soft:#281F38;
+    --text:#F0EAF7; --text-dim:#9C8FB3; --slate:#584B6B;
+    --avatar-bg:#140F1B; --avatar-stroke:#F0EAF7; --on-amber:#140F1B;
+    --shadow:0 1px 2px rgba(0,0,0,0.45); --shadow-lift:0 4px 18px rgba(0,0,0,0.5);
+  }
+  /* Ocean: deep teal dark */
+  html[data-theme="ocean"]{
+    --ink:#07161A; --ink-2:#0C2027; --panel:#0F2730;
+    --line:#1B3C48; --line-soft:#153039;
+    --text:#E4F2F6; --text-dim:#82A3AD; --slate:#456670;
+    --avatar-bg:#07161A; --avatar-stroke:#E4F2F6; --on-amber:#07161A;
+    --shadow:0 1px 2px rgba(0,0,0,0.45); --shadow-lift:0 4px 18px rgba(0,0,0,0.5);
+  }
+  /* Rose: soft warm light variant */
+  html[data-theme="rose"]{
+    --ink:#FAF0F1; --ink-2:#FEF7F8; --panel:#FFFBFB;
+    --line:#EDD9DC; --line-soft:#F4E6E8;
+    --text:#26191C; --text-dim:#7A6267; --slate:#C0A7AC;
+    --error:#B54250; --good:#3C7A56;
+    --avatar-bg:#26191C; --avatar-stroke:#FEF7F8; --on-amber:#FFFBFB;
+    --shadow:0 1px 2px rgba(120,60,80,0.06); --shadow-lift:0 4px 16px rgba(120,60,80,0.10);
+  }
   /* Paper: warm off-white light variant */
   html[data-theme="paper"]{
     --ink:#F4F1EA; --ink-2:#FBF9F3; --panel:#FFFDF8;
@@ -142,7 +175,8 @@
 
   /* On light bases, accents need a light on-accent text and white icon
      text so buttons stay readable */
-  html[data-theme="light"][data-accent], html[data-theme="paper"][data-accent]{ --on-amber:#FFFFFF; }
+  html[data-theme="light"][data-accent], html[data-theme="paper"][data-accent],
+  html[data-theme="rose"][data-accent]{ --on-amber:#FFFFFF; }
 
   /* ══ Animated themes ══════════════════════════════════════════ */
   /* Aurora: the accent slowly shifts hue through a synth palette */
@@ -485,7 +519,7 @@
 
   /* custom avatar upload */
   .av-upload{ display:flex; align-items:center; gap:12px; margin-top:14px; }
-  .av-upload[hidden]{ display:none; }
+  .av-upload.gone{ display:none; }
   .av-upload-preview{
     width:56px; height:56px; border-radius:50%; flex-shrink:0; overflow:hidden;
     background:var(--avatar-bg); border:2px solid var(--amber);
@@ -503,15 +537,17 @@
   .av-upload-btn.danger:hover{ color:var(--error); border-color:var(--error); }
   .av-upload-btn:disabled{ opacity:0.55; cursor:default; }
 
-  /* shown instead of the preview/buttons row while a new picture is
-     actually being written to the server. no background color is set
-     here on purpose, so the animation (transparent by itself) simply
-     shows whatever the settings panel behind it already is. */
-  .av-uploading{
+  /* Shown instead of the preview/buttons row while a new picture is
+     actually being written to the server. Hidden by default and only
+     revealed by the .show class, the same pattern the modals use: the
+     hidden attribute kept losing to the display rule here, which left
+     this stuck on screen. No background colour is set on purpose, so the
+     animation (transparent itself) shows the settings panel behind it. */
+  .av-uploading{ display:none; }
+  .av-uploading.show{
     display:flex; flex-direction:column; align-items:center;
     gap:4px; margin-top:14px; padding:6px 0;
   }
-  .av-uploading[hidden]{ display:none; }
   .av-uploading-anim{ width:120px; height:90px; }
   .av-uploading-anim svg{ display:block; }
   .av-uploading-label{ font-size:0.8rem; color:var(--text-dim); }
@@ -1954,7 +1990,7 @@
             <button class="av-upload-btn danger" id="avRemoveBtn" hidden>Remove picture</button>
           </div>
         </div>
-        <div class="av-uploading" id="avUploading" hidden>
+        <div class="av-uploading" id="avUploading">
           <div class="av-uploading-anim" id="avUploadingAnim"></div>
           <div class="av-uploading-label">Uploading your picture…</div>
         </div>
@@ -2048,7 +2084,11 @@
           <button class="theme-opt" data-theme-pref="light">Light</button>
           <button class="theme-opt" data-theme-pref="amoled">AMOLED</button>
           <button class="theme-opt" data-theme-pref="midnight">Midnight</button>
+          <button class="theme-opt" data-theme-pref="forest">Forest</button>
+          <button class="theme-opt" data-theme-pref="dusk">Dusk</button>
+          <button class="theme-opt" data-theme-pref="ocean">Ocean</button>
           <button class="theme-opt" data-theme-pref="paper">Paper</button>
+          <button class="theme-opt" data-theme-pref="rose">Rose</button>
         </div>
 
         <div class="set-label" style="margin-top:18px;">Accent</div>
@@ -3129,6 +3169,9 @@
 
   function setDirty(v){
     dirty = v;
+    // mirrored onto window so the service worker script, which runs
+    // outside this module, can avoid reloading over unsaved edits
+    window.__scheduleDirty = v;
     unsavedDot.classList.toggle('show', v);
   }
 
@@ -4260,7 +4303,7 @@ Wed: OFF
   const THEME_KEY = 's2_theme';
   const ACCENT_KEY = 's2_accent';
   // Base themes that are just a fixed data-theme value (no system logic)
-  const FIXED_THEMES = ['dark','light','amoled','midnight','paper'];
+  const FIXED_THEMES = ['dark','light','amoled','midnight','paper','forest','dusk','ocean','rose'];
 
   function getThemePref(){
     try{ return localStorage.getItem(THEME_KEY) || 'system'; } catch(e){ return 'system'; }
@@ -4486,8 +4529,8 @@ Wed: OFF
   let uploadAnimInstance = null;
 
   async function showUploadingAnim(){
-    avUploadRow.hidden = true;
-    avUploading.hidden = false;
+    avUploadRow.classList.add('gone');
+    avUploading.classList.add('show');
     try{
       const lottie = await loadLottie();
       avUploadingAnim.innerHTML = '';
@@ -4505,8 +4548,8 @@ Wed: OFF
   }
   function hideUploadingAnim(){
     if (uploadAnimInstance){ uploadAnimInstance.destroy(); uploadAnimInstance = null; }
-    avUploading.hidden = true;
-    avUploadRow.hidden = false;
+    avUploading.classList.remove('show');
+    avUploadRow.classList.remove('gone');
   }
 
   // ── Upload a profile picture ───────────────────────────────
@@ -4659,6 +4702,9 @@ Wed: OFF
     fillSettingsForm();
     setMsg.textContent = '';
     setMsg.className = 'set-msg';
+    avMsg.textContent = '';
+    avMsg.className = 'set-msg';
+    hideUploadingAnim(); // never reopen onto a stuck "Uploading..." state
     document.getElementById('deleteConfirm').classList.remove('show');
     settingsModal.classList.add('show');
     document.body.style.overflow = 'hidden';
@@ -4892,7 +4938,9 @@ Wed: OFF
     if (loadLottie._p) return loadLottie._p;
     loadLottie._p = new Promise((resolve, reject) => {
       const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie.min.js';
+      // Served from our own origin, not a CDN: school networks block some
+      // CDNs outright, and this keeps the animations working offline.
+      s.src = './lottie.min.js';
       s.onload = () => resolve(window.lottie);
       s.onerror = () => reject(new Error('lottie failed to load'));
       document.head.appendChild(s);
@@ -6676,19 +6724,50 @@ Wed: OFF
     applyPlatform();
   })();
 
-  // Register the service worker so the app works offline once installed.
-  if ('serviceWorker' in navigator){
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./service-worker.js').catch(() => {
-        // Not fatal. The app still works, it just won't run offline.
-      });
-    });
-  }
-
   // warn before closing with unsaved changes
   window.addEventListener('beforeunload', (e) => {
     if (dirty){ e.preventDefault(); e.returnValue = ''; }
   });
+</script>
+
+<!-- Service worker registration lives in its own plain script on purpose.
+     It used to sit at the end of the module above, which imports Firebase
+     from a CDN: if that CDN was slow, blocked or down, the whole module
+     failed and the worker never registered, leaving the app permanently
+     stuck on an old cached version with no way to update itself. -->
+<script>
+  // updateViaCache:'none' matters too: without it the browser can serve the
+  // worker script itself from its HTTP cache, so a new version is never
+  // even noticed.
+  if ('serviceWorker' in navigator){
+    var hadController = !!navigator.serviceWorker.controller;
+    var refreshing = false;
+
+    // When a new worker takes over, this page is still running the older
+    // HTML/JS it loaded with. Reload once so the two never disagree.
+    // Skipped when there are unsaved edits, it applies on the next load.
+    navigator.serviceWorker.addEventListener('controllerchange', function(){
+      if (!hadController || refreshing) return;
+      if (window.__scheduleDirty) return;
+      refreshing = true;
+      window.location.reload();
+    });
+
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('./service-worker.js', { updateViaCache: 'none' })
+        .then(function(reg){
+          reg.update().catch(function(){});
+          // An installed app can sit backgrounded for days, so check again
+          // whenever it comes back to the foreground.
+          document.addEventListener('visibilitychange', function(){
+            if (document.visibilityState === 'visible') reg.update().catch(function(){});
+          });
+        })
+        .catch(function(){
+          // Not fatal. The app still works, it just won't run offline.
+        });
+    });
+  }
 </script>
 
 </body>

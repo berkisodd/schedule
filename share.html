@@ -21,7 +21,10 @@
   (function(){
     try{
       var pref = localStorage.getItem('s2_theme') || 'system';
-      var dark = pref === 'dark' || (pref === 'system' &&
+      // This page only has a dark and a light palette, so every theme maps
+      // onto whichever of the two it belongs to.
+      var darkThemes = ['dark','amoled','midnight','forest','dusk','ocean'];
+      var dark = darkThemes.indexOf(pref) !== -1 || (pref === 'system' &&
         window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
       document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
     } catch(e){
