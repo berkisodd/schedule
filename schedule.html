@@ -480,6 +480,28 @@
   }
   .set-row{ display:flex; align-items:center; justify-content:space-between; gap:16px; }
 
+  /* uploaded avatar picture, fills whatever avatar slot it lands in */
+  .av-img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+  /* custom avatar upload */
+  .av-upload{ display:flex; align-items:center; gap:12px; margin-top:14px; }
+  .av-upload-preview{
+    width:56px; height:56px; border-radius:50%; flex-shrink:0; overflow:hidden;
+    background:var(--avatar-bg); border:2px solid var(--amber);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .av-upload-preview svg{ width:100%; height:100%; display:block; }
+  .av-upload-actions{ display:flex; flex-wrap:wrap; gap:8px; flex:1; min-width:0; }
+  .av-upload-btn{
+    padding:8px 13px; border-radius:8px; font-size:0.8rem; font-weight:600;
+    font-family:inherit; cursor:pointer;
+    background:none; border:1px solid var(--line); color:var(--text-dim);
+    transition:color 0.2s ease, border-color 0.2s ease;
+  }
+  .av-upload-btn:hover{ color:var(--text); border-color:var(--text-dim); }
+  .av-upload-btn.danger:hover{ color:var(--error); border-color:var(--error); }
+  .av-upload-btn:disabled{ opacity:0.55; cursor:default; }
+
   /* avatar picker */
   .avatar-picker{ display:flex; gap:12px; flex-wrap:wrap; }
   .avatar-opt{
@@ -1910,7 +1932,16 @@
       <div class="set-section">
         <div class="set-label">Profile picture</div>
         <div class="avatar-picker" id="avatarPicker"></div>
-        <div class="set-hint">More avatars and custom uploads coming soon.</div>
+        <div class="av-upload">
+          <div class="av-upload-preview" id="avUploadPreview"></div>
+          <div class="av-upload-actions">
+            <input type="file" id="avFileInput" accept="image/*" hidden>
+            <button class="av-upload-btn" id="avUploadBtn">Upload a picture</button>
+            <button class="av-upload-btn danger" id="avRemoveBtn" hidden>Remove picture</button>
+          </div>
+        </div>
+        <div class="set-msg" id="avMsg"></div>
+        <div class="set-hint">Your picture is shrunk down before it is saved, so it stays small. Pick an avatar above to go back to a drawn one.</div>
       </div>
 
       <div class="set-section">
@@ -2631,12 +2662,74 @@
     gary:'Gary', larry:'Larry', boxy:'Boxy', dozy:'Dozy',
     spike:'Spike', tunes:'Tunes', orbit:'Orbit', stack:'Stack'
   };
-  function avatarSvg(key){ return AVATARS[key] || AVATARS.larry; }
+  // Accepts a preset key ('larry') or an uploaded picture as a data URL.
+  // Every avatar in the app renders through here, so custom pictures show
+  // everywhere without touching the individual call sites.
+  function avatarSvg(v){
+    if (typeof v === 'string' && v.startsWith('data:')){
+      return '<img class="av-img" src="' + v.replace(/"/g, '&quot;') + '" alt="">';
+    }
+    return AVATARS[v] || AVATARS.larry;
+  }
+
+  // ── Uploaded avatars ───────────────────────────────────────
+  // The picture itself lives in its own "avatars/{uid}" doc, never in the
+  // profile doc. fetchPeople() reads every profile and runs often, so
+  // keeping blobs out of it means that read stays as cheap as it was.
+  // Each device caches a picture in localStorage keyed by the profile's
+  // avatarUpdated stamp, so it downloads a given picture once.
+  const AV_CACHE_PREFIX = 's2_av_';
+
+  function getCachedAvatar(uid, stamp){
+    if (!uid || !stamp) return null;
+    try{
+      const raw = localStorage.getItem(AV_CACHE_PREFIX + uid);
+      if (!raw) return null;
+      const c = JSON.parse(raw);
+      return (c && c.v === stamp && typeof c.d === 'string') ? c.d : null;
+    } catch(e){ return null; }
+  }
+  function setCachedAvatar(uid, stamp, dataUrl){
+    try{
+      localStorage.setItem(AV_CACHE_PREFIX + uid, JSON.stringify({ v: stamp, d: dataUrl }));
+    } catch(e){ /* quota full, just skip caching */ }
+  }
+  function clearCachedAvatar(uid){
+    try{ localStorage.removeItem(AV_CACHE_PREFIX + uid); } catch(e){}
+  }
+
+  async function fetchAvatarPicture(uid){
+    try{
+      const snap = await getDoc(doc(db, "avatars", uid));
+      const d = snap.exists() ? snap.data() : null;
+      return (d && typeof d.image === 'string') ? d.image : null;
+    } catch(e){ return null; }
+  }
+
+  // Fills p.avatar with a data URL for anyone who uploaded a picture.
+  // Cached pictures cost nothing; only misses hit Firestore.
+  async function resolveAvatars(list){
+    const misses = [];
+    list.forEach(p => {
+      if (!p.avatarUpdated) return;
+      const hit = getCachedAvatar(p.uid, p.avatarUpdated);
+      if (hit) p.avatar = hit;
+      else misses.push(p);
+    });
+    if (!misses.length) return;
+    await Promise.all(misses.map(async p => {
+      const img = await fetchAvatarPicture(p.uid);
+      if (img){
+        p.avatar = img;
+        setCachedAvatar(p.uid, p.avatarUpdated, img);
+      }
+    }));
+  }
 
   // ── Profile state ──────────────────────────────────────────
   let profile = {
     name: '', status: '', bio: '', gender: '',
-    avatar: 'larry', isPublic: false,
+    avatar: 'larry', avatarUpdated: null, isPublic: false,
     hideStatus: false, lastActive: null, manualPresence: 'auto',
     matchEnabled: false
   };
@@ -4333,17 +4426,26 @@ Wed: OFF
   const statusCount = document.getElementById('statusCount');
   const bioCount = document.getElementById('bioCount');
 
+  // An uploaded picture wins over the drawn avatar everywhere it shows.
+  let customAvatar = null;      // data URL, or null when using a preset
+  let avatarDirty = false;      // picture added or removed, not saved yet
+  function myAvatar(){ return customAvatar || profile.avatar; }
+
   function renderAvatarPicker(){
     avatarPicker.innerHTML = '';
     Object.keys(AVATARS).forEach(key => {
       const wrap = document.createElement('div');
       wrap.className = 'avatar-wrap';
       const btn = document.createElement('button');
-      btn.className = 'avatar-opt' + (profile.avatar === key ? ' selected' : '');
+      // a preset only reads as selected when no picture is overriding it
+      btn.className = 'avatar-opt' + (!customAvatar && profile.avatar === key ? ' selected' : '');
       btn.innerHTML = avatarSvg(key);
       btn.addEventListener('click', () => {
         profile.avatar = key;
+        // picking a drawn avatar clears an uploaded picture
+        if (customAvatar){ customAvatar = null; avatarDirty = true; }
         renderAvatarPicker();
+        renderAvatarUpload();
         renderTopbarAvatar();
       });
       const label = document.createElement('div');
@@ -4356,8 +4458,94 @@ Wed: OFF
   }
 
   function renderTopbarAvatar(){
-    topbarAvatar.innerHTML = avatarSvg(profile.avatar);
+    topbarAvatar.innerHTML = avatarSvg(myAvatar());
   }
+
+  // ── Upload a profile picture ───────────────────────────────
+  const avFileInput = document.getElementById('avFileInput');
+  const avUploadBtn = document.getElementById('avUploadBtn');
+  const avRemoveBtn = document.getElementById('avRemoveBtn');
+  const avUploadPreview = document.getElementById('avUploadPreview');
+  const avMsg = document.getElementById('avMsg');
+
+  const AV_SIZE = 128;          // square pixels stored
+  const AV_MAX_BYTES = 25000;   // hard cap on the stored string
+
+  function renderAvatarUpload(){
+    avUploadPreview.innerHTML = avatarSvg(myAvatar());
+    avRemoveBtn.hidden = !customAvatar;
+    avUploadBtn.textContent = customAvatar ? 'Change picture' : 'Upload a picture';
+  }
+
+  // Shrinks any photo down to a small square JPEG. Starts at decent
+  // quality and steps down until the stored string is under the cap, so a
+  // 5MB camera photo still ends up a few KB.
+  function compressImage(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('read failed'));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('not an image'));
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = AV_SIZE; canvas.height = AV_SIZE;
+          const ctx = canvas.getContext('2d');
+          // centre crop to a square so faces don't get squashed
+          const side = Math.min(img.width, img.height);
+          const sx = (img.width - side) / 2;
+          const sy = (img.height - side) / 2;
+          ctx.drawImage(img, sx, sy, side, side, 0, 0, AV_SIZE, AV_SIZE);
+          let q = 0.7, out = canvas.toDataURL('image/jpeg', q);
+          while (out.length > AV_MAX_BYTES && q > 0.3){
+            q -= 0.1;
+            out = canvas.toDataURL('image/jpeg', q);
+          }
+          if (out.length > AV_MAX_BYTES) reject(new Error('too big'));
+          else resolve(out);
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  avUploadBtn.addEventListener('click', () => avFileInput.click());
+  avFileInput.addEventListener('change', async () => {
+    const file = avFileInput.files && avFileInput.files[0];
+    avFileInput.value = ''; // let the same file be picked again later
+    if (!file) return;
+    if (!file.type.startsWith('image/')){
+      avMsg.textContent = 'Pick an image file.'; avMsg.className = 'set-msg err';
+      return;
+    }
+    avMsg.textContent = 'Shrinking your picture...'; avMsg.className = 'set-msg';
+    avUploadBtn.disabled = true;
+    try{
+      customAvatar = await compressImage(file);
+      avatarDirty = true;
+      renderAvatarUpload();
+      renderAvatarPicker();
+      renderTopbarAvatar();
+      avMsg.textContent = 'Looks good. Hit Save profile to keep it.';
+      avMsg.className = 'set-msg ok';
+    } catch(err){
+      console.error('Avatar compress failed:', err);
+      avMsg.textContent = 'Could not use that image. Try another one.';
+      avMsg.className = 'set-msg err';
+    }
+    avUploadBtn.disabled = false;
+  });
+
+  avRemoveBtn.addEventListener('click', () => {
+    customAvatar = null;
+    avatarDirty = true;
+    renderAvatarUpload();
+    renderAvatarPicker();
+    renderTopbarAvatar();
+    avMsg.textContent = 'Picture removed. Hit Save profile to confirm.';
+    avMsg.className = 'set-msg';
+  });
 
   const hideStatusToggle = document.getElementById('hideStatusToggle');
 
@@ -4448,6 +4636,7 @@ Wed: OFF
           bio: d.bio || '',
           gender: d.gender || '',
           avatar: AVATARS[d.avatar] ? d.avatar : 'larry',
+          avatarUpdated: d.avatarUpdated || null,
           isPublic: d.isPublic === true,
           hideStatus: d.hideStatus === true,
           lastActive: d.lastActive || null,
@@ -4461,7 +4650,17 @@ Wed: OFF
       console.error('Could not load profile:', err);
       profile.name = currentUser.displayName || '';
     }
+    // load my own uploaded picture, if I have one
+    if (profile.avatarUpdated){
+      const mine = getCachedAvatar(currentUser.uid, profile.avatarUpdated)
+        || await fetchAvatarPicture(currentUser.uid);
+      if (mine){
+        customAvatar = mine;
+        setCachedAvatar(currentUser.uid, profile.avatarUpdated, mine);
+      }
+    }
     renderTopbarAvatar();
+    renderAvatarUpload();
     startPresence();
   }
 
@@ -4483,12 +4682,30 @@ Wed: OFF
     profile.gender = setGender.value;
 
     try{
+      // Save the picture first, in its own doc, so the profile doc stays
+      // small. avatarUpdated doubles as the cache key for every device.
+      if (avatarDirty){
+        if (customAvatar){
+          profile.avatarUpdated = new Date().toISOString();
+          await setDoc(doc(db, "avatars", currentUser.uid), {
+            image: customAvatar,
+            updatedAt: profile.avatarUpdated
+          });
+          setCachedAvatar(currentUser.uid, profile.avatarUpdated, customAvatar);
+        } else {
+          profile.avatarUpdated = null;
+          try{ await deleteDoc(doc(db, "avatars", currentUser.uid)); } catch(e){}
+          clearCachedAvatar(currentUser.uid);
+        }
+        avatarDirty = false;
+      }
       await setDoc(doc(db, "profiles", currentUser.uid), {
         name: profile.name,
         status: profile.status,
         bio: profile.bio,
         gender: profile.gender,
         avatar: profile.avatar,
+        avatarUpdated: profile.avatarUpdated || null,
         isPublic: profile.isPublic,
         hideStatus: profile.hideStatus,
         manualPresence: profile.manualPresence || 'auto',
@@ -5974,6 +6191,7 @@ Wed: OFF
           bio: data.bio || '',
           gender: data.gender || '',
           avatar: AVATARS[data.avatar] ? data.avatar : 'larry',
+          avatarUpdated: data.avatarUpdated || null,
           isPublic: data.isPublic === true,
           hideStatus: data.hideStatus === true,
           lastActive: data.lastActive || null,
@@ -5983,6 +6201,8 @@ Wed: OFF
         });
       });
     allPeople.sort((a,b) => a.name.localeCompare(b.name));
+    // swap in uploaded pictures for anyone who has one
+    await resolveAvatars(allPeople);
   }
 
   function renderPeople(filter){
