@@ -502,6 +502,18 @@
   .av-upload-btn.danger:hover{ color:var(--error); border-color:var(--error); }
   .av-upload-btn:disabled{ opacity:0.55; cursor:default; }
 
+  /* shown instead of the preview/buttons row while a new picture is
+     actually being written to the server. no background color is set
+     here on purpose, so the animation (transparent by itself) simply
+     shows whatever the settings panel behind it already is. */
+  .av-uploading{
+    display:flex; flex-direction:column; align-items:center;
+    gap:4px; margin-top:14px; padding:6px 0;
+  }
+  .av-uploading-anim{ width:120px; height:90px; }
+  .av-uploading-anim svg{ display:block; }
+  .av-uploading-label{ font-size:0.8rem; color:var(--text-dim); }
+
   /* avatar picker */
   .avatar-picker{ display:flex; gap:12px; flex-wrap:wrap; }
   .avatar-opt{
@@ -1932,13 +1944,17 @@
       <div class="set-section">
         <div class="set-label">Profile picture</div>
         <div class="avatar-picker" id="avatarPicker"></div>
-        <div class="av-upload">
+        <div class="av-upload" id="avUploadRow">
           <div class="av-upload-preview" id="avUploadPreview"></div>
           <div class="av-upload-actions">
             <input type="file" id="avFileInput" accept="image/*" hidden>
             <button class="av-upload-btn" id="avUploadBtn">Upload a picture</button>
             <button class="av-upload-btn danger" id="avRemoveBtn" hidden>Remove picture</button>
           </div>
+        </div>
+        <div class="av-uploading" id="avUploading" hidden>
+          <div class="av-uploading-anim" id="avUploadingAnim"></div>
+          <div class="av-uploading-label">Uploading your picture…</div>
         </div>
         <div class="set-msg" id="avMsg"></div>
         <div class="set-hint">Your picture is shrunk down before it is saved, so it stays small. Pick an avatar above to go back to a drawn one.</div>
@@ -4461,6 +4477,36 @@ Wed: OFF
     topbarAvatar.innerHTML = avatarSvg(myAvatar());
   }
 
+  // ── "Uploading" animation while a new picture writes to the server ──
+  const avUploadRow = document.getElementById('avUploadRow');
+  const avUploading = document.getElementById('avUploading');
+  const avUploadingAnim = document.getElementById('avUploadingAnim');
+  let uploadAnimInstance = null;
+
+  async function showUploadingAnim(){
+    avUploadRow.hidden = true;
+    avUploading.hidden = false;
+    try{
+      const lottie = await loadLottie();
+      avUploadingAnim.innerHTML = '';
+      uploadAnimInstance = lottie.loadAnimation({
+        container: avUploadingAnim,
+        renderer: 'svg',
+        loop: true,
+        autoplay: true,
+        path: './avatar-upload.json'
+      });
+    } catch(err){
+      // no animation, the "Uploading your picture..." text still shows
+      console.error('Upload animation unavailable:', err);
+    }
+  }
+  function hideUploadingAnim(){
+    if (uploadAnimInstance){ uploadAnimInstance.destroy(); uploadAnimInstance = null; }
+    avUploading.hidden = true;
+    avUploadRow.hidden = false;
+  }
+
   // ── Upload a profile picture ───────────────────────────────
   const avFileInput = document.getElementById('avFileInput');
   const avUploadBtn = document.getElementById('avUploadBtn');
@@ -4686,12 +4732,18 @@ Wed: OFF
       // small. avatarUpdated doubles as the cache key for every device.
       if (avatarDirty){
         if (customAvatar){
-          profile.avatarUpdated = new Date().toISOString();
-          await setDoc(doc(db, "avatars", currentUser.uid), {
-            image: customAvatar,
-            updatedAt: profile.avatarUpdated
-          });
-          setCachedAvatar(currentUser.uid, profile.avatarUpdated, customAvatar);
+          // this is the actual upload, worth showing the animation for
+          await showUploadingAnim();
+          try{
+            profile.avatarUpdated = new Date().toISOString();
+            await setDoc(doc(db, "avatars", currentUser.uid), {
+              image: customAvatar,
+              updatedAt: profile.avatarUpdated
+            });
+            setCachedAvatar(currentUser.uid, profile.avatarUpdated, customAvatar);
+          } finally {
+            hideUploadingAnim();
+          }
         } else {
           profile.avatarUpdated = null;
           try{ await deleteDoc(doc(db, "avatars", currentUser.uid)); } catch(e){}
