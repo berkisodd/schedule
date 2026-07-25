@@ -1171,6 +1171,18 @@
     padding:13px; margin-top:14px; font-size:0.8rem; line-height:1.55;
     color:var(--text-dim);
   }
+  .conn-help-modal{ max-width:420px; }
+  .conn-help-list{
+    list-style:none; margin:16px 0 0; padding:0;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .conn-help-list li{
+    position:relative; padding-left:22px; font-size:0.9rem;
+    color:var(--text); line-height:1.4;
+  }
+  .conn-help-list li::before{
+    content:'•'; position:absolute; left:4px; color:var(--amber); font-weight:700;
+  }
   .adm-stat{
     display:flex; justify-content:space-between; align-items:baseline;
     padding:10px 0; border-bottom:1px solid var(--line-soft);
@@ -2472,6 +2484,24 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="connHelpModal">
+  <div class="modal conn-help-modal">
+    <button class="modal-close" id="closeConnHelp" aria-label="Close">✕</button>
+    <div class="set-head">
+      <div class="set-title">We can't reach the server</div>
+      <div class="set-sub">This usually clears up on its own. A few things to try:</div>
+    </div>
+    <ul class="conn-help-list">
+      <li>Log out and log back in</li>
+      <li>Refresh the page</li>
+      <li>Close the app completely and open it again</li>
+      <li>Check that your wifi or data connection is actually working</li>
+    </ul>
+    <div class="set-hint">If it keeps happening, wait a few minutes and try again. Sometimes it just takes a moment to catch up.</div>
+    <button class="btn-primary" id="connHelpRefresh" style="margin-top:18px;">Refresh now</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="shareModal">
   <div class="modal share-modal">
     <button class="modal-close" id="closeShare" aria-label="Close">✕</button>
@@ -2635,6 +2665,11 @@
     connStatus.classList.remove('live','connecting','offline');
     connStatus.classList.add(next);
     connLabel.textContent = label;
+    // Only this exact label means something is genuinely stuck, plain
+    // "Offline" already explains itself. The dedupe check above means
+    // this only fires once per real transition into the state, not on
+    // every repeated call.
+    if (next === 'offline' && label === "Can't reach server") showConnHelpModal();
   }
   function reportServerSnapshot(){
     lastServerSnapAt = Date.now();
@@ -2667,6 +2702,18 @@
       }, 6000);
     }
   }, 6000);
+
+  // Popup with plain troubleshooting steps, shown only when the connection
+  // is genuinely stuck (see the check inside setConnState above).
+  const connHelpModal = document.getElementById('connHelpModal');
+  const closeConnHelp = document.getElementById('closeConnHelp');
+  const connHelpRefresh = document.getElementById('connHelpRefresh');
+  function showConnHelpModal(){ connHelpModal.classList.add('show'); }
+  function closeConnHelpModal(){ connHelpModal.classList.remove('show'); }
+  closeConnHelp.addEventListener('click', closeConnHelpModal);
+  connHelpModal.addEventListener('click', (e) => { if (e.target === connHelpModal) closeConnHelpModal(); });
+  connHelpRefresh.addEventListener('click', () => window.location.reload());
+
   // races a promise against a timeout so a stuck read surfaces an error
   // instead of hanging on "Loading..." forever
   function withTimeout(promise, ms){
@@ -4004,7 +4051,7 @@ Wed: OFF
       if (typeof closeChatModal === 'function') closeChatModal();
       else chatM.classList.remove('show');
     } else {
-      const order = ['profileModal','adminModal','notifModal','peopleModal','settingsModal','shareModal'];
+      const order = ['connHelpModal','profileModal','adminModal','notifModal','peopleModal','settingsModal','shareModal'];
       for (const id of order){
         const m = document.getElementById(id);
         if (m && m.classList.contains('show')){ m.classList.remove('show'); break; }
@@ -4013,7 +4060,7 @@ Wed: OFF
     // Scroll-lock safety: if no modal is left open, always restore
     // scrolling, even if some open path forgot to. This is the rescue
     // hatch for a stranded overflow:hidden.
-    const all = ['chatModal','profileModal','adminModal','notifModal','peopleModal','settingsModal','shareModal'];
+    const all = ['chatModal','connHelpModal','profileModal','adminModal','notifModal','peopleModal','settingsModal','shareModal'];
     const anyOpen = all.some(id => {
       const m = document.getElementById(id);
       return m && m.classList.contains('show');
