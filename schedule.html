@@ -537,20 +537,27 @@
   .av-upload-btn.danger:hover{ color:var(--error); border-color:var(--error); }
   .av-upload-btn:disabled{ opacity:0.55; cursor:default; }
 
-  /* Shown instead of the preview/buttons row while a new picture is
-     actually being written to the server. Hidden by default and only
-     revealed by the .show class, the same pattern the modals use: the
-     hidden attribute kept losing to the display rule here, which left
-     this stuck on screen. No background colour is set on purpose, so the
-     animation (transparent itself) shows the settings panel behind it. */
+  /* Upload progress. A centred overlay rather than something inline in the
+     settings panel, so it is visible wherever you happen to be scrolled.
+     Hidden by default and only revealed by .show, the same pattern the
+     modals use: the hidden attribute kept losing to the display rule and
+     left this stuck on screen. z-index sits above .modal-overlay (50). */
   .av-uploading{ display:none; }
   .av-uploading.show{
-    display:flex; flex-direction:column; align-items:center;
-    gap:4px; margin-top:14px; padding:6px 0;
+    display:flex; align-items:center; justify-content:center;
+    position:fixed; inset:0; z-index:60;
+    background:rgba(0,0,0,0.55); backdrop-filter:blur(8px);
+    animation:fadeIn 0.2s ease;
+  }
+  .av-uploading-card{
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:var(--radius-lg); padding:22px 30px;
+    box-shadow:var(--shadow-lift);
   }
   .av-uploading-anim{ width:120px; height:90px; }
   .av-uploading-anim svg{ display:block; }
-  .av-uploading-label{ font-size:0.8rem; color:var(--text-dim); }
+  .av-uploading-label{ font-size:0.85rem; color:var(--text-dim); }
 
   /* avatar picker */
   .avatar-picker{ display:flex; gap:12px; flex-wrap:wrap; }
@@ -1989,10 +1996,6 @@
             <button class="av-upload-btn" id="avUploadBtn">Upload a picture</button>
             <button class="av-upload-btn danger" id="avRemoveBtn" hidden>Remove picture</button>
           </div>
-        </div>
-        <div class="av-uploading" id="avUploading">
-          <div class="av-uploading-anim" id="avUploadingAnim"></div>
-          <div class="av-uploading-label">Uploading your picture…</div>
         </div>
         <div class="set-msg" id="avMsg"></div>
         <div class="set-hint">Your picture is shrunk down before it is saved, so it stays small. Pick an avatar above to go back to a drawn one.</div>
@@ -4528,19 +4531,36 @@ Wed: OFF
   const avUploadingAnim = document.getElementById('avUploadingAnim');
   let uploadAnimInstance = null;
 
+  // Warm up the library and the animation data as soon as someone picks a
+  // picture. Uploading a small file is quick, so without this the upload
+  // often finishes before the animation has even finished loading and you
+  // never see it.
+  const UPLOAD_ANIM_MIN_MS = 1100;
+  let uploadAnimData = null;
+  function prepareUploadAnim(){
+    loadLottie().catch(() => {});
+    if (uploadAnimData || prepareUploadAnim._p) return;
+    prepareUploadAnim._p = fetch('./avatar-upload.json')
+      .then(r => r.json())
+      .then(d => { uploadAnimData = d; })
+      .catch(() => {});
+  }
+
   async function showUploadingAnim(){
-    avUploadRow.classList.add('gone');
     avUploading.classList.add('show');
     try{
       const lottie = await loadLottie();
       avUploadingAnim.innerHTML = '';
-      uploadAnimInstance = lottie.loadAnimation({
+      const opts = {
         container: avUploadingAnim,
         renderer: 'svg',
         loop: true,
-        autoplay: true,
-        path: './avatar-upload.json'
-      });
+        autoplay: true
+      };
+      // preloaded data renders straight away; the path is the fallback
+      if (uploadAnimData) opts.animationData = uploadAnimData;
+      else opts.path = './avatar-upload.json';
+      uploadAnimInstance = lottie.loadAnimation(opts);
     } catch(err){
       // no animation, the "Uploading your picture..." text still shows
       console.error('Upload animation unavailable:', err);
@@ -4615,6 +4635,7 @@ Wed: OFF
     try{
       customAvatar = await compressImage(file);
       avatarDirty = true;
+      prepareUploadAnim(); // ready by the time they scroll down and save
       renderAvatarUpload();
       renderAvatarPicker();
       renderTopbarAvatar();
@@ -4781,6 +4802,7 @@ Wed: OFF
       if (avatarDirty){
         if (customAvatar){
           // this is the actual upload, worth showing the animation for
+          const shownAt = Date.now();
           await showUploadingAnim();
           try{
             profile.avatarUpdated = new Date().toISOString();
@@ -4790,6 +4812,10 @@ Wed: OFF
             });
             setCachedAvatar(currentUser.uid, profile.avatarUpdated, customAvatar);
           } finally {
+            // a small picture uploads in a blink, so hold the animation on
+            // screen long enough to actually register as feedback
+            const left = UPLOAD_ANIM_MIN_MS - (Date.now() - shownAt);
+            if (left > 0) await new Promise(r => setTimeout(r, left));
             hideUploadingAnim();
           }
         } else {
@@ -6729,6 +6755,18 @@ Wed: OFF
     if (dirty){ e.preventDefault(); e.returnValue = ''; }
   });
 </script>
+
+<!-- Upload progress lives here, at the top level, rather than inside the
+     Profile picture section. The Save button sits a dozen sections further
+     down the settings panel, so on a phone that section is scrolled well
+     off screen by the time you tap Save and the animation was playing
+     where nobody could see it. -->
+<div class="av-uploading" id="avUploading">
+  <div class="av-uploading-card">
+    <div class="av-uploading-anim" id="avUploadingAnim"></div>
+    <div class="av-uploading-label">Uploading your picture…</div>
+  </div>
+</div>
 
 <!-- Service worker registration lives in its own plain script on purpose.
      It used to sit at the end of the module above, which imports Firebase
