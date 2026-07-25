@@ -1980,13 +1980,6 @@
     </div>
     <div class="daytrack-right">
       <div class="daytrack-now" id="clockNow">--:--</div>
-      <button class="bell-btn admin-only" id="openAdminTop" aria-label="Admin">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/>
-          <path d="m9 12 2 2 4-4"/>
-        </svg>
-      </button>
       <button class="bell-btn" id="openNotifs" aria-label="Notifications">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
              stroke-linecap="round" stroke-linejoin="round">
@@ -6261,8 +6254,6 @@ Wed: OFF
   }
   const openAdminBtn = document.getElementById('openAdmin');
   if (openAdminBtn) openAdminBtn.addEventListener('click', openAdminPanel);
-  const openAdminTopBtn = document.getElementById('openAdminTop');
-  if (openAdminTopBtn) openAdminTopBtn.addEventListener('click', openAdminPanel);
   closeAdmin.addEventListener('click', () => {
     adminModal.classList.remove('show');
     document.body.style.overflow = '';
@@ -6895,15 +6886,17 @@ Wed: OFF
 
   // Phone bottom tab bar: each button just forwards to the header
   // control it replaces on a phone, so there's one place that owns
-  // what actually happens when you tap People/Import/Share/Add.
+  // what actually happens when you tap People/Import/Share/Add/Admin.
   const tabPeople = document.getElementById('tabPeople');
   const tabImport = document.getElementById('tabImport');
   const tabShare = document.getElementById('tabShare');
   const tabAdd = document.getElementById('tabAdd');
+  const tabAdmin = document.getElementById('tabAdmin');
   if (tabPeople) tabPeople.addEventListener('click', () => openPeople.click());
   if (tabImport) tabImport.addEventListener('click', () => openImport.click());
   if (tabShare) tabShare.addEventListener('click', () => openShare.click());
   if (tabAdd) tabAdd.addEventListener('click', () => toggleAdd.click());
+  if (tabAdmin) tabAdmin.addEventListener('click', openAdminPanel);
 </script>
 
 <!-- Upload progress lives here, at the top level, rather than inside the
@@ -6923,7 +6916,9 @@ Wed: OFF
      phone that row is trimmed to just the view toggle by CSS, and this
      fixed bar takes over as the real navigation instead. Each button here
      just forwards a click to the original control, so there's one place
-     that owns what happens when you tap People, Import, Share or Add. -->
+     that owns what happens when you tap People, Import, Share or Add.
+     Admin lives here too (not in the cramped top bar) since that row is
+     already tight with the clock, bell, avatar and logout button. -->
 <nav class="mobile-tabbar" id="mobileTabbar" aria-label="Main">
   <button class="mtab" id="tabPeople" aria-label="People">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -6960,6 +6955,14 @@ Wed: OFF
       <path d="M15.41 6.51 8.59 10.49"/>
     </svg>
     <span>Share</span>
+  </button>
+  <button class="mtab admin-only" id="tabAdmin" aria-label="Admin">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/>
+      <path d="m9 12 2 2 4-4"/>
+    </svg>
+    <span>Admin</span>
   </button>
 </nav>
 
