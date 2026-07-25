@@ -326,7 +326,9 @@
     letter-spacing:0.06em; color:var(--text-dim);
     padding:2px 7px 2px 5px; border-radius:20px;
     border:1px solid var(--line-soft); background:var(--ink-2);
+    cursor:pointer; transition:border-color 0.18s ease;
   }
+  .conn-status:hover{ border-color:var(--slate); }
   .conn-dot{
     width:6px; height:6px; border-radius:50%; flex-shrink:0;
     background:var(--slate); transition:background 0.25s ease, box-shadow 0.25s ease;
@@ -1219,6 +1221,26 @@
   .conn-help-list li::before{
     content:'•'; position:absolute; left:4px; color:var(--amber); font-weight:700;
   }
+  .conn-info-modal{ max-width:380px; text-align:center; padding-bottom:8px; }
+  .conn-info-icon{
+    width:56px; height:56px; margin:32px auto 14px;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:50%; background:var(--ink-2); border:1px solid var(--line);
+    color:var(--text-dim);
+  }
+  .conn-info-icon svg{ width:26px; height:26px; }
+  .conn-info-sub{ color:var(--text-dim); font-size:0.85rem; padding:0 24px; }
+  .conn-info-rows{ margin:22px 24px 0; border-top:1px solid var(--line); }
+  .conn-info-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:13px 2px; border-bottom:1px solid var(--line); font-size:0.88rem;
+  }
+  .conn-info-label{ color:var(--text-dim); }
+  .conn-info-value{
+    display:flex; align-items:center; gap:6px; font-weight:600;
+    font-family:'JetBrains Mono', monospace; font-size:0.82rem;
+  }
+  .conn-info-hint{ color:var(--text-dim); font-size:0.78rem; line-height:1.5; margin:14px 24px 18px; }
   .adm-stat{
     display:flex; justify-content:space-between; align-items:baseline;
     padding:10px 0; border-bottom:1px solid var(--line-soft);
@@ -2538,6 +2560,38 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="connInfoModal">
+  <div class="modal conn-info-modal">
+    <button class="modal-close" id="closeConnInfo" aria-label="Close">✕</button>
+    <div class="conn-info-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="2" width="20" height="8" rx="2"/>
+        <rect x="2" y="14" width="20" height="8" rx="2"/>
+        <line x1="6" y1="6" x2="6.01" y2="6"/>
+        <line x1="6" y1="18" x2="6.01" y2="18"/>
+      </svg>
+    </div>
+    <div class="set-title">Server status</div>
+    <div class="conn-info-sub">A live look at the connection to your data.</div>
+    <div class="conn-info-rows">
+      <div class="conn-info-row">
+        <span class="conn-info-label">Status</span>
+        <span class="conn-info-value">
+          <span class="conn-dot" id="connInfoDot"></span>
+          <span id="connInfoLabel">Connecting…</span>
+        </span>
+      </div>
+      <div class="conn-info-row">
+        <span class="conn-info-label">Ping</span>
+        <span class="conn-info-value" id="connInfoPing">Measuring…</span>
+      </div>
+    </div>
+    <div class="conn-info-hint">This is the round trip time to reach your data, not a raw network ping. Browsers can't measure that directly.</div>
+    <button class="btn-primary" id="connInfoRetest" style="margin-bottom:18px;">Test again</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="shareModal">
   <div class="modal share-modal">
     <button class="modal-close" id="closeShare" aria-label="Close">✕</button>
@@ -2656,7 +2710,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut, deleteUser, updateProfile, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where, updateDoc, onSnapshot, addDoc, orderBy, limit, writeBatch } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, getDocFromServer, setDoc, deleteDoc, collection, getDocs, query, where, updateDoc, onSnapshot, addDoc, orderBy, limit, writeBatch } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBmD7gtaHTmrIE4Pl9q1746s-zoWvx6XAI",
@@ -2749,6 +2803,52 @@
   closeConnHelp.addEventListener('click', closeConnHelpModal);
   connHelpModal.addEventListener('click', (e) => { if (e.target === connHelpModal) closeConnHelpModal(); });
   connHelpRefresh.addEventListener('click', () => window.location.reload());
+
+  // Tapping the pill shows a real measured round trip to the database,
+  // not a synthetic number. There's no ICMP ping available in a browser,
+  // so this times an actual read that skips the local cache instead.
+  const connInfoModal = document.getElementById('connInfoModal');
+  const closeConnInfo = document.getElementById('closeConnInfo');
+  const connInfoDot = document.getElementById('connInfoDot');
+  const connInfoLabel = document.getElementById('connInfoLabel');
+  const connInfoPing = document.getElementById('connInfoPing');
+  const connInfoRetest = document.getElementById('connInfoRetest');
+
+  function syncConnInfoStatus(){
+    connInfoDot.className = 'conn-dot';
+    connStatus.classList.forEach(c => {
+      if (c === 'live' || c === 'connecting' || c === 'offline') connInfoDot.classList.add(c);
+    });
+    connInfoLabel.textContent = connLabel.textContent;
+  }
+
+  async function measurePing(){
+    if (navigator.onLine === false){
+      connInfoPing.textContent = 'Offline';
+      return;
+    }
+    connInfoPing.textContent = 'Measuring…';
+    const start = performance.now();
+    try{
+      await getDocFromServer(doc(db, 'config', 'app'));
+      const ms = Math.round(performance.now() - start);
+      connInfoPing.textContent = ms + ' ms';
+    } catch(e){
+      connInfoPing.textContent = 'Could not reach the server';
+    }
+    syncConnInfoStatus();
+  }
+
+  function openConnInfoModal(){
+    syncConnInfoStatus();
+    connInfoModal.classList.add('show');
+    measurePing();
+  }
+  function closeConnInfoModal(){ connInfoModal.classList.remove('show'); }
+  connStatus.addEventListener('click', openConnInfoModal);
+  closeConnInfo.addEventListener('click', closeConnInfoModal);
+  connInfoModal.addEventListener('click', (e) => { if (e.target === connInfoModal) closeConnInfoModal(); });
+  connInfoRetest.addEventListener('click', measurePing);
 
   // races a promise against a timeout so a stuck read surfaces an error
   // instead of hanging on "Loading..." forever
@@ -4087,7 +4187,7 @@ Wed: OFF
       if (typeof closeChatModal === 'function') closeChatModal();
       else chatM.classList.remove('show');
     } else {
-      const order = ['connHelpModal','profileModal','adminModal','notifModal','peopleModal','settingsModal','shareModal'];
+      const order = ['connHelpModal','connInfoModal','profileModal','adminModal','notifModal','peopleModal','settingsModal','shareModal'];
       for (const id of order){
         const m = document.getElementById(id);
         if (m && m.classList.contains('show')){ m.classList.remove('show'); break; }
@@ -4096,7 +4196,7 @@ Wed: OFF
     // Scroll-lock safety: if no modal is left open, always restore
     // scrolling, even if some open path forgot to. This is the rescue
     // hatch for a stranded overflow:hidden.
-    const all = ['chatModal','connHelpModal','profileModal','adminModal','notifModal','peopleModal','settingsModal','shareModal'];
+    const all = ['chatModal','connHelpModal','connInfoModal','profileModal','adminModal','notifModal','peopleModal','settingsModal','shareModal'];
     const anyOpen = all.some(id => {
       const m = document.getElementById(id);
       return m && m.classList.contains('show');
