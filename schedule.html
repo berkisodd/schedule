@@ -463,6 +463,42 @@
     .head-actions{ width:100%; justify-content:flex-start; }
   }
 
+  /* ── Phone bottom tab bar ─────────────────────────────────
+     On a phone, People/Import/Share/Add move down here instead of
+     crowding the header. Settings is already one tap away from the
+     avatar in the top bar, and Admin gets its own icon up there too,
+     so this only needs to carry the four actions with no other home. */
+  .mobile-tabbar{ display:none; }
+  @media (max-width:700px){
+    /* Settings/Admin already have a home in the top bar; these four
+       are the ones that need somewhere else to go. */
+    .head-actions .btn-import,
+    .head-actions .btn-people,
+    .head-actions .btn-settings,
+    .head-actions .btn-share,
+    .head-actions .btn-add{
+      display:none;
+    }
+    body{ padding-bottom:calc(64px + env(safe-area-inset-bottom)); }
+    .mobile-tabbar{
+      display:flex; position:fixed; left:0; right:0; bottom:0; z-index:40;
+      background:var(--panel); border-top:1px solid var(--line);
+      padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+      justify-content:space-around;
+    }
+  }
+  .mtab{
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    background:none; border:none; color:var(--text-dim); cursor:pointer;
+    font-family:'Inter',sans-serif; font-size:0.66rem; font-weight:500;
+    padding:4px 10px; border-radius:var(--radius);
+    transition:color 0.18s ease;
+  }
+  .mtab svg{ width:20px; height:20px; display:block; }
+  .mtab:hover, .mtab:active{ color:var(--text); }
+  .mtab-add svg{ color:var(--amber); }
+  .mtab-add{ color:var(--text); }
+
   /* presence dots */
   .pdot{
     width:10px; height:10px; border-radius:50%; flex-shrink:0;
@@ -1944,6 +1980,13 @@
     </div>
     <div class="daytrack-right">
       <div class="daytrack-now" id="clockNow">--:--</div>
+      <button class="bell-btn admin-only" id="openAdminTop" aria-label="Admin">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>
+      </button>
       <button class="bell-btn" id="openNotifs" aria-label="Notifications">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
              stroke-linecap="round" stroke-linejoin="round">
@@ -6218,6 +6261,8 @@ Wed: OFF
   }
   const openAdminBtn = document.getElementById('openAdmin');
   if (openAdminBtn) openAdminBtn.addEventListener('click', openAdminPanel);
+  const openAdminTopBtn = document.getElementById('openAdminTop');
+  if (openAdminTopBtn) openAdminTopBtn.addEventListener('click', openAdminPanel);
   closeAdmin.addEventListener('click', () => {
     adminModal.classList.remove('show');
     document.body.style.overflow = '';
@@ -6847,6 +6892,18 @@ Wed: OFF
   window.addEventListener('beforeunload', (e) => {
     if (dirty){ e.preventDefault(); e.returnValue = ''; }
   });
+
+  // Phone bottom tab bar: each button just forwards to the header
+  // control it replaces on a phone, so there's one place that owns
+  // what actually happens when you tap People/Import/Share/Add.
+  const tabPeople = document.getElementById('tabPeople');
+  const tabImport = document.getElementById('tabImport');
+  const tabShare = document.getElementById('tabShare');
+  const tabAdd = document.getElementById('tabAdd');
+  if (tabPeople) tabPeople.addEventListener('click', () => openPeople.click());
+  if (tabImport) tabImport.addEventListener('click', () => openImport.click());
+  if (tabShare) tabShare.addEventListener('click', () => openShare.click());
+  if (tabAdd) tabAdd.addEventListener('click', () => toggleAdd.click());
 </script>
 
 <!-- Upload progress lives here, at the top level, rather than inside the
@@ -6860,6 +6917,51 @@ Wed: OFF
     <div class="av-uploading-label">Uploading your picture…</div>
   </div>
 </div>
+
+<!-- On a phone, the header used to carry all of these as one crowded row
+     of pill buttons. They still exist up there for wide screens; on a
+     phone that row is trimmed to just the view toggle by CSS, and this
+     fixed bar takes over as the real navigation instead. Each button here
+     just forwards a click to the original control, so there's one place
+     that owns what happens when you tap People, Import, Share or Add. -->
+<nav class="mobile-tabbar" id="mobileTabbar" aria-label="Main">
+  <button class="mtab" id="tabPeople" aria-label="People">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+    <span>People</span>
+  </button>
+  <button class="mtab" id="tabImport" aria-label="Import a schedule">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>
+    </svg>
+    <span>Import</span>
+  </button>
+  <button class="mtab mtab-add" id="tabAdd" aria-label="Add period">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 5v14"/>
+      <path d="M5 12h14"/>
+    </svg>
+    <span>Add</span>
+  </button>
+  <button class="mtab" id="tabShare" aria-label="Share">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="18" cy="5" r="3"/>
+      <circle cx="6" cy="12" r="3"/>
+      <circle cx="18" cy="19" r="3"/>
+      <path d="M8.59 13.51 15.42 17.49"/>
+      <path d="M15.41 6.51 8.59 10.49"/>
+    </svg>
+    <span>Share</span>
+  </button>
+</nav>
 
 <!-- Service worker registration lives in its own plain script on purpose.
      It used to sit at the end of the module above, which imports Firebase
