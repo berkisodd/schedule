@@ -431,6 +431,29 @@
   }
   .daytab.active.today .daytab-abbr::after{ color:var(--amber); }
 
+  /* ── Rotating-day "today" override, shown only in rotation mode ── */
+  .rotation-override{
+    max-width:820px; margin:-14px auto 20px; padding:0 24px;
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    font-size:0.78rem; color:var(--text-dim);
+  }
+  .rotation-override-fix{
+    background:none; border:none; color:var(--text-dim); text-decoration:underline;
+    font-family:'Inter',sans-serif; font-size:0.78rem; cursor:pointer; padding:0;
+  }
+  .rotation-override-fix:hover{ color:var(--text); }
+  .rotation-override-picker{
+    width:100%; display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;
+  }
+  .rotation-override-opt{
+    background:transparent; border:1px solid var(--line); color:var(--text-dim);
+    font-family:'Inter',sans-serif; font-size:0.78rem; padding:6px 11px;
+    border-radius:var(--radius); cursor:pointer;
+    transition:border-color 0.18s ease, color 0.18s ease;
+  }
+  .rotation-override-opt:hover{ border-color:var(--slate); color:var(--text); }
+  .rotation-override-opt.current{ border-color:var(--amber); color:var(--amber); }
+
   /* ── Schedule list ────────────────────────────────────── */
   .section{ max-width:820px; margin:0 auto; padding:0 20px; transition:max-width 0.3s ease; }
   body.weekview .section{ max-width:1200px; }
@@ -1690,6 +1713,8 @@
     transition:border-color 0.2s ease, background 0.2s ease;
   }
   .install-btn:hover{ border-color:var(--slate); background:var(--ink-2); }
+  .install-btn:disabled{ cursor:default; opacity:0.55; }
+  .install-btn:disabled:hover{ border-color:var(--line); background:var(--panel); }
   .install-btn-icon{
     width:34px; height:34px; flex:none; border-radius:9px;
     border:1px solid var(--line); display:flex; align-items:center;
@@ -2028,6 +2053,12 @@
 
 <div class="daytabs" id="dayTabs"></div>
 
+<div class="rotation-override" id="rotationOverride" hidden>
+  <span class="rotation-override-text" id="rotationOverrideText"></span>
+  <button type="button" class="rotation-override-fix" id="rotationOverrideFix">Not right?</button>
+  <div class="rotation-override-picker" id="rotationOverridePicker" hidden></div>
+</div>
+
 <div class="section">
   <div class="section-head">
     <h2>Schedule <span class="viewing" id="viewingLabel"></span></h2>
@@ -2263,10 +2294,31 @@
           </span>
           <span class="install-btn-main">
             <span class="install-btn-title">Export to calendar</span>
-            <span class="install-btn-sub">Download as .ics, add it to Apple or Google Calendar</span>
+            <span class="install-btn-sub" id="exportIcalSub">Download as .ics, add it to Apple or Google Calendar</span>
           </span>
           <span class="install-btn-chev">›</span>
         </button>
+      </div>
+
+      <div class="set-section" id="rotationSection">
+        <div class="set-row">
+          <div>
+            <div class="set-label" style="margin-bottom:4px;">My school rotates days</div>
+            <div class="set-hint" style="margin:0;">For schools that cycle through numbered days (Day 1, Day 2, ...) instead of a normal Monday to Friday week.</div>
+          </div>
+          <button class="switch" id="rotationToggle" role="switch" aria-checked="false">
+            <span class="switch-knob"></span>
+          </button>
+        </div>
+        <div id="rotationOptions" hidden style="margin-top:14px;">
+          <div class="set-hint" style="margin-bottom:6px;">Days in the cycle</div>
+          <input type="number" class="set-input" id="rotationLength" min="2" max="10" value="2" style="max-width:110px;">
+          <div class="set-hint" style="margin:14px 0 6px;">Pick one date you know the day for, so the app can count forward from it automatically.</div>
+          <input type="date" class="set-input" id="rotationRefDate" style="margin-bottom:9px;">
+          <select class="set-input" id="rotationRefDay"></select>
+          <div class="set-msg" id="rotationMsg"></div>
+          <button class="btn-primary" id="saveRotationBtn" style="margin-top:12px;">Save schedule type</button>
+        </div>
       </div>
 
       <div class="set-msg" id="setMsg"></div>
@@ -3027,9 +3079,17 @@
   let dirty = false;
 
   // ── Data model: week = { Mon:[], Tue:[], ... } ─────────────
-  const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  // DAYS is mutable: schools with a rotating block schedule (Day1, Day2,
+  // ...) use generic keys instead of weekdays. Everything below just
+  // iterates whatever DAYS currently is, so switching it is what makes
+  // day tabs/week grid/chips/copy-from-day work for both modes for free.
+  let DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   const DAY_FULL = { Mon:'Monday', Tue:'Tuesday', Wed:'Wednesday', Thu:'Thursday', Fri:'Friday', Sat:'Saturday', Sun:'Sunday' };
   const JS_DAY_TO_KEY = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; // getDay() index
+
+  // Rotation config, off by default: `schedules/{uid}.rotation`. Absent or
+  // enabled:false (every existing user) means nothing here changes anything.
+  let rotation = { enabled:false, length:2, refDate:'', refDay:1, overrides:{} };
 
   let week = emptyWeek();
   let viewingDay = todayKey();      // which tab is open
@@ -3042,6 +3102,87 @@
   }
   function todayKey(){
     return JS_DAY_TO_KEY[new Date().getDay()];
+  }
+
+  function normalizeRotation(r){
+    const out = { enabled:false, length:2, refDate:'', refDay:1, overrides:{} };
+    if (r && typeof r === 'object'){
+      out.length = Number.isInteger(r.length) && r.length >= 2 && r.length <= 10 ? r.length : 2;
+      out.enabled = r.enabled === true;
+      out.refDate = typeof r.refDate === 'string' ? r.refDate : '';
+      out.refDay = Number.isInteger(r.refDay) && r.refDay >= 1 && r.refDay <= out.length ? r.refDay : 1;
+      if (r.overrides && typeof r.overrides === 'object'){
+        Object.keys(r.overrides).forEach(k => {
+          const v = r.overrides[k];
+          // 0 is a valid override meaning "no school today"
+          if (Number.isInteger(v) && v >= 0 && v <= out.length) out.overrides[k] = v;
+        });
+      }
+    }
+    return out;
+  }
+
+  // Regenerates DAYS from the current rotation config. Must run before
+  // normalizeWeek()/emptyWeek() so they build the right shape, and again
+  // any time rotation settings change.
+  function recomputeDays(){
+    DAYS = rotation.enabled
+      ? Array.from({ length: rotation.length }, (_, i) => 'Day' + (i + 1))
+      : ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  }
+
+  // Full descriptive label ("Monday", "Day 1"). The compact day-tab/chip
+  // text intentionally keeps using the raw key (already short for
+  // weekdays), so this is only for sentence-style text.
+  function dayLabel(key){
+    if (DAY_FULL[key]) return DAY_FULL[key];
+    const m = /^Day(\d+)$/.exec(key || '');
+    return m ? ('Day ' + m[1]) : (key || '');
+  }
+
+  function ymd(d){
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+
+  // Signed count of school days (Mon-Fri) from one date to another,
+  // positive if `toStr` is after `fromStr`. Used to auto-advance a
+  // rotating cycle from a single reference point without modeling every
+  // holiday, only weekends are assumed to not be school days.
+  function countSchoolDaysBetween(fromStr, toStr){
+    const from = new Date(fromStr + 'T00:00:00');
+    const to = new Date(toStr + 'T00:00:00');
+    if (isNaN(from) || isNaN(to)) return 0;
+    let count = 0;
+    const dir = to >= from ? 1 : -1;
+    const d = new Date(from);
+    while (d.getTime() !== to.getTime()){
+      d.setDate(d.getDate() + dir);
+      const dow = d.getDay();
+      if (dow !== 0 && dow !== 6) count += dir;
+    }
+    return count;
+  }
+
+  // The one place "which day is it right now" gets resolved. Off:
+  // exactly today's weekday, unchanged. On: a manual override for the
+  // exact date wins if set, otherwise the rotation is calculated from the
+  // reference point; weekends resolve to null (no school), same as an
+  // empty weekday does today.
+  function resolveTodayKey(){
+    if (!rotation.enabled) return todayKey();
+    // rotation is on but not finished being set up yet (no reference date
+    // saved), so weekday keys like "Sun" don't exist in DAYS anymore
+    if (!rotation.refDate) return null;
+    const dateStr = ymd(new Date());
+    if (dateStr in rotation.overrides){
+      const v = rotation.overrides[dateStr];
+      return v === 0 ? null : 'Day' + v;
+    }
+    const dow = new Date().getDay();
+    if (dow === 0 || dow === 6) return null;
+    const steps = countSchoolDaysBetween(rotation.refDate, dateStr);
+    const idx = (((rotation.refDay - 1) + steps) % rotation.length + rotation.length) % rotation.length;
+    return 'Day' + (idx + 1);
   }
 
   // ══ Announcements ═════════════════════════════════════════════
@@ -3250,11 +3391,14 @@
         const data = snap.data();
         introSeen = data.introSeen === true;
         shareId = data.shareId || null;
+        rotation = normalizeRotation(data.rotation);
+        recomputeDays();
         if (data.week && typeof data.week === 'object'){
           // new weekly format
           week = normalizeWeek(data.week);
         } else if (Array.isArray(data.periods)){
-          // migrate old single-day format into every weekday
+          // migrate old single-day format into every weekday (legacy
+          // format predates rotation entirely, always weekday keys)
           week = emptyWeek();
           ['Mon','Tue','Wed','Thu','Fri'].forEach(d => {
             week[d] = data.periods.map(p => ({...p, id: freshId()}));
@@ -3264,6 +3408,8 @@
     } catch (err){
       console.error('Failed to load schedule:', err);
     }
+    // now that rotation is known, make sure the viewed day is a real key
+    viewingDay = resolveTodayKey() || DAYS[0];
     // default the add-to-days to whatever day you're viewing
     applyDays = new Set([viewingDay]);
     renderDayTabs();
@@ -3326,6 +3472,7 @@
     if(!currentUser) return;
     await setDoc(doc(db, "schedules", currentUser.uid), {
       week,
+      rotation,
       introSeen: introSeen === true,
       shareId: shareId || '',
       updatedAt: new Date().toISOString()
@@ -3410,7 +3557,7 @@
   // ── Day tabs ────────────────────────────────────────────
   function renderDayTabs(){
     dayTabs.innerHTML = '';
-    const tk = todayKey();
+    const tk = resolveTodayKey();
     DAYS.forEach(d => {
       const tab = document.createElement('div');
       tab.className = 'daytab' + (d === viewingDay ? ' active' : '') + (d === tk ? ' today' : '');
@@ -3426,7 +3573,63 @@
       });
       dayTabs.appendChild(tab);
     });
-    viewingLabel.textContent = '· ' + DAY_FULL[viewingDay];
+    viewingLabel.textContent = '· ' + dayLabel(viewingDay);
+    renderRotationOverride();
+  }
+
+  // ── Rotating-day "today" override control ───────────────
+  const rotationOverride = document.getElementById('rotationOverride');
+  const rotationOverrideText = document.getElementById('rotationOverrideText');
+  const rotationOverrideFix = document.getElementById('rotationOverrideFix');
+  const rotationOverridePicker = document.getElementById('rotationOverridePicker');
+
+  function renderRotationOverride(){
+    if (!rotation.enabled){
+      rotationOverride.hidden = true;
+      return;
+    }
+    rotationOverride.hidden = false;
+    const tk = resolveTodayKey();
+    rotationOverrideText.textContent = tk ? `Today is ${dayLabel(tk)}.` : 'No school today.';
+    rotationOverridePicker.hidden = true;
+    rotationOverridePicker.innerHTML = '';
+  }
+
+  rotationOverrideFix.addEventListener('click', () => {
+    if (!rotationOverridePicker.hidden){
+      rotationOverridePicker.hidden = true;
+      rotationOverridePicker.innerHTML = '';
+      return;
+    }
+    const tk = resolveTodayKey();
+    rotationOverridePicker.innerHTML = '';
+    DAYS.forEach(d => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'rotation-override-opt' + (d === tk ? ' current' : '');
+      btn.textContent = dayLabel(d);
+      btn.addEventListener('click', () => setRotationOverride(Number(d.replace('Day',''))));
+      rotationOverridePicker.appendChild(btn);
+    });
+    const noSchoolBtn = document.createElement('button');
+    noSchoolBtn.type = 'button';
+    noSchoolBtn.className = 'rotation-override-opt' + (tk === null ? ' current' : '');
+    noSchoolBtn.textContent = 'No school today';
+    noSchoolBtn.addEventListener('click', () => setRotationOverride(0));
+    rotationOverridePicker.appendChild(noSchoolBtn);
+    rotationOverridePicker.hidden = false;
+  });
+
+  async function setRotationOverride(value){
+    const dateStr = ymd(new Date());
+    rotation = normalizeRotation({ ...rotation, overrides: { ...rotation.overrides, [dateStr]: value } });
+    viewingDay = resolveTodayKey() || DAYS[0];
+    applyDays = new Set([viewingDay]);
+    renderDayTabs();
+    renderChips();
+    renderPeriods();
+    if (currentView === 'week') renderWeekGrid();
+    try{ await persistSchedule(); } catch(e){}
   }
 
   // ── Apply-to-day chips in the add panel ─────────────────
@@ -3607,7 +3810,7 @@
     setDirty(true);
     renderDayTabs();
     renderPeriods();
-    saveMsg.textContent = `Cleared ${DAY_FULL[viewingDay]}. Not saved yet.`;
+    saveMsg.textContent = `Cleared ${dayLabel(viewingDay)}. Not saved yet.`;
     saveMsg.style.color = 'var(--text-dim)';
     saveMsg.classList.add('show');
     setTimeout(() => saveMsg.classList.remove('show'), 3000);
@@ -3635,7 +3838,7 @@
     setDirty(true);
     renderDayTabs();
     renderPeriods();
-    flashSave(`Copied ${DAY_FULL[key]} into ${DAY_FULL[viewingDay]}.`, 'var(--good)');
+    flashSave(`Copied ${dayLabel(key)} into ${dayLabel(viewingDay)}.`, 'var(--good)');
   };
 
   function flashSave(text, color){
@@ -3662,7 +3865,7 @@
       periodsList.appendChild(emptyState);
       return;
     }
-    const isToday = viewingDay === todayKey();
+    const isToday = viewingDay === resolveTodayKey();
     const nowMin = new Date().getHours()*60 + new Date().getMinutes();
 
     list.forEach((p, i) => {
@@ -3758,7 +3961,7 @@
 
   function renderWeekGrid(){
     weekGrid.innerHTML = '';
-    const tk = todayKey();
+    const tk = resolveTodayKey();
     const nowMin = new Date().getHours()*60 + new Date().getMinutes();
 
     DAYS.forEach(d => {
@@ -3785,7 +3988,7 @@
 
       col.innerHTML = `
         <div class="wg-day-head">
-          <span class="wg-day-name">${DAY_FULL[d]}</span>
+          <span class="wg-day-name">${dayLabel(d)}</span>
           <span class="wg-day-count">${list.length || ''}</span>
         </div>
         ${classesHtml}
@@ -3833,7 +4036,8 @@
     document.getElementById('clockNow').textContent =
       `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 
-    const todays = week[todayKey()] || [];
+    const todayKeyNow = resolveTodayKey();
+    const todays = week[todayKeyNow] || [];
 
     if(todays.length){
       const dayStart = toMinutes(todays[0].start);
@@ -3875,7 +4079,9 @@
     } else {
       heroState.textContent = 'Nothing scheduled today';
       setHeroClock('--:--');
-      heroSub.textContent = `It's ${DAY_FULL[todayKey()]}. Add periods to this day to start the countdown.`;
+      heroSub.textContent = todayKeyNow
+        ? `It's ${dayLabel(todayKeyNow)}. Add periods to this day to start the countdown.`
+        : 'No school today. Add periods to a school day to start the countdown.';
     }
 
     // keep the "Now" highlight fresh in whichever view is open.
@@ -3883,7 +4089,7 @@
     // or ended, or the day rolled over). Re-rendering every second
     // destroyed the DOM nodes constantly, which broke double-tap
     // editing and replayed animations nonstop.
-    const tk = todayKey();
+    const tk = todayKeyNow;
     const tlist = week[tk] || [];
     const nmin = new Date().getHours()*60 + new Date().getMinutes();
     const curId = (tlist.find(p => nmin >= toMinutes(p.start) && nmin < toMinutes(p.end)) || {}).id || '';
@@ -3971,8 +4177,32 @@
   }
 
   // ══ Import / Export via SCHEDULE2.0 code ═══════════════════════
-  const PROMPT_TEXT =
-`I have a weekly school schedule. Here is a photo of it.
+  // Rotation-aware: rebuilt each time the import modal opens, since the
+  // day names in the format itself change (Mon/Tue/... vs Day1/Day2/...).
+  function buildPromptText(){
+    if (rotation.enabled){
+      const sample = DAYS.map((d, i) => {
+        if (i === 0) return `${d}: 9:00-10:00 Class Name (Room), 10:15-11:15 Another Class`;
+        if (i === 1) return `${d}: 9:00-10:00 Class Name (Room)`;
+        return `${d}: OFF`;
+      }).join('\n');
+      return `I have a rotating school schedule with ${rotation.length} different days in the cycle (${DAYS.join(', ')}). Here is a photo of it.
+
+Convert it into this exact format, and give me ONLY the code block, nothing else:
+
+SCHEDULE2.0
+${sample}
+
+Rules:
+- Each line starts with the day name exactly as shown above (${DAYS.join(', ')}), followed by a colon.
+- Time format is START-END using HH:MM, 24 hour clock (e.g. 13:30 for 1:30 PM).
+- After the time comes the class name.
+- If there is a room, put it in parentheses right after the name.
+- Separate multiple classes on the same day with commas.
+- Write OFF for any day with no classes.
+- Simplify class names to just the subject (e.g. use ELA instead of eeorsa/ELA, use Math instead of ms101/Math).`;
+    }
+    return `I have a weekly school schedule. Here is a photo of it.
 
 Convert it into this exact format, and give me ONLY the code block, nothing else:
 
@@ -3993,6 +4223,7 @@ Rules:
 - Separate multiple classes on the same day with commas.
 - Write OFF for any day with no classes.
 - Simplify class names to just the subject (e.g. use ELA instead of eeorsa/ELA, use Math instead of ms101/Math).`;
+  }
 
   const importModal = document.getElementById('importModal');
   const openImport = document.getElementById('openImport');
@@ -4011,7 +4242,7 @@ Rules:
   const stepDots = Array.from(importModal.querySelectorAll('.stepdot'));
   const steps = Array.from(importModal.querySelectorAll('.step'));
 
-  promptText.textContent = PROMPT_TEXT;
+  promptText.textContent = buildPromptText();
 
   let stepIndex = 0;
   function showStep(n){
@@ -4042,6 +4273,7 @@ Rules:
   });
 
   function openModal(){
+    promptText.textContent = buildPromptText();
     importModal.classList.add('show');
     showStep(0);
     importMsg.textContent = '';
@@ -4222,7 +4454,7 @@ Wed: OFF
   }
 
   copyPrompt.addEventListener('click', async () => {
-    const ok = await copyToClipboard(PROMPT_TEXT);
+    const ok = await copyToClipboard(buildPromptText());
     copyPrompt.textContent = ok ? 'Copied ✓' : 'Copy failed';
     copyPrompt.classList.toggle('done', ok);
     setTimeout(() => { copyPrompt.textContent = 'Copy prompt'; copyPrompt.classList.remove('done'); }, 1800);
@@ -4261,15 +4493,25 @@ Wed: OFF
     if (lines[0] && lines[0].toUpperCase().startsWith('SCHEDULE2.0')) lines.shift();
     if (!lines.length) throw new Error('No day lines found.');
 
-    const dayMap = { mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat', sun:'Sun' };
+    // Rotation mode uses full day names (Day1, Day2, ...), so matching
+    // has to compare the whole token, first-3-letters would collide
+    // Day1/Day10. Weekday mode keeps the original lenient first-3-letters
+    // match (forgiving "Monday:" as well as "Mon:").
+    const isRotating = rotation.enabled;
+    const dayMap = {};
+    if (isRotating){
+      DAYS.forEach(d => { dayMap[d.toLowerCase()] = d; });
+    } else {
+      Object.assign(dayMap, { mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat', sun:'Sun' });
+    }
     const parsed = emptyWeek();
     let matchedAnyDay = false;
 
     for (const line of lines){
       const colon = line.indexOf(':');
       if (colon === -1) continue;
-      const dayRaw = line.slice(0, colon).trim().toLowerCase().slice(0,3);
-      const dayKey = dayMap[dayRaw];
+      const rawToken = line.slice(0, colon).trim().toLowerCase().replace(/\s+/g, '');
+      const dayKey = isRotating ? dayMap[rawToken] : dayMap[rawToken.slice(0,3)];
       if (!dayKey) continue;
       matchedAnyDay = true;
 
@@ -4310,7 +4552,7 @@ Wed: OFF
       parsed[dayKey].sort((a,b) => toMinutes(a.start) - toMinutes(b.start));
     }
 
-    if (!matchedAnyDay) throw new Error('No valid day lines (Mon, Tue, ...) found.');
+    if (!matchedAnyDay) throw new Error(isRotating ? `No valid day lines (${DAYS.join(', ')}) found.` : 'No valid day lines (Mon, Tue, ...) found.');
     return parsed;
   }
 
@@ -4421,6 +4663,7 @@ Wed: OFF
         userId: currentUser.uid,
         ownerName: currentUser.displayName || '',
         week,
+        rotation,
         updatedAt: new Date().toISOString()
       });
       shareId = id;
@@ -4467,6 +4710,7 @@ Wed: OFF
         userId: currentUser.uid,
         ownerName: currentUser.displayName || '',
         week,
+        rotation,
         updatedAt: new Date().toISOString()
       });
     } catch (err){
@@ -4937,6 +5181,7 @@ Wed: OFF
     renderAvatarPicker();
     renderPresencePicker();
     updateMyPresenceUI();
+    fillRotationForm();
   }
 
   setStatus.addEventListener('input', () => { statusCount.textContent = setStatus.value.length; });
@@ -4946,6 +5191,111 @@ Wed: OFF
     profile.isPublic = !profile.isPublic;
     publicToggle.classList.toggle('on', profile.isPublic);
     publicToggle.setAttribute('aria-checked', profile.isPublic ? 'true' : 'false');
+  });
+
+  // ── Rotating / A-B day schedule type ────────────────────
+  const rotationToggle = document.getElementById('rotationToggle');
+  const rotationOptions = document.getElementById('rotationOptions');
+  const rotationLength = document.getElementById('rotationLength');
+  const rotationRefDate = document.getElementById('rotationRefDate');
+  const rotationRefDay = document.getElementById('rotationRefDay');
+  const rotationMsg = document.getElementById('rotationMsg');
+  const saveRotationBtn = document.getElementById('saveRotationBtn');
+
+  function fillRefDayOptions(){
+    const n = Math.min(Math.max(parseInt(rotationLength.value, 10) || 2, 2), 10);
+    const prev = rotationRefDay.value;
+    rotationRefDay.innerHTML = '';
+    for (let i = 1; i <= n; i++){
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = 'This date is Day ' + i;
+      rotationRefDay.appendChild(opt);
+    }
+    if (prev && Number(prev) <= n) rotationRefDay.value = prev;
+  }
+
+  function fillRotationForm(){
+    rotationToggle.classList.toggle('on', !!rotation.enabled);
+    rotationToggle.setAttribute('aria-checked', rotation.enabled ? 'true' : 'false');
+    rotationOptions.hidden = !rotation.enabled;
+    rotationLength.value = rotation.length || 2;
+    fillRefDayOptions();
+    rotationRefDate.value = rotation.refDate || '';
+    if (rotation.refDay) rotationRefDay.value = rotation.refDay;
+    rotationMsg.textContent = '';
+    updateIcalExportAvailability();
+  }
+
+  // The .ics export uses a plain weekly RRULE, which can't express a
+  // rotating cycle correctly, so it's turned off while rotation is on
+  // rather than exporting something misleading.
+  function updateIcalExportAvailability(){
+    const btn = document.getElementById('exportIcalBtn');
+    const sub = document.getElementById('exportIcalSub');
+    if (!btn || !sub) return;
+    btn.disabled = rotation.enabled;
+    sub.textContent = rotation.enabled
+      ? "Not available yet for rotating schedules"
+      : 'Download as .ics, add it to Apple or Google Calendar';
+  }
+
+  rotationLength.addEventListener('input', fillRefDayOptions);
+
+  rotationToggle.addEventListener('click', () => {
+    const turningOn = !rotation.enabled;
+    if (DAYS.some(d => week[d] && week[d].length)){
+      const msg = turningOn
+        ? "Switching to rotating days works differently, so your current schedule will be cleared. Continue?"
+        : "Switching back to Monday to Friday works differently, so your current schedule will be cleared. Continue?";
+      if (!window.confirm(msg)) return;
+    }
+    rotation = normalizeRotation({ ...rotation, enabled: turningOn });
+    recomputeDays();
+    week = emptyWeek();
+    viewingDay = resolveTodayKey() || DAYS[0];
+    applyDays = new Set([viewingDay]);
+    setDirty(true);
+    fillRotationForm();
+    renderDayTabs();
+    renderChips();
+    renderPeriods();
+    if (currentView === 'week') renderWeekGrid();
+  });
+
+  saveRotationBtn.addEventListener('click', async () => {
+    if (rotation.enabled){
+      const len = Math.min(Math.max(parseInt(rotationLength.value, 10) || 2, 2), 10);
+      const refDate = rotationRefDate.value;
+      const refDay = Math.min(Math.max(parseInt(rotationRefDay.value, 10) || 1, 1), len);
+      if (!refDate){
+        rotationMsg.textContent = 'Pick a reference date.';
+        rotationMsg.className = 'set-msg err';
+        return;
+      }
+      const lengthChanged = len !== rotation.length;
+      rotation = normalizeRotation({ enabled: true, length: len, refDate, refDay, overrides: rotation.overrides });
+      if (lengthChanged){
+        // day keys shift when the cycle length changes, existing periods
+        // no longer line up so start clean rather than silently misfile them
+        recomputeDays();
+        week = emptyWeek();
+      }
+    }
+    viewingDay = resolveTodayKey() || DAYS[0];
+    applyDays = new Set([viewingDay]);
+    try{
+      await persistSchedule();
+      rotationMsg.textContent = 'Saved.';
+      rotationMsg.className = 'set-msg ok';
+      renderDayTabs();
+      renderChips();
+      renderPeriods();
+      if (currentView === 'week') renderWeekGrid();
+    } catch(e){
+      rotationMsg.textContent = 'Could not save, try again.';
+      rotationMsg.className = 'set-msg err';
+    }
   });
 
   function openSettingsModal(){
@@ -5779,7 +6129,7 @@ Wed: OFF
             <div class="notif-av">${avatarSvg(m.avatar)}</div>
             <div class="notif-body">
               <div class="notif-text"><strong>${escapeHtml(m.name)}</strong> has ${escapeHtml(m.label)} with you</div>
-              <div class="notif-meta">${DAY_FULL[m.day] || m.day} ${fmtTime(m.start)}${m.sameSlot ? ' · same period' : ''}</div>
+              <div class="notif-meta">${dayLabel(m.day)} ${fmtTime(m.start)}${m.sameSlot ? ' · same period' : ''}</div>
             </div>
           </div>`).join('') + '</div>';
     }
