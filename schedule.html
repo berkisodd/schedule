@@ -779,6 +779,105 @@
   .people-body{ padding:20px 24px 26px; display:flex; flex-direction:column; gap:14px; }
   .people-search{ margin-bottom:2px; }
   .people-list{ display:flex; flex-direction:column; gap:9px; max-height:400px; overflow-y:auto; }
+  .people-tabs{ padding:0 24px 14px; }
+  .people-tabs .viewtoggle{ width:100%; }
+  .people-tabs .vt-btn{ flex:1; }
+  .calendars-body{ padding:0 24px 26px; display:flex; flex-direction:column; gap:14px; }
+  .calendars-body #calViewToggle{ align-self:center; }
+
+  /* ── Shared Calendars tab ─────────────────────────────── */
+  .cal-friend-row{ display:flex; gap:12px; overflow-x:auto; padding:2px 2px 6px; }
+  .cal-friend-av{
+    display:flex; flex-direction:column; align-items:center; gap:5px;
+    background:none; border:none; cursor:pointer; flex:0 0 auto; width:58px;
+    font-family:'Inter',sans-serif; color:var(--text-dim); padding:0;
+  }
+  .cal-friend-avwrap{
+    width:48px; height:48px; border-radius:50%; overflow:hidden;
+    background:var(--avatar-bg); border:2px solid transparent;
+    display:flex; align-items:center; justify-content:center;
+    position:relative; transition:border-color 0.18s ease;
+  }
+  .cal-friend-avwrap svg, .cal-friend-avwrap img{ width:100%; height:100%; display:block; }
+  .cal-friend-av.selected .cal-friend-avwrap{ border-color:var(--amber); }
+  .cal-friend-check{
+    position:absolute; bottom:-2px; right:-2px; width:18px; height:18px;
+    border-radius:50%; background:var(--amber); color:var(--on-amber);
+    display:none; align-items:center; justify-content:center;
+    font-size:0.6rem; font-weight:700; border:2px solid var(--panel);
+  }
+  .cal-friend-av.selected .cal-friend-check{ display:flex; }
+  .cal-friend-name{
+    font-size:0.7rem; max-width:58px; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap;
+  }
+  .cal-empty{ text-align:center; color:var(--text-dim); font-size:0.86rem; padding:26px 10px; }
+
+  .cal-datebar{ display:flex; align-items:center; justify-content:center; gap:14px; }
+  .cal-date-nav{
+    width:30px; height:30px; border-radius:50%; border:1px solid var(--line);
+    background:none; color:var(--text-dim); cursor:pointer; font-size:1rem;
+    display:flex; align-items:center; justify-content:center;
+    transition:border-color 0.18s ease, color 0.18s ease;
+  }
+  .cal-date-nav:hover{ border-color:var(--slate); color:var(--text); }
+  .cal-date-label{ font-weight:700; font-size:0.94rem; min-width:160px; text-align:center; }
+
+  .cal-content{ min-height:100px; }
+  .cal-list{ display:flex; flex-direction:column; gap:8px; }
+  .cal-row{
+    display:flex; align-items:center; gap:10px; padding:10px 12px;
+    border:1px solid var(--line); border-radius:var(--radius);
+    border-left:3px solid var(--period-color, var(--line));
+    background:var(--panel);
+  }
+  .cal-row-time{
+    font-family:'JetBrains Mono', monospace; font-size:0.74rem;
+    color:var(--text-dim); width:64px; flex-shrink:0;
+  }
+  .cal-row-info{ flex:1; min-width:0; }
+  .cal-row-name{
+    font-weight:600; font-size:0.88rem; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis;
+  }
+  .cal-row-room{ font-size:0.76rem; color:var(--text-dim); }
+  .cal-row-av{
+    width:26px; height:26px; border-radius:50%; overflow:hidden;
+    flex-shrink:0; background:var(--avatar-bg);
+  }
+  .cal-row-av svg, .cal-row-av img{ width:100%; height:100%; display:block; }
+
+  /* real positioned timeline: hour ruler + a track with absolutely
+     positioned blocks, same percent-of-span idea as the countdown rail
+     just vertical and over a fixed 7AM-9PM axis */
+  .cal-timeline-wrap{ display:flex; gap:10px; }
+  .cal-timeline-hours{
+    display:flex; flex-direction:column; width:42px; flex-shrink:0;
+    font-family:'JetBrains Mono', monospace; font-size:0.62rem; color:var(--text-dim);
+  }
+  .cal-timeline-hour{ position:relative; top:-6px; }
+  .cal-timeline-track{
+    position:relative; flex:1; border-top:1px solid var(--line-soft);
+    background-image:repeating-linear-gradient(
+      to bottom, var(--line-soft) 0, var(--line-soft) 1px,
+      transparent 1px, transparent var(--hour-h, 50px)
+    );
+  }
+  .cal-block{
+    position:absolute; border-radius:8px; background:var(--ink-2);
+    border:1px solid var(--line); border-left:3px solid var(--period-color, var(--slate));
+    padding:5px 7px; overflow:hidden; font-family:'Inter',sans-serif;
+  }
+  .cal-block-name{
+    font-weight:600; font-size:0.72rem; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis;
+  }
+  .cal-block-time{ color:var(--text-dim); font-size:0.62rem; margin-top:1px; }
+  .cal-block-av{
+    position:absolute; bottom:3px; right:3px; width:16px; height:16px;
+    border-radius:50%; overflow:hidden; border:1px solid var(--panel);
+  }
+  .cal-block-av svg, .cal-block-av img{ width:100%; height:100%; display:block; }
   .person{
     display:flex; align-items:center; gap:12px; padding:11px 13px;
     background:var(--ink-2); border:1px solid var(--line); border-radius:11px;
@@ -2217,6 +2316,18 @@
       <div class="set-section">
         <div class="set-row">
           <div>
+            <div class="set-label" style="margin-bottom:4px;">Share my calendar with friends</div>
+            <div class="set-hint" style="margin:0;">Lets friends see your full schedule in Shared Calendars. Off unless you turn it on, and turning it off removes what was shared.</div>
+          </div>
+          <button class="switch" id="shareScheduleToggle" role="switch" aria-checked="false">
+            <span class="switch-knob"></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="set-section">
+        <div class="set-row">
+          <div>
             <div class="set-label" style="margin-bottom:4px;">Public account</div>
             <div class="set-hint" style="margin:0;">When off, others only see your name and a private label.</div>
           </div>
@@ -2536,9 +2647,28 @@
       <div class="set-title">People</div>
       <div class="set-sub">Everyone using Schedule 2.0.</div>
     </div>
-    <div class="people-body">
+    <div class="people-tabs">
+      <div class="viewtoggle" id="peopleViewToggle">
+        <button class="vt-btn active" id="ptPeople" data-ptab="people">People</button>
+        <button class="vt-btn" id="ptCalendars" data-ptab="calendars">Calendars</button>
+      </div>
+    </div>
+    <div class="people-body" id="peopleBody">
       <input type="text" class="set-input people-search" id="peopleSearch" placeholder="Search by name">
       <div class="people-list" id="peopleList"></div>
+    </div>
+    <div class="calendars-body" id="calendarsBody" hidden>
+      <div class="cal-friend-row" id="calFriendRow"></div>
+      <div class="cal-datebar">
+        <button class="cal-date-nav" id="calPrevDay" aria-label="Previous day">‹</button>
+        <div class="cal-date-label" id="calDateLabel">Today</div>
+        <button class="cal-date-nav" id="calNextDay" aria-label="Next day">›</button>
+      </div>
+      <div class="viewtoggle" id="calViewToggle">
+        <button class="vt-btn active" id="calViewList" data-calview="list">List</button>
+        <button class="vt-btn" id="calViewTimeline" data-calview="timeline">Timeline</button>
+      </div>
+      <div class="cal-content" id="calContent"></div>
     </div>
   </div>
 </div>
@@ -2641,6 +2771,25 @@
     </div>
     <div class="conn-info-hint">This is the round trip time to reach your data, not a raw network ping. Browsers can't measure that directly.</div>
     <button class="btn-primary" id="connInfoRetest" style="margin-bottom:18px;">Test again</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="sharedCalendarsIntro">
+  <div class="modal conn-help-modal">
+    <button class="modal-close" id="closeSharedCalendarsIntro" aria-label="Close">✕</button>
+    <div class="set-head">
+      <div class="set-title">Introducing Shared Calendars</div>
+      <div class="set-sub">See your friends' schedules alongside your own, right in People.</div>
+    </div>
+    <ul class="conn-help-list">
+      <li>Only friends who also turn this on can see each other's schedules</li>
+      <li>Rooms, colors, everything on your schedule is included</li>
+      <li>Turn it off anytime in Settings, that removes what was shared</li>
+    </ul>
+    <div class="addpanel-actions" style="margin-top:18px; margin-bottom:18px;">
+      <button class="btn-ghost" id="declineSharedCalendars">Not now</button>
+      <button class="btn-primary" id="acceptSharedCalendars">Turn it on</button>
+    </div>
   </div>
 </div>
 
@@ -3073,7 +3222,8 @@
     name: '', status: '', bio: '', gender: '',
     avatar: 'larry', avatarUpdated: null, isPublic: false,
     hideStatus: false, lastActive: null, manualPresence: 'auto',
-    matchEnabled: false
+    matchEnabled: false, shareScheduleWithFriends: false,
+    sharedCalendarsIntroSeen: false
   };
   let tickStarted = false;
   let dirty = false;
@@ -3163,26 +3313,33 @@
     return count;
   }
 
-  // The one place "which day is it right now" gets resolved. Off:
-  // exactly today's weekday, unchanged. On: a manual override for the
-  // exact date wins if set, otherwise the rotation is calculated from the
+  // Resolves which day key applies on an arbitrary date, for an
+  // arbitrary rotation config — not just "now" for the current user.
+  // Shared Calendars needs this per selected friend, per viewed date,
+  // since each friend can be on a different schedule type. `resolveTodayKey()`
+  // below is just this called with the current user's own rotation + now.
+  // Off: exactly that date's weekday. On: a manual override for the exact
+  // date wins if set, otherwise the rotation is calculated from the
   // reference point; weekends resolve to null (no school), same as an
   // empty weekday does today.
-  function resolveTodayKey(){
-    if (!rotation.enabled) return todayKey();
+  function resolveKeyForDate(rot, dateObj){
+    if (!rot.enabled) return JS_DAY_TO_KEY[dateObj.getDay()];
     // rotation is on but not finished being set up yet (no reference date
     // saved), so weekday keys like "Sun" don't exist in DAYS anymore
-    if (!rotation.refDate) return null;
-    const dateStr = ymd(new Date());
-    if (dateStr in rotation.overrides){
-      const v = rotation.overrides[dateStr];
+    if (!rot.refDate) return null;
+    const dateStr = ymd(dateObj);
+    if (dateStr in rot.overrides){
+      const v = rot.overrides[dateStr];
       return v === 0 ? null : 'Day' + v;
     }
-    const dow = new Date().getDay();
+    const dow = dateObj.getDay();
     if (dow === 0 || dow === 6) return null;
-    const steps = countSchoolDaysBetween(rotation.refDate, dateStr);
-    const idx = (((rotation.refDay - 1) + steps) % rotation.length + rotation.length) % rotation.length;
+    const steps = countSchoolDaysBetween(rot.refDate, dateStr);
+    const idx = (((rot.refDay - 1) + steps) % rot.length + rot.length) % rot.length;
     return 'Day' + (idx + 1);
+  }
+  function resolveTodayKey(){
+    return resolveKeyForDate(rotation, new Date());
   }
 
   // ══ Announcements ═════════════════════════════════════════════
@@ -3480,6 +3637,8 @@
     setDirty(false);
     // push the same week to the public copy if sharing is on
     syncShareIfActive();
+    // and to the friends-only copy if that's turned on too
+    syncFriendScheduleIfActive();
     // and refresh what classmate matching sees, so it can't go stale
     if (profile.matchEnabled) syncSharedClasses();
   }
@@ -4419,7 +4578,7 @@ Wed: OFF
       if (typeof closeChatModal === 'function') closeChatModal();
       else chatM.classList.remove('show');
     } else {
-      const order = ['connHelpModal','connInfoModal','profileModal','adminModal','notifModal','peopleModal','settingsModal','shareModal'];
+      const order = ['sharedCalendarsIntro','connHelpModal','connInfoModal','profileModal','adminModal','notifModal','peopleModal','settingsModal','shareModal'];
       for (const id of order){
         const m = document.getElementById(id);
         if (m && m.classList.contains('show')){ m.classList.remove('show'); break; }
@@ -4428,7 +4587,7 @@ Wed: OFF
     // Scroll-lock safety: if no modal is left open, always restore
     // scrolling, even if some open path forgot to. This is the rescue
     // hatch for a stranded overflow:hidden.
-    const all = ['chatModal','connHelpModal','connInfoModal','profileModal','adminModal','notifModal','peopleModal','settingsModal','shareModal'];
+    const all = ['chatModal','sharedCalendarsIntro','connHelpModal','connInfoModal','profileModal','adminModal','notifModal','peopleModal','settingsModal','shareModal'];
     const anyOpen = all.some(id => {
       const m = document.getElementById(id);
       return m && m.classList.contains('show');
@@ -4715,6 +4874,22 @@ Wed: OFF
       });
     } catch (err){
       console.error('Share sync failed:', err);
+    }
+  }
+
+  // Keeps the friends-only shared copy fresh on every save, same idea as
+  // syncShareIfActive() above just gated on the opt-in toggle instead of
+  // an active share link.
+  async function syncFriendScheduleIfActive(){
+    if (!profile.shareScheduleWithFriends || !currentUser) return;
+    try{
+      await setDoc(doc(db, "sharedFriendSchedules", currentUser.uid), {
+        week,
+        rotation,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (err){
+      console.error('Friend schedule sync failed:', err);
     }
   }
 
@@ -5157,6 +5332,14 @@ Wed: OFF
     else bellBadge.hidden = true;
   });
 
+  const shareScheduleToggle = document.getElementById('shareScheduleToggle');
+  shareScheduleToggle.addEventListener('click', async () => {
+    profile.shareScheduleWithFriends = !profile.shareScheduleWithFriends;
+    shareScheduleToggle.classList.toggle('on', profile.shareScheduleWithFriends);
+    shareScheduleToggle.setAttribute('aria-checked', profile.shareScheduleWithFriends ? 'true' : 'false');
+    await syncShareScheduleWithFriends();
+  });
+
   hideStatusToggle.addEventListener('click', () => {
     profile.hideStatus = !profile.hideStatus;
     hideStatusToggle.classList.toggle('on', profile.hideStatus);
@@ -5175,6 +5358,8 @@ Wed: OFF
     hideStatusToggle.setAttribute('aria-checked', profile.hideStatus ? 'true' : 'false');
     matchToggle.classList.toggle('on', !!profile.matchEnabled);
     matchToggle.setAttribute('aria-checked', profile.matchEnabled ? 'true' : 'false');
+    shareScheduleToggle.classList.toggle('on', !!profile.shareScheduleWithFriends);
+    shareScheduleToggle.setAttribute('aria-checked', profile.shareScheduleWithFriends ? 'true' : 'false');
     statusCount.textContent = (profile.status || '').length;
     bioCount.textContent = (profile.bio || '').length;
     setEmail.textContent = currentUser ? currentUser.email : '';
@@ -5335,7 +5520,9 @@ Wed: OFF
           hideStatus: d.hideStatus === true,
           lastActive: d.lastActive || null,
           manualPresence: ['auto','online','idle','offline'].includes(d.manualPresence) ? d.manualPresence : 'auto',
-          matchEnabled: d.matchEnabled === true
+          matchEnabled: d.matchEnabled === true,
+          shareScheduleWithFriends: d.shareScheduleWithFriends === true,
+          sharedCalendarsIntroSeen: d.sharedCalendarsIntroSeen === true
         };
       } else {
         profile.name = currentUser.displayName || '';
@@ -5696,6 +5883,53 @@ Wed: OFF
     document.body.style.overflow = 'hidden';
     peopleSearch.value = '';
     loadPeople();
+    maybeShowSharedCalendarsIntro();
+  });
+
+  // Shown once, the first time someone opens People after this shipped.
+  // Choosing either button marks it seen so it never nags again.
+  const sharedCalendarsIntro = document.getElementById('sharedCalendarsIntro');
+  const closeSharedCalendarsIntro = document.getElementById('closeSharedCalendarsIntro');
+  const declineSharedCalendars = document.getElementById('declineSharedCalendars');
+  const acceptSharedCalendars = document.getElementById('acceptSharedCalendars');
+
+  function maybeShowSharedCalendarsIntro(){
+    if (!currentUser || profile.sharedCalendarsIntroSeen) return;
+    sharedCalendarsIntro.classList.add('show');
+  }
+  async function markSharedCalendarsIntroSeen(){
+    profile.sharedCalendarsIntroSeen = true;
+    if (!currentUser) return;
+    try{
+      await setDoc(doc(db, "profiles", currentUser.uid), { sharedCalendarsIntroSeen: true }, { merge: true });
+    } catch (err){
+      console.error('Could not save shared calendars intro flag:', err);
+    }
+  }
+  function closeSharedCalendarsIntroModal(){
+    sharedCalendarsIntro.classList.remove('show');
+  }
+  closeSharedCalendarsIntro.addEventListener('click', () => {
+    markSharedCalendarsIntroSeen();
+    closeSharedCalendarsIntroModal();
+  });
+  declineSharedCalendars.addEventListener('click', () => {
+    markSharedCalendarsIntroSeen();
+    closeSharedCalendarsIntroModal();
+  });
+  acceptSharedCalendars.addEventListener('click', async () => {
+    profile.shareScheduleWithFriends = true;
+    shareScheduleToggle.classList.toggle('on', true);
+    shareScheduleToggle.setAttribute('aria-checked', 'true');
+    await markSharedCalendarsIntroSeen();
+    await syncShareScheduleWithFriends();
+    closeSharedCalendarsIntroModal();
+  });
+  sharedCalendarsIntro.addEventListener('click', (e) => {
+    if (e.target === sharedCalendarsIntro){
+      markSharedCalendarsIntroSeen();
+      closeSharedCalendarsIntroModal();
+    }
   });
 
   // Firestore's getDocs retries a bad connection internally for a very
@@ -5736,6 +5970,268 @@ Wed: OFF
   }
   closePeople.addEventListener('click', closePeopleModal);
   peopleModal.addEventListener('click', (e) => { if (e.target === peopleModal) closePeopleModal(); });
+
+  // ══ Shared Calendars (the "Calendars" tab inside People) ═══════
+  // Friends who opted in (see syncShareScheduleWithFriends) get a copy of
+  // their week+rotation synced to sharedFriendSchedules/{uid}. This tab
+  // fetches that for every accepted friend who has one, lets you toggle
+  // several on at once, and shows their periods for a chosen date either
+  // as a merged list or a real positioned timeline.
+  const ptPeople = document.getElementById('ptPeople');
+  const ptCalendars = document.getElementById('ptCalendars');
+  const peopleBody = document.getElementById('peopleBody');
+  const calendarsBody = document.getElementById('calendarsBody');
+  const calFriendRow = document.getElementById('calFriendRow');
+  const calDateLabel = document.getElementById('calDateLabel');
+  const calPrevDay = document.getElementById('calPrevDay');
+  const calNextDay = document.getElementById('calNextDay');
+  const calViewList = document.getElementById('calViewList');
+  const calViewTimeline = document.getElementById('calViewTimeline');
+  const calContent = document.getElementById('calContent');
+
+  let calFriendsLoaded = false;
+  let sharedFriends = [];             // friends who opted in, with their week+rotation
+  let selectedFriendUids = new Set(); // multi-select state
+  let calendarViewDate = new Date();
+  let calendarViewMode = 'list';      // 'list' | 'timeline'
+
+  ptPeople.addEventListener('click', () => {
+    ptPeople.classList.add('active');
+    ptCalendars.classList.remove('active');
+    peopleBody.hidden = false;
+    calendarsBody.hidden = true;
+  });
+  ptCalendars.addEventListener('click', () => {
+    ptCalendars.classList.add('active');
+    ptPeople.classList.remove('active');
+    peopleBody.hidden = true;
+    calendarsBody.hidden = false;
+    if (!calFriendsLoaded) loadFriendCalendars();
+  });
+
+  async function loadFriendCalendars(){
+    calContent.innerHTML = '';
+    calFriendRow.innerHTML = '<div class="cal-empty">Loading calendars...</div>';
+    const ready = await waitForReady(8000);
+    if (!ready){
+      calFriendRow.innerHTML = '<div class="cal-empty">Still starting up. Give it a second.</div>';
+      return;
+    }
+    try{
+      await loadFriendships();
+      const uids = Array.from(friendUids);
+      const results = await Promise.all(uids.map(async uid => {
+        try{
+          const [schedSnap, profSnap] = await Promise.all([
+            getDoc(doc(db, "sharedFriendSchedules", uid)),
+            getDoc(doc(db, "profiles", uid))
+          ]);
+          if (!schedSnap.exists()) return null;
+          const data = schedSnap.data();
+          const prof = profSnap.exists() ? profSnap.data() : {};
+          return {
+            uid,
+            name: prof.name || 'Friend',
+            avatar: AVATARS[prof.avatar] ? prof.avatar : 'larry',
+            avatarUpdated: prof.avatarUpdated || null,
+            week: (data.week && typeof data.week === 'object') ? data.week : {},
+            rotation: normalizeRotation(data.rotation)
+          };
+        } catch(e){ return null; }
+      }));
+      sharedFriends = results.filter(Boolean);
+      await resolveAvatars(sharedFriends);
+      // drop any selection for a friend who's no longer available
+      selectedFriendUids = new Set(Array.from(selectedFriendUids).filter(uid => sharedFriends.some(f => f.uid === uid)));
+      calFriendsLoaded = true;
+      renderCalendarsTab();
+    } catch (err){
+      console.error('Could not load friend calendars:', err);
+      calFriendRow.innerHTML = '<div class="cal-empty">Couldn\'t load calendars. Bad connection, maybe.<br>' +
+        '<button class="btn-ghost" id="calRetry" style="margin-top:12px;">Try again</button></div>';
+      const r = document.getElementById('calRetry');
+      if (r) r.addEventListener('click', loadFriendCalendars);
+    }
+  }
+
+  function renderCalendarsTab(){
+    renderFriendAvatarRow();
+    renderCalDateLabel();
+    renderCalendarContent();
+  }
+
+  function renderFriendAvatarRow(){
+    calFriendRow.innerHTML = '';
+    if (!sharedFriends.length){
+      calFriendRow.innerHTML = '<div class="cal-empty">None of your friends have shared their calendar yet.</div>';
+      return;
+    }
+    sharedFriends.forEach(f => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cal-friend-av' + (selectedFriendUids.has(f.uid) ? ' selected' : '');
+      btn.innerHTML =
+        '<span class="cal-friend-avwrap">' + avatarSvg(f.avatar) + '<span class="cal-friend-check">✓</span></span>' +
+        '<span class="cal-friend-name">' + escapeHtml((f.name || 'Friend').split(' ')[0]) + '</span>';
+      btn.addEventListener('click', () => {
+        if (selectedFriendUids.has(f.uid)) selectedFriendUids.delete(f.uid);
+        else selectedFriendUids.add(f.uid);
+        renderFriendAvatarRow();
+        renderCalendarContent();
+      });
+      calFriendRow.appendChild(btn);
+    });
+  }
+
+  function renderCalDateLabel(){
+    const today = new Date(); today.setHours(0,0,0,0);
+    const d = new Date(calendarViewDate); d.setHours(0,0,0,0);
+    const diffDays = Math.round((d - today) / 86400000);
+    const dateStr = calendarViewDate.toLocaleDateString(undefined, { weekday:'long', month:'short', day:'numeric' });
+    if (diffDays === 0) calDateLabel.textContent = 'Today, ' + dateStr;
+    else if (diffDays === 1) calDateLabel.textContent = 'Tomorrow, ' + dateStr;
+    else if (diffDays === -1) calDateLabel.textContent = 'Yesterday, ' + dateStr;
+    else calDateLabel.textContent = dateStr;
+  }
+  calPrevDay.addEventListener('click', () => {
+    calendarViewDate.setDate(calendarViewDate.getDate() - 1);
+    renderCalDateLabel();
+    renderCalendarContent();
+  });
+  calNextDay.addEventListener('click', () => {
+    calendarViewDate.setDate(calendarViewDate.getDate() + 1);
+    renderCalDateLabel();
+    renderCalendarContent();
+  });
+
+  calViewList.addEventListener('click', () => {
+    calendarViewMode = 'list';
+    calViewList.classList.add('active');
+    calViewTimeline.classList.remove('active');
+    renderCalendarContent();
+  });
+  calViewTimeline.addEventListener('click', () => {
+    calendarViewMode = 'timeline';
+    calViewTimeline.classList.add('active');
+    calViewList.classList.remove('active');
+    renderCalendarContent();
+  });
+
+  // Every selected friend can be on their own schedule type (plain
+  // weekday or a rotating cycle from the rotating-days feature), so each
+  // one's day key for the viewed date is resolved independently.
+  function getMergedPeriodsForDate(){
+    const out = [];
+    sharedFriends.forEach(f => {
+      if (!selectedFriendUids.has(f.uid)) return;
+      const key = resolveKeyForDate(f.rotation, calendarViewDate);
+      if (!key) return;
+      const list = f.week[key];
+      if (!Array.isArray(list)) return;
+      list.forEach(p => out.push({ ...p, __friend: f }));
+    });
+    out.sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
+    return out;
+  }
+
+  function renderCalendarContent(){
+    if (!selectedFriendUids.size){
+      calContent.innerHTML = '<div class="cal-empty">Pick one or more friends above to see their schedule.</div>';
+      return;
+    }
+    const periods = getMergedPeriodsForDate();
+    if (!periods.length){
+      calContent.innerHTML = '<div class="cal-empty">Nothing scheduled for anyone selected on this day.</div>';
+      return;
+    }
+    if (calendarViewMode === 'timeline') renderCalTimeline(periods);
+    else renderCalList(periods);
+  }
+
+  function renderCalList(periods){
+    calContent.innerHTML = '<div class="cal-list"></div>';
+    const list = calContent.querySelector('.cal-list');
+    periods.forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'cal-row';
+      if (p.color) row.style.setProperty('--period-color', p.color);
+      row.innerHTML =
+        '<div class="cal-row-time">' + fmtTime(p.start) + '</div>' +
+        '<div class="cal-row-info">' +
+          '<div class="cal-row-name">' + escapeHtml(p.name) + '</div>' +
+          (p.room ? '<div class="cal-row-room">' + escapeHtml(p.room) + '</div>' : '') +
+        '</div>' +
+        '<div class="cal-row-av" title="' + escapeHtml(p.__friend.name) + '">' + avatarSvg(p.__friend.avatar) + '</div>';
+      list.appendChild(row);
+    });
+  }
+
+  // Fixed 7AM-9PM axis (matches the reference concept). Blocks are
+  // positioned as a percentage of that span (same fractional-position
+  // idea as the countdown rail, just vertical and over a fixed range
+  // instead of a stretchy per-day span), and overlapping blocks are laid
+  // out side by side using the standard calendar-overlap algorithm: sort
+  // by start time, give each event the first free column, then size every
+  // column in that overlap group as 100%/columnCount wide.
+  const CAL_AXIS_START = 7 * 60;
+  const CAL_AXIS_END = 21 * 60;
+  function renderCalTimeline(periods){
+    const axisSpan = CAL_AXIS_END - CAL_AXIS_START;
+    const hourHeight = 50;
+    const hourCount = axisSpan / 60;
+
+    let hoursHtml = '';
+    for (let h = 0; h <= hourCount; h++){
+      const hour24 = Math.floor(CAL_AXIS_START / 60) + h;
+      const label = hour24 === 12 ? '12PM' : hour24 > 12 ? (hour24 - 12) + 'PM' : hour24 === 0 ? '12AM' : hour24 + 'AM';
+      hoursHtml += '<div class="cal-timeline-hour" style="height:' + hourHeight + 'px">' + label + '</div>';
+    }
+
+    // clip to the visible axis and drop anything entirely outside it
+    const clipped = periods
+      .map(p => ({ ...p, s: Math.max(toMinutes(p.start), CAL_AXIS_START), e: Math.min(toMinutes(p.end), CAL_AXIS_END) }))
+      .filter(p => p.e > p.s)
+      .sort((a, b) => a.s - b.s || a.e - b.e);
+
+    // assign each event the first column whose previous occupant has
+    // already ended, tracking the max column count per overlap cluster
+    const columns = []; // columns[i] = end time of the last event placed there
+    const placed = clipped.map(p => {
+      let col = columns.findIndex(endMin => endMin <= p.s);
+      if (col === -1){ col = columns.length; columns.push(p.e); }
+      else columns[col] = p.e;
+      return { ...p, col };
+    });
+    // recompute, per event, how many columns are actually active during
+    // its own span, so it doesn't take a narrower slice than it needs to
+    placed.forEach(p => {
+      let maxCol = p.col;
+      placed.forEach(q => {
+        if (q !== p && q.s < p.e && q.e > p.s) maxCol = Math.max(maxCol, q.col);
+      });
+      p.__cols = maxCol + 1;
+    });
+
+    const blocksHtml = placed.map(p => {
+      const top = (p.s - CAL_AXIS_START) / axisSpan * 100;
+      const height = Math.max((p.e - p.s) / axisSpan * 100, 2);
+      const width = 100 / p.__cols;
+      const left = p.col * width;
+      const colorStyle = p.color ? `--period-color:${p.color};` : '';
+      return `
+        <div class="cal-block" style="top:${top}%; height:${height}%; left:${left}%; width:calc(${width}% - 4px); ${colorStyle}">
+          <div class="cal-block-name">${escapeHtml(p.name)}</div>
+          <div class="cal-block-time">${fmtTime(p.start)}</div>
+          <div class="cal-block-av" title="${escapeHtml(p.__friend.name)}">${avatarSvg(p.__friend.avatar)}</div>
+        </div>`;
+    }).join('');
+
+    calContent.innerHTML =
+      '<div class="cal-timeline-wrap">' +
+        '<div class="cal-timeline-hours">' + hoursHtml + '</div>' +
+        '<div class="cal-timeline-track" style="--hour-h:' + hourHeight + 'px; height:' + (hourHeight * hourCount) + 'px;">' + blocksHtml + '</div>' +
+      '</div>';
+  }
 
   // ══ Messaging ═════════════════════════════════════════════════
   // Conversations reuse the friendship pair id, so a chat between two
@@ -5973,6 +6469,23 @@ Wed: OFF
       }, { merge: true });
     } catch (err){
       console.error('Could not sync shared classes:', err);
+    }
+  }
+
+  // Mirrors the public share-link pattern (sharedSchedules/{token}), just
+  // keyed by uid instead of a random token, and gated by this toggle
+  // instead of being always-on. Friends-only is enforced by the app only
+  // ever fetching this for uids already in friendUids (see Shared Calendars).
+  async function syncShareScheduleWithFriends(){
+    if (!currentUser) return;
+    try{
+      await setDoc(doc(db, "profiles", currentUser.uid), {
+        shareScheduleWithFriends: !!profile.shareScheduleWithFriends
+      }, { merge: true });
+      if (profile.shareScheduleWithFriends) await syncFriendScheduleIfActive();
+      else await deleteDoc(doc(db, "sharedFriendSchedules", currentUser.uid));
+    } catch (err){
+      console.error('Could not sync shared calendar:', err);
     }
   }
 
