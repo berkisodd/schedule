@@ -476,7 +476,7 @@
     color:var(--text-dim); font-weight:400;
   }
   /* One shared shape for every header action, so nothing shouts. */
-  .btn-add, .btn-import, .btn-share, .btn-people, .btn-settings{
+  .btn-add, .btn-import, .btn-share, .btn-people, .btn-settings, .btn-calendars{
     display:flex; align-items:center; gap:6px;
     background:transparent; border:1px solid var(--line); color:var(--text-dim);
     font-family:'Inter',sans-serif; font-size:0.82rem; font-weight:500;
@@ -485,7 +485,7 @@
     transition:color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
   }
   .btn-add:hover, .btn-import:hover, .btn-share:hover,
-  .btn-people:hover, .btn-settings:hover{
+  .btn-people:hover, .btn-settings:hover, .btn-calendars:hover{
     color:var(--text); border-color:var(--slate);
   }
   /* Add is the one primary action in the header. */
@@ -508,6 +508,7 @@
        are the ones that need somewhere else to go. */
     .head-actions .btn-import,
     .head-actions .btn-people,
+    .head-actions .btn-calendars,
     .head-actions .btn-settings,
     .head-actions .btn-share,
     .head-actions .btn-add{
@@ -792,10 +793,7 @@
   .people-body{ padding:20px 24px 26px; display:flex; flex-direction:column; gap:14px; }
   .people-search{ margin-bottom:2px; }
   .people-list{ display:flex; flex-direction:column; gap:9px; max-height:400px; overflow-y:auto; }
-  .people-tabs{ padding:0 24px 14px; }
-  .people-tabs .viewtoggle{ width:100%; }
-  .people-tabs .vt-btn{ flex:1; }
-  .calendars-body{ padding:0 24px 26px; display:flex; flex-direction:column; gap:14px; }
+  .calendars-body{ padding:20px 24px 26px; display:flex; flex-direction:column; gap:14px; }
   .calendars-body #calViewToggle{ align-self:center; }
 
   /* ── Shared Calendars tab ─────────────────────────────── */
@@ -2210,6 +2208,7 @@
       </div>
       <button class="btn-import" id="openImport">⚡ Import</button>
       <button class="btn-people" id="openPeople">People</button>
+      <button class="btn-calendars" id="openCalendars">Calendars</button>
       <button class="btn-settings admin-only" id="openAdmin">Admin</button>
       <button class="btn-settings" id="openSettings">Settings</button>
       <button class="btn-share" id="openShare">Share</button>
@@ -2689,17 +2688,21 @@
       <div class="set-title">People</div>
       <div class="set-sub">Everyone using Schedule 2.0.</div>
     </div>
-    <div class="people-tabs">
-      <div class="viewtoggle" id="peopleViewToggle">
-        <button class="vt-btn active" id="ptPeople" data-ptab="people">People</button>
-        <button class="vt-btn" id="ptCalendars" data-ptab="calendars">Calendars</button>
-      </div>
-    </div>
     <div class="people-body" id="peopleBody">
       <input type="text" class="set-input people-search" id="peopleSearch" placeholder="Search by name">
       <div class="people-list" id="peopleList"></div>
     </div>
-    <div class="calendars-body" id="calendarsBody" hidden>
+  </div>
+</div>
+
+<div class="modal-overlay" id="calendarsModal">
+  <div class="modal people-modal">
+    <button class="modal-close" id="closeCalendars" aria-label="Close">✕</button>
+    <div class="set-head">
+      <div class="set-title">Calendars</div>
+      <div class="set-sub">See friends' schedules alongside your own.</div>
+    </div>
+    <div class="calendars-body" id="calendarsBody">
       <div class="cal-friend-row" id="calFriendRow"></div>
       <div class="cal-datebar">
         <button class="cal-date-nav" id="calPrevDay" aria-label="Previous day">‹</button>
@@ -4636,7 +4639,7 @@ Wed: OFF
       if (typeof closeChatModal === 'function') closeChatModal();
       else chatM.classList.remove('show');
     } else {
-      const order = ['sharedCalendarsIntro','connHelpModal','connInfoModal','profileModal','adminModal','notifModal','peopleModal','settingsModal','shareModal'];
+      const order = ['sharedCalendarsIntro','connHelpModal','connInfoModal','profileModal','adminModal','notifModal','peopleModal','calendarsModal','settingsModal','shareModal'];
       for (const id of order){
         const m = document.getElementById(id);
         if (m && m.classList.contains('show')){ m.classList.remove('show'); break; }
@@ -4645,7 +4648,7 @@ Wed: OFF
     // Scroll-lock safety: if no modal is left open, always restore
     // scrolling, even if some open path forgot to. This is the rescue
     // hatch for a stranded overflow:hidden.
-    const all = ['chatModal','sharedCalendarsIntro','connHelpModal','connInfoModal','profileModal','adminModal','notifModal','peopleModal','settingsModal','shareModal'];
+    const all = ['chatModal','sharedCalendarsIntro','connHelpModal','connInfoModal','profileModal','adminModal','notifModal','peopleModal','calendarsModal','settingsModal','shareModal'];
     const anyOpen = all.some(id => {
       const m = document.getElementById(id);
       return m && m.classList.contains('show');
@@ -5938,10 +5941,9 @@ Wed: OFF
     document.body.style.overflow = 'hidden';
     peopleSearch.value = '';
     loadPeople();
-    maybeShowSharedCalendarsIntro();
   });
 
-  // Shown once, the first time someone opens People after this shipped.
+  // Shown once, the first time someone opens Calendars after this shipped.
   // Choosing either button marks it seen so it never nags again.
   const sharedCalendarsIntro = document.getElementById('sharedCalendarsIntro');
   const closeSharedCalendarsIntro = document.getElementById('closeSharedCalendarsIntro');
@@ -6026,15 +6028,16 @@ Wed: OFF
   closePeople.addEventListener('click', closePeopleModal);
   peopleModal.addEventListener('click', (e) => { if (e.target === peopleModal) closePeopleModal(); });
 
-  // ══ Shared Calendars (the "Calendars" tab inside People) ═══════
+  // ══ Shared Calendars (its own modal, opened from People/Import/Add/
+  // Share's neighbor on the bottom tab bar, or the header on desktop) ═══
   // Friends who opted in (see syncShareScheduleWithFriends) get a copy of
-  // their week+rotation synced to sharedFriendSchedules/{uid}. This tab
+  // their week+rotation synced to sharedFriendSchedules/{uid}. This modal
   // fetches that for every accepted friend who has one, lets you toggle
   // several on at once, and shows their periods for a chosen date either
   // as a merged list or a real positioned timeline.
-  const ptPeople = document.getElementById('ptPeople');
-  const ptCalendars = document.getElementById('ptCalendars');
-  const peopleBody = document.getElementById('peopleBody');
+  const calendarsModal = document.getElementById('calendarsModal');
+  const openCalendars = document.getElementById('openCalendars');
+  const closeCalendars = document.getElementById('closeCalendars');
   const calendarsBody = document.getElementById('calendarsBody');
   const calFriendRow = document.getElementById('calFriendRow');
   const calDateLabel = document.getElementById('calDateLabel');
@@ -6050,19 +6053,19 @@ Wed: OFF
   let calendarViewDate = new Date();
   let calendarViewMode = 'list';      // 'list' | 'timeline'
 
-  ptPeople.addEventListener('click', () => {
-    ptPeople.classList.add('active');
-    ptCalendars.classList.remove('active');
-    peopleBody.hidden = false;
-    calendarsBody.hidden = true;
-  });
-  ptCalendars.addEventListener('click', () => {
-    ptCalendars.classList.add('active');
-    ptPeople.classList.remove('active');
-    peopleBody.hidden = true;
-    calendarsBody.hidden = false;
+  function openCalendarsModal(){
+    calendarsModal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    maybeShowSharedCalendarsIntro();
     if (!calFriendsLoaded) loadFriendCalendars();
-  });
+  }
+  function closeCalendarsModal(){
+    calendarsModal.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+  openCalendars.addEventListener('click', openCalendarsModal);
+  closeCalendars.addEventListener('click', closeCalendarsModal);
+  calendarsModal.addEventListener('click', (e) => { if (e.target === calendarsModal) closeCalendarsModal(); });
 
   async function loadFriendCalendars(){
     calContent.innerHTML = '';
@@ -7904,13 +7907,15 @@ Wed: OFF
 
   // Phone bottom tab bar: each button just forwards to the header
   // control it replaces on a phone, so there's one place that owns
-  // what actually happens when you tap People/Import/Share/Add/Admin.
+  // what actually happens when you tap People/Calendars/Import/Share/Add/Admin.
   const tabPeople = document.getElementById('tabPeople');
+  const tabCalendars = document.getElementById('tabCalendars');
   const tabImport = document.getElementById('tabImport');
   const tabShare = document.getElementById('tabShare');
   const tabAdd = document.getElementById('tabAdd');
   const tabAdmin = document.getElementById('tabAdmin');
   if (tabPeople) tabPeople.addEventListener('click', () => openPeople.click());
+  if (tabCalendars) tabCalendars.addEventListener('click', () => openCalendars.click());
   if (tabImport) tabImport.addEventListener('click', () => openImport.click());
   if (tabShare) tabShare.addEventListener('click', () => openShare.click());
   if (tabAdd) tabAdd.addEventListener('click', () => toggleAdd.click());
@@ -7966,6 +7971,16 @@ Wed: OFF
       <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
     </svg>
     <span>People</span>
+  </button>
+  <button class="mtab" id="tabCalendars" aria-label="Shared Calendars">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2"/>
+      <line x1="16" y1="2" x2="16" y2="6"/>
+      <line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+    <span>Calendars</span>
   </button>
   <button class="mtab" id="tabImport" aria-label="Import a schedule">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
