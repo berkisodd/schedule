@@ -252,9 +252,13 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  // Mirrors the same rotation-aware DAYS/today logic in schedule.html,
+  // since this is a fully independent public view of a synced copy of
+  // the same `week` (+ `rotation`) data.
+  let DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   const DAY_FULL = { Mon:'Monday', Tue:'Tuesday', Wed:'Wednesday', Thu:'Thursday', Fri:'Friday', Sat:'Saturday', Sun:'Sunday' };
   const JS_DAY_TO_KEY = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let rotation = { enabled:false, length:2, refDate:'', refDay:1, overrides:{} };
 
   let week = emptyWeek();
   let ownerName = '';
@@ -262,6 +266,62 @@
 
   function emptyWeek(){ const w = {}; DAYS.forEach(d => w[d] = []); return w; }
   function todayKey(){ return JS_DAY_TO_KEY[new Date().getDay()]; }
+
+  function normalizeRotation(r){
+    const out = { enabled:false, length:2, refDate:'', refDay:1, overrides:{} };
+    if (r && typeof r === 'object'){
+      out.length = Number.isInteger(r.length) && r.length >= 2 && r.length <= 10 ? r.length : 2;
+      out.enabled = r.enabled === true;
+      out.refDate = typeof r.refDate === 'string' ? r.refDate : '';
+      out.refDay = Number.isInteger(r.refDay) && r.refDay >= 1 && r.refDay <= out.length ? r.refDay : 1;
+      if (r.overrides && typeof r.overrides === 'object'){
+        Object.keys(r.overrides).forEach(k => {
+          const v = r.overrides[k];
+          if (Number.isInteger(v) && v >= 0 && v <= out.length) out.overrides[k] = v;
+        });
+      }
+    }
+    return out;
+  }
+  function recomputeDays(){
+    DAYS = rotation.enabled
+      ? Array.from({ length: rotation.length }, (_, i) => 'Day' + (i + 1))
+      : ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  }
+  function dayLabel(key){
+    if (DAY_FULL[key]) return DAY_FULL[key];
+    const m = /^Day(\d+)$/.exec(key || '');
+    return m ? ('Day ' + m[1]) : (key || '');
+  }
+  function ymd(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function countSchoolDaysBetween(fromStr, toStr){
+    const from = new Date(fromStr + 'T00:00:00');
+    const to = new Date(toStr + 'T00:00:00');
+    if (isNaN(from) || isNaN(to)) return 0;
+    let count = 0;
+    const dir = to >= from ? 1 : -1;
+    const d = new Date(from);
+    while (d.getTime() !== to.getTime()){
+      d.setDate(d.getDate() + dir);
+      const dow = d.getDay();
+      if (dow !== 0 && dow !== 6) count += dir;
+    }
+    return count;
+  }
+  function resolveTodayKey(){
+    if (!rotation.enabled) return todayKey();
+    if (!rotation.refDate) return null;
+    const dateStr = ymd(new Date());
+    if (dateStr in rotation.overrides){
+      const v = rotation.overrides[dateStr];
+      return v === 0 ? null : 'Day' + v;
+    }
+    const dow = new Date().getDay();
+    if (dow === 0 || dow === 6) return null;
+    const steps = countSchoolDaysBetween(rotation.refDate, dateStr);
+    const idx = (((rotation.refDay - 1) + steps) % rotation.length + rotation.length) % rotation.length;
+    return 'Day' + (idx + 1);
+  }
   function toMinutes(hhmm){
     if(!hhmm) return null;
     const [h,m] = hhmm.split(':').map(Number);
@@ -319,6 +379,8 @@
         return;
       }
       const data = snap.data();
+      rotation = normalizeRotation(data.rotation);
+      recomputeDays();
       week = normalizeWeek(data.week || {});
       ownerName = data.ownerName || '';
     } catch (err){
@@ -339,7 +401,7 @@
   function renderWeekGrid(){
     const grid = document.getElementById('weekGrid');
     grid.innerHTML = '';
-    const tk = todayKey();
+    const tk = resolveTodayKey();
     const nowMin = new Date().getHours()*60 + new Date().getMinutes();
 
     DAYS.forEach(d => {
@@ -365,7 +427,7 @@
 
       col.innerHTML = `
         <div class="wg-day-head">
-          <span class="wg-day-name">${DAY_FULL[d]}</span>
+          <span class="wg-day-name">${dayLabel(d)}</span>
           <span class="wg-day-count">${list.length || ''}</span>
         </div>
         ${inner}
@@ -431,7 +493,8 @@
     document.getElementById('clockNow').textContent =
       `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 
-    const todays = week[todayKey()] || [];
+    const todayKeyNow = resolveTodayKey();
+    const todays = week[todayKeyNow] || [];
     let current = null, next = null;
     for (const p of todays){
       const s = toMinutes(p.start), e = toMinutes(p.end);
@@ -461,7 +524,7 @@
     } else {
       heroState.textContent = 'Nothing scheduled today';
       setHeroClock('--:--');
-      heroSub.textContent = `It is ${DAY_FULL[todayKey()]}.`;
+      heroSub.textContent = todayKeyNow ? `It is ${dayLabel(todayKeyNow)}.` : 'There is no school today.';
     }
 
     renderWeekGrid();
