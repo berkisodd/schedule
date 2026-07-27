@@ -1417,6 +1417,15 @@
     color:var(--text-dim); line-height:1.5;
   }
   .share-revoke{ padding:10px 0; margin-top:4px; }
+  /* The generated SVG already draws its own white background rect (so it
+     scans correctly regardless of theme), this card just frames it. */
+  .share-qr{
+    display:flex; justify-content:center; align-items:center;
+    padding:14px; background:var(--panel); border:1px solid var(--line);
+    border-radius:var(--radius); min-height:60px;
+  }
+  .share-qr svg{ width:150px; height:150px; display:block; border-radius:6px; }
+  .share-qr-msg{ font-size:0.78rem; color:var(--text-dim); }
 
   .periods{ display:flex; flex-direction:column; gap:10px; margin-bottom:24px; }
   /* Fade used when switching between day and week view. Applied briefly
@@ -2856,6 +2865,7 @@
           <input type="text" class="share-link" id="shareLink" readonly>
           <button class="io-copy" id="copyShareLink">Copy</button>
         </div>
+        <div class="share-qr" id="shareQr"></div>
         <div class="share-note" id="shareNote">Updates you save show up for anyone with this link.</div>
         <button class="btn-ghost share-revoke" id="revokeShare">Turn off sharing</button>
       </div>
@@ -4831,6 +4841,7 @@ Wed: OFF
   const shareInactive = document.getElementById('shareInactive');
   const shareActive = document.getElementById('shareActive');
   const shareMsg = document.getElementById('shareMsg');
+  const shareQr = document.getElementById('shareQr');
 
   function shareUrlFor(id){
     const base = window.location.href.replace(/\/[^\/]*$/, '/');
@@ -4849,7 +4860,45 @@ Wed: OFF
     const on = !!shareId;
     shareInactive.classList.toggle('show', !on);
     shareActive.classList.toggle('show', on);
-    if (on) shareLink.value = shareUrlFor(shareId);
+    if (on){
+      shareLink.value = shareUrlFor(shareId);
+      renderShareQr(shareLink.value);
+    } else {
+      shareQr.innerHTML = '';
+    }
+  }
+
+  // Vendored locally rather than pulled from a CDN, same reasoning as
+  // lottie.min.js: school networks block some CDNs outright, and this
+  // keeps it working offline.
+  function loadQrLib(){
+    if (window.qrcode) return Promise.resolve(window.qrcode);
+    if (loadQrLib._p) return loadQrLib._p;
+    loadQrLib._p = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = './qrcode.min.js';
+      s.onload = () => resolve(window.qrcode);
+      s.onerror = () => reject(new Error('qrcode lib failed to load'));
+      document.head.appendChild(s);
+      setTimeout(() => { if (!window.qrcode) reject(new Error('qrcode load timeout')); }, 8000);
+    });
+    return loadQrLib._p;
+  }
+
+  async function renderShareQr(url){
+    shareQr.innerHTML = '<span class="share-qr-msg">Loading code…</span>';
+    try{
+      const qrcodeLib = await loadQrLib();
+      // type 0 = auto-pick the smallest grid that fits the URL, 'M' is
+      // the standard error-correction level phone cameras expect
+      const qr = qrcodeLib(0, 'M');
+      qr.addData(url);
+      qr.make();
+      shareQr.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 8, scalable: true });
+    } catch(e){
+      // never block sharing itself over a decoration that failed to load
+      shareQr.innerHTML = '<span class="share-qr-msg">Code unavailable offline</span>';
+    }
   }
 
   function showShareMsg(text, kind){
