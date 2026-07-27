@@ -424,6 +424,18 @@
   }
   .foot a:hover{ text-decoration:underline; }
 
+  .terrain-link{
+    text-align:center;
+    margin-top:12px;
+    font-size:0.82rem;
+  }
+  .terrain-link a{
+    color:var(--amber);
+    text-decoration:none;
+    font-weight:600;
+  }
+  .terrain-link a:hover{ text-decoration:underline; }
+
   @media (prefers-reduced-motion: reduce){
     *{ animation:none !important; transition:none !important; }
   }
@@ -570,6 +582,10 @@
 
     <div class="foot" id="footNote">
       No account yet? <a href="#" onclick="setMode('signup');return false;">Sign up</a>
+    </div>
+
+    <div class="terrain-link">
+      <a href="https://berkisodd.github.io/terrain/" target="_blank" rel="noopener noreferrer">Wanna see some updates? 👀</a>
     </div>
   </div>
 
