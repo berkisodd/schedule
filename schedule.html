@@ -5714,6 +5714,8 @@ Wed: OFF
         updatedAt: new Date().toISOString()
       });
       try{ await updateProfile(currentUser, { displayName: profile.name }); } catch(e){}
+      // my row in the People list just went stale
+      invalidatePeople();
       renderTopbarAvatar();
       setMsg.textContent = 'Profile saved.';
       setMsg.className = 'set-msg ok';
@@ -6347,6 +6349,7 @@ Wed: OFF
   let chatUnsub = null;        // active onSnapshot for the open chat
   let unreadUnsub = null;      // background listener for unread counts
   let openChatUid = null;
+  let chatGen = 0;             // bumped per open/close, see openChat
   let unreadByUid = new Map();
 
   function convoId(a, b){ return pairId(a, b); }
@@ -7402,6 +7405,14 @@ Wed: OFF
 
   async function openChat(person){
     if (!currentUser) return;
+    // ensureConvo below is a network round trip, and the person can close
+    // this chat or tap into a different one while it's still in flight.
+    // Each open claims a generation so a superseded one bails out instead
+    // of attaching its listener on top of the newer chat's. Without this,
+    // the older listener was never unsubscribed: it kept reading from
+    // Firestore forever and painted its own conversation's messages into
+    // whatever chat was actually on screen.
+    const gen = ++chatGen;
     openChatUid = person.uid;
     chatName.textContent = person.name || 'Chat';
     chatAv.innerHTML = avatarSvg(person.avatar);
@@ -7416,9 +7427,12 @@ Wed: OFF
       await ensureConvo(person.uid);
     } catch (err){
       console.error('Could not open conversation:', err);
+      if (gen !== chatGen) return;
       chatScroll.innerHTML = '<div class="chat-empty">Couldn\'t open this chat. Bad connection, maybe.<br>Close and try again.</div>';
       return;
     }
+    // closed, or a different chat opened, while we were waiting
+    if (gen !== chatGen) return;
 
     chatUnsub = listenToChat(person.uid, (msgs) => {
       renderMessages(msgs);
@@ -7438,6 +7452,7 @@ Wed: OFF
   }
 
   function closeChatModal(){
+    chatGen++;   // invalidates an open still waiting on ensureConvo
     if (chatUnsub){ chatUnsub(); chatUnsub = null; }
     openChatUid = null;
     chatModal.classList.remove('show');
@@ -7503,7 +7518,32 @@ Wed: OFF
     unreadUnsub = () => stops.forEach(s => s());
   }
 
-  async function fetchPeople(){
+  // This reads every profile doc, and several things ask for it at once:
+  // the People modal, the match badge on its startup timer, the admin
+  // panel, the notifications sheet. Each call used to be its own full
+  // collection read, so opening People a few times, or landing on it while
+  // the badge timer fired, re-downloaded everyone each time. Concurrent
+  // callers now share one read, and a recent result is reused.
+  let peopleFetch = null;   // in-flight read
+  let peopleAt = 0;         // when allPeople was last filled
+  const PEOPLE_TTL = 60000;
+
+  // Call after anything that changes what a profile row should say.
+  function invalidatePeople(){ peopleAt = 0; }
+
+  function fetchPeople(force){
+    if (!force){
+      if (peopleFetch) return peopleFetch;
+      if (peopleAt && Date.now() - peopleAt < PEOPLE_TTL) return Promise.resolve();
+    }
+    const run = fetchPeopleNow();
+    peopleFetch = run;
+    // free the slot either way, so a failed read can be retried
+    run.then(() => {}, () => {}).then(() => { if (peopleFetch === run) peopleFetch = null; });
+    return run;
+  }
+
+  async function fetchPeopleNow(){
     // No try/catch here on purpose: loadPeople handles failures and
     // shows a retry. Swallowing the error here would render a
     // misleading "No profiles yet" instead.
@@ -7530,6 +7570,7 @@ Wed: OFF
     allPeople.sort((a,b) => a.name.localeCompare(b.name));
     // swap in uploaded pictures for anyone who has one
     await resolveAvatars(allPeople);
+    peopleAt = Date.now();
   }
 
   function renderPeople(filter){
