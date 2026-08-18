@@ -1078,8 +1078,13 @@
     overflow:hidden; display:flex; align-items:center; justify-content:center;
   }
   .chat-av svg{ width:100%; height:100%; display:block; }
-  .chat-head-name{ font-weight:700; font-size:0.98rem; flex:1; min-width:0;
+  .chat-head-title{ flex:1; min-width:0; }
+  .chat-head-name{ font-weight:700; font-size:0.98rem;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .chat-head-sub{
+    font-size:0.68rem; color:var(--text-dim); margin-top:1px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:help;
+  }
   .chat-close{ position:static; flex-shrink:0; }
 
   .chat-scroll{
@@ -2760,7 +2765,10 @@
     <div class="chat-head">
       <button class="chat-back" id="chatBack" aria-label="Back">‹</button>
       <div class="chat-av" id="chatAv"></div>
-      <div class="chat-head-name" id="chatName">Chat</div>
+      <div class="chat-head-title">
+        <div class="chat-head-name" id="chatName">Chat</div>
+        <div class="chat-head-sub" title="Sent over HTTPS, the same encryption your bank uses in transit. Not end-to-end: like most apps, messages are stored as readable text in the database.">🔒 Encrypted in transit</div>
+      </div>
       <button class="modal-close chat-close" id="closeChat" aria-label="Close">✕</button>
     </div>
     <div class="chat-scroll" id="chatScroll"></div>
