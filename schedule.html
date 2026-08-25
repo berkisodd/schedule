@@ -1124,7 +1124,7 @@
   }
   .msg-reaction.mine{ border-color:var(--amber); background:var(--amber-dim); }
   .msg-actions{
-    display:flex; gap:2px; margin-top:5px; padding:5px 6px;
+    display:flex; gap:2px; margin-top:5px; padding:5px 6px; flex-wrap:wrap;
     background:var(--panel); border:1px solid var(--line); border-radius:12px;
   }
   .msg-action-emoji{
@@ -1144,6 +1144,9 @@
   .chat-typing{
     display:none; align-items:center; gap:7px;
     padding:0 18px 10px; font-size:0.78rem; color:var(--text-dim); flex-shrink:0;
+  }
+  .chat-typing #chatTypingText{
+    min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
   .chat-typing.show{ display:flex; }
   .typing-dots{ display:inline-flex; gap:3px; }
@@ -3027,7 +3030,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut, deleteUser, updateProfile, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, getDocFromServer, setDoc, deleteDoc, deleteField, collection, getDocs, query, where, updateDoc, onSnapshot, addDoc, orderBy, limit, writeBatch } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, getDocFromServer, setDoc, deleteDoc, deleteField, collection, getDocs, query, where, updateDoc, onSnapshot, addDoc, orderBy, limit, limitToLast, writeBatch } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBmD7gtaHTmrIE4Pl9q1746s-zoWvx6XAI",
@@ -6515,10 +6518,14 @@ Wed: OFF
   function listenToChat(otherUid, onMessages, onError){
     if (!currentUser) return () => {};
     const id = convoId(currentUser.uid, otherUid);
+    // limitToLast, not limit: with an ascending order, limit(200) pins
+    // the window to the OLDEST 200 messages, so once a chat crossed 200
+    // it froze — new messages fell outside the window and never showed.
+    // limitToLast keeps the newest 200 instead.
     const q = query(
       collection(db, "conversations", id, "messages"),
       orderBy("createdAt", "asc"),
-      limit(200)
+      limitToLast(200)
     );
     return onSnapshot(q, (snap) => {
       if (snap.metadata.fromCache) reportCacheOnlySnapshot();
@@ -7577,6 +7584,10 @@ Wed: OFF
     if (bubble){
       activeMsgId = activeMsgId === bubble.dataset.msgid ? null : bubble.dataset.msgid;
       renderMessages(chatMsgs);
+    } else if (activeMsgId){
+      // tapping empty space dismisses an open reaction bar
+      activeMsgId = null;
+      renderMessages(chatMsgs);
     }
   });
 
@@ -7605,9 +7616,15 @@ Wed: OFF
   // write to react to.
   let chatPresenceTimer = null;
 
-  async function refreshChatHeaderPresence(otherUid){
+  // `fresh` skips the People cache and reads the profile doc directly.
+  // The 20s interval passes it, because recomputing from a cached
+  // lastActive can only ever DECAY (Online → idle → offline as the clock
+  // moves past a frozen timestamp) — someone actively messaging you
+  // would still drift to "Active 5 mins ago". One small doc read per
+  // 20s, only while a chat is open, buys an honest header.
+  async function refreshChatHeaderPresence(otherUid, fresh){
     if (openChatUid !== otherUid) return;
-    let p = allPeople.find(x => x.uid === otherUid);
+    let p = fresh ? null : allPeople.find(x => x.uid === otherUid);
     if (!p){
       try{
         const snap = await getDoc(doc(db, "profiles", otherUid));
@@ -7634,6 +7651,11 @@ Wed: OFF
     // Firestore forever and painted its own conversation's messages into
     // whatever chat was actually on screen.
     const gen = ++chatGen;
+    // If they were mid-type in another chat, clear that chat's typing
+    // flag BEFORE openChatUid moves — stopTypingNow targets the current
+    // openChatUid, and skipping this left a stuck "is typing…" in the
+    // old conversation and swallowed the first typing write in this one.
+    stopTypingNow();
     openChatUid = person.uid;
     chatName.textContent = person.name || 'Chat';
     chatAv.innerHTML = avatarSvg(person.avatar);
@@ -7651,7 +7673,7 @@ Wed: OFF
     if (chatPresenceTimer){ clearInterval(chatPresenceTimer); chatPresenceTimer = null; }
 
     refreshChatHeaderPresence(person.uid);
-    chatPresenceTimer = setInterval(() => refreshChatHeaderPresence(person.uid), 20000);
+    chatPresenceTimer = setInterval(() => refreshChatHeaderPresence(person.uid, true), 20000);
 
     try{
       await ensureConvo(person.uid);
