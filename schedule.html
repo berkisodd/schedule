@@ -1079,11 +1079,14 @@
   }
   .chat-av svg{ width:100%; height:100%; display:block; }
   .chat-head-title{ flex:1; min-width:0; }
-  .chat-head-name{ font-weight:700; font-size:0.98rem;
+  .chat-head-name-row{ display:flex; align-items:center; gap:6px; min-width:0; }
+  .chat-head-name{ font-weight:700; font-size:0.98rem; min-width:0;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .chat-enc-icon{ font-size:0.78rem; opacity:0.55; cursor:help; flex-shrink:0; }
   .chat-head-sub{
-    font-size:0.68rem; color:var(--text-dim); margin-top:1px;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:help;
+    font-size:0.72rem; color:var(--text-dim); margin-top:1px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    display:flex; align-items:center; gap:5px; min-height:12px;
   }
   .chat-close{ position:static; flex-shrink:0; }
 
@@ -1092,26 +1095,67 @@
     display:flex; flex-direction:column; gap:8px;
     -webkit-overflow-scrolling:touch;
   }
+  .msg-wrap{ display:flex; flex-direction:column; max-width:76%; }
+  .msg-wrap.mine{ align-self:flex-end; align-items:flex-end; }
+  .msg-wrap.theirs{ align-self:flex-start; align-items:flex-start; }
   .msg{
-    max-width:76%; padding:9px 13px; border-radius:15px;
+    padding:9px 13px; border-radius:15px; cursor:pointer;
     font-size:0.9rem; line-height:1.45; word-wrap:break-word;
-    white-space:pre-wrap;
+    white-space:pre-wrap; max-width:100%;
   }
   .msg.mine{
-    align-self:flex-end; background:var(--amber); color:var(--on-amber);
+    background:var(--amber); color:var(--on-amber);
     border-bottom-right-radius:5px;
   }
   .msg.theirs{
-    align-self:flex-start; background:var(--ink-2);
+    background:var(--ink-2);
     border:1px solid var(--line); border-bottom-left-radius:5px;
   }
   .msg-time{
     font-family:'JetBrains Mono', monospace; font-size:0.62rem;
     color:var(--text-dim); align-self:center; margin:8px 0 2px;
   }
+  .msg-seen{ font-size:0.68rem; color:var(--text-dim); margin-top:3px; }
+  .msg-reactions{ display:flex; gap:4px; margin-top:4px; flex-wrap:wrap; }
+  .msg-reaction{
+    font-size:0.72rem; padding:2px 7px; border-radius:10px;
+    border:1px solid var(--line); background:var(--panel); color:var(--text);
+    cursor:pointer; line-height:1.5;
+  }
+  .msg-reaction.mine{ border-color:var(--amber); background:var(--amber-dim); }
+  .msg-actions{
+    display:flex; gap:2px; margin-top:5px; padding:5px 6px;
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+  }
+  .msg-action-emoji{
+    font-size:1rem; background:none; border:none; cursor:pointer;
+    padding:3px 5px; border-radius:6px; line-height:1;
+  }
+  .msg-action-emoji:hover{ background:var(--ink-2); }
+  .msg-action-del{
+    font-size:0.85rem; background:none; border:none; cursor:pointer;
+    padding:3px 7px; color:var(--error); margin-left:2px;
+  }
   .chat-empty{
     margin:auto; text-align:center; color:var(--text-dim);
     font-size:0.86rem; line-height:1.6; padding:20px;
+  }
+
+  .chat-typing{
+    display:none; align-items:center; gap:7px;
+    padding:0 18px 10px; font-size:0.78rem; color:var(--text-dim); flex-shrink:0;
+  }
+  .chat-typing.show{ display:flex; }
+  .typing-dots{ display:inline-flex; gap:3px; }
+  .typing-dots span{
+    width:5px; height:5px; border-radius:50%; background:var(--text-dim);
+    animation:typingBounce 1.2s infinite ease-in-out;
+  }
+  .typing-dots span:nth-child(2){ animation-delay:0.15s; }
+  .typing-dots span:nth-child(3){ animation-delay:0.3s; }
+  @keyframes typingBounce{
+    0%, 60%, 100%{ transform:translateY(0); opacity:0.5; }
+    30%{ transform:translateY(-3px); opacity:1; }
   }
 
   .chat-composer{
@@ -2766,12 +2810,19 @@
       <button class="chat-back" id="chatBack" aria-label="Back">‹</button>
       <div class="chat-av" id="chatAv"></div>
       <div class="chat-head-title">
-        <div class="chat-head-name" id="chatName">Chat</div>
-        <div class="chat-head-sub" title="Sent over HTTPS, the same encryption your bank uses in transit. Not end-to-end: like most apps, messages are stored as readable text in the database.">🔒 Encrypted in transit</div>
+        <div class="chat-head-name-row">
+          <div class="chat-head-name" id="chatName">Chat</div>
+          <span class="chat-enc-icon" title="Sent over HTTPS, the same encryption your bank uses in transit. Not end-to-end: like most apps, messages are stored as readable text in the database.">🔒</span>
+        </div>
+        <div class="chat-head-sub" id="chatHeadSub"></div>
       </div>
       <button class="modal-close chat-close" id="closeChat" aria-label="Close">✕</button>
     </div>
     <div class="chat-scroll" id="chatScroll"></div>
+    <div class="chat-typing" id="chatTyping">
+      <span class="typing-dots"><span></span><span></span><span></span></span>
+      <span id="chatTypingText"></span>
+    </div>
     <form class="chat-composer" id="chatForm">
       <input type="text" id="chatInput" placeholder="Message" autocomplete="off" maxlength="2000">
       <button type="submit" class="chat-send" id="chatSend" aria-label="Send">↑</button>
@@ -2976,7 +3027,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut, deleteUser, updateProfile, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, getDocFromServer, setDoc, deleteDoc, collection, getDocs, query, where, updateDoc, onSnapshot, addDoc, orderBy, limit, writeBatch } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, getDocFromServer, setDoc, deleteDoc, deleteField, collection, getDocs, query, where, updateDoc, onSnapshot, addDoc, orderBy, limit, writeBatch } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBmD7gtaHTmrIE4Pl9q1746s-zoWvx6XAI",
@@ -6354,11 +6405,16 @@ Wed: OFF
   // Conversations reuse the friendship pair id, so a chat between two
   // people always lives at the same path and needs no lookup. Messages
   // are a subcollection under it.
-  let chatUnsub = null;        // active onSnapshot for the open chat
+  let chatUnsub = null;        // active onSnapshot for the open chat's messages
+  let typingUnsub = null;      // active onSnapshot for the open chat's typing doc
   let unreadUnsub = null;      // background listener for unread counts
   let openChatUid = null;
   let chatGen = 0;             // bumped per open/close, see openChat
   let unreadByUid = new Map();
+  let chatMsgs = [];           // last snapshot rendered, so a reaction/delete
+                                // tap can re-render without a fresh listener hit
+  let activeMsgId = null;      // message whose reaction/delete bar is open
+  const REACTION_EMOJIS = ['👍','❤️','😂','😮','😢','🙏'];
 
   function convoId(a, b){ return pairId(a, b); }
 
@@ -6378,6 +6434,48 @@ Wed: OFF
       if (!m[uid] || iso > m[uid]) m[uid] = iso;
       localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify(m));
     } catch(e){}
+  }
+
+  // Typing indicator: a tiny doc per person under the conversation, so
+  // either side can watch just the other's without a compound query.
+  // Written on input, cleared after a short idle gap. The receiver treats
+  // anything older than a few seconds as stale, in case a clear-write
+  // never landed (tab closed, connection dropped mid-type).
+  const TYPING_IDLE_MS = 2500;
+  const TYPING_STALE_MS = 6000;
+  let typingTimer = null;
+  let iAmTyping = false;
+
+  async function setTyping(otherUid, isTyping){
+    if (!currentUser) return;
+    const id = convoId(currentUser.uid, otherUid);
+    try{
+      await setDoc(doc(db, "conversations", id, "typing", currentUser.uid), {
+        typing: isTyping,
+        at: new Date().toISOString()
+      });
+    } catch(e){ /* best effort, not worth surfacing */ }
+  }
+
+  function noteTyping(){
+    if (!openChatUid) return;
+    if (!iAmTyping){
+      iAmTyping = true;
+      setTyping(openChatUid, true);
+    }
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(() => {
+      iAmTyping = false;
+      setTyping(openChatUid, false);
+    }, TYPING_IDLE_MS);
+  }
+
+  function stopTypingNow(){
+    clearTimeout(typingTimer);
+    if (iAmTyping && openChatUid){
+      iAmTyping = false;
+      setTyping(openChatUid, false);
+    }
   }
 
   async function sendMessage(toUid, text){
@@ -7354,6 +7452,9 @@ Wed: OFF
   const chatSend = document.getElementById('chatSend');
   const chatName = document.getElementById('chatName');
   const chatAv = document.getElementById('chatAv');
+  const chatHeadSub = document.getElementById('chatHeadSub');
+  const chatTyping = document.getElementById('chatTyping');
+  const chatTypingText = document.getElementById('chatTypingText');
   const closeChat = document.getElementById('closeChat');
   const chatBack = document.getElementById('chatBack');
 
@@ -7367,7 +7468,21 @@ Wed: OFF
     } catch(e){ return ''; }
   }
 
+  // Groups a message's { uid: emoji } reaction map into { emoji: {count, mine} },
+  // since the bar under a bubble is per-emoji, not per-person.
+  function groupReactions(reactions){
+    const grouped = {};
+    Object.entries(reactions || {}).forEach(([uid, emoji]) => {
+      if (!emoji) return;
+      if (!grouped[emoji]) grouped[emoji] = { count: 0, mine: false };
+      grouped[emoji].count++;
+      if (currentUser && uid === currentUser.uid) grouped[emoji].mine = true;
+    });
+    return grouped;
+  }
+
   function renderMessages(msgs){
+    chatMsgs = msgs;
     if (!msgs.length){
       chatScroll.innerHTML = '<div class="chat-empty">No messages yet.<br>Say something.</div>';
       return;
@@ -7386,12 +7501,84 @@ Wed: OFF
       }
       lastStamp = t;
       const mine = currentUser && m.from === currentUser.uid;
-      html += `<div class="msg ${mine ? 'mine' : 'theirs'}">${escapeHtml(m.text)}</div>`;
+      const grouped = groupReactions(m.reactions);
+      const reactionsHtml = Object.keys(grouped).length
+        ? '<div class="msg-reactions">' + Object.entries(grouped).map(([emoji, g]) =>
+            `<button type="button" class="msg-reaction${g.mine ? ' mine' : ''}" data-react="${escapeHtml(emoji)}" data-msgid="${m.id}">${emoji} ${g.count}</button>`
+          ).join('') + '</div>'
+        : '';
+      const showActions = activeMsgId === m.id;
+      const actionsHtml = showActions
+        ? '<div class="msg-actions">' +
+            REACTION_EMOJIS.map(e => `<button type="button" class="msg-action-emoji" data-emoji="${e}" data-msgid="${m.id}">${e}</button>`).join('') +
+            (mine ? `<button type="button" class="msg-action-del" data-delmsg="${m.id}">🗑</button>` : '') +
+          '</div>'
+        : '';
+      html += `<div class="msg-wrap ${mine ? 'mine' : 'theirs'}">` +
+        `<div class="msg ${mine ? 'mine' : 'theirs'}" data-msgid="${m.id}">${escapeHtml(m.text)}</div>` +
+        reactionsHtml + actionsHtml +
+      '</div>';
     });
+
+    // Seen receipt: only under the very last message, and only when it's
+    // mine and marked read. Matches the common "one line, not per-bubble"
+    // pattern instead of cluttering every message with its own status.
+    const last = msgs[msgs.length - 1];
+    if (last && currentUser && last.from === currentUser.uid && last.read){
+      html += `<div class="msg-seen">Seen</div>`;
+    }
+
     chatScroll.innerHTML = html;
 
     if (nearBottom) chatScroll.scrollTop = chatScroll.scrollHeight;
   }
+
+  async function handleReact(msgId, emoji){
+    if (!currentUser || !openChatUid) return;
+    const msg = chatMsgs.find(m => m.id === msgId);
+    const already = msg && msg.reactions ? msg.reactions[currentUser.uid] : null;
+    const id = convoId(currentUser.uid, openChatUid);
+    const ref = doc(db, "conversations", id, "messages", msgId);
+    // close the bar right away for a snappy feel; the real snapshot
+    // update (with the new reaction) follows right behind it
+    activeMsgId = null;
+    renderMessages(chatMsgs);
+    try{
+      await updateDoc(ref, {
+        ['reactions.' + currentUser.uid]: already === emoji ? deleteField() : emoji
+      });
+    } catch(err){ console.error('Could not react to message:', err); }
+  }
+
+  async function handleDeleteMessage(msgId){
+    if (!currentUser || !openChatUid) return;
+    if (!confirm('Delete this message? This cannot be undone.')) return;
+    const id = convoId(currentUser.uid, openChatUid);
+    activeMsgId = null;
+    try{
+      await deleteDoc(doc(db, "conversations", id, "messages", msgId));
+    } catch(err){
+      console.error('Could not delete message:', err);
+      alert('Could not delete that message. Try again.');
+    }
+  }
+
+  // Single delegated listener, since renderMessages replaces the whole
+  // list's innerHTML on every snapshot — per-row listeners would just be
+  // thrown away each time anyway.
+  chatScroll.addEventListener('click', (e) => {
+    const del = e.target.closest('[data-delmsg]');
+    if (del){ handleDeleteMessage(del.dataset.delmsg); return; }
+    const emojiBtn = e.target.closest('[data-emoji]');
+    if (emojiBtn){ handleReact(emojiBtn.dataset.msgid, emojiBtn.dataset.emoji); return; }
+    const pill = e.target.closest('[data-react]');
+    if (pill){ handleReact(pill.dataset.msgid, pill.dataset.react); return; }
+    const bubble = e.target.closest('.msg[data-msgid]');
+    if (bubble){
+      activeMsgId = activeMsgId === bubble.dataset.msgid ? null : bubble.dataset.msgid;
+      renderMessages(chatMsgs);
+    }
+  });
 
   // The rules check the parent conversation doc on every message read,
   // so it has to exist before the listener attaches. Without this, a
@@ -7411,6 +7598,32 @@ Wed: OFF
     }
   }
 
+  // Presence for the chat header. Reuses the People cache when it's warm
+  // (the only way into a chat is via a profile, so it usually is); falls
+  // back to a single doc read otherwise. Re-run on a timer while the chat
+  // is open, since idle/online is time-based and can flip with no new
+  // write to react to.
+  let chatPresenceTimer = null;
+
+  async function refreshChatHeaderPresence(otherUid){
+    if (openChatUid !== otherUid) return;
+    let p = allPeople.find(x => x.uid === otherUid);
+    if (!p){
+      try{
+        const snap = await getDoc(doc(db, "profiles", otherUid));
+        if (snap.exists()){
+          const d = snap.data();
+          p = { hideStatus: d.hideStatus === true, lastActive: d.lastActive || null, manualPresence: d.manualPresence || 'auto' };
+        }
+      } catch(e){ /* header just stays blank */ }
+    }
+    if (openChatUid !== otherUid || !p) return;
+    if (p.hideStatus){ chatHeadSub.innerHTML = ''; return; }
+    const state = presenceFrom(p.lastActive, p.hideStatus, p.manualPresence);
+    const text = state === 'online' ? 'Online' : (lastSeenText(p.lastActive) || 'Offline');
+    chatHeadSub.innerHTML = presenceDot(state) + '<span>' + escapeHtml(text) + '</span>';
+  }
+
   async function openChat(person){
     if (!currentUser) return;
     // ensureConvo below is a network round trip, and the person can close
@@ -7424,12 +7637,21 @@ Wed: OFF
     openChatUid = person.uid;
     chatName.textContent = person.name || 'Chat';
     chatAv.innerHTML = avatarSvg(person.avatar);
+    chatHeadSub.innerHTML = '';
     chatScroll.innerHTML = '<div class="chat-empty">Loading...</div>';
+    chatTyping.classList.remove('show');
     chatInput.value = '';
+    activeMsgId = null;
+    chatMsgs = [];
     chatModal.classList.add('show');
     document.body.style.overflow = 'hidden';
 
     if (chatUnsub){ chatUnsub(); chatUnsub = null; }
+    if (typingUnsub){ typingUnsub(); typingUnsub = null; }
+    if (chatPresenceTimer){ clearInterval(chatPresenceTimer); chatPresenceTimer = null; }
+
+    refreshChatHeaderPresence(person.uid);
+    chatPresenceTimer = setInterval(() => refreshChatHeaderPresence(person.uid), 20000);
 
     try{
       await ensureConvo(person.uid);
@@ -7456,13 +7678,33 @@ Wed: OFF
       chatScroll.innerHTML = '<div class="chat-empty">Lost the connection to this chat.<br>Close and reopen to retry.</div>';
     });
 
+    const id = convoId(currentUser.uid, person.uid);
+    typingUnsub = onSnapshot(collection(db, "conversations", id, "typing"), (snap) => {
+      if (gen !== chatGen) return;
+      let theirsTyping = false;
+      snap.forEach(d => {
+        if (d.id === currentUser.uid) return;
+        const data = d.data();
+        if (data && data.typing && Date.now() - new Date(data.at).getTime() < TYPING_STALE_MS){
+          theirsTyping = true;
+        }
+      });
+      chatTypingText.textContent = (person.name || 'They') + ' is typing…';
+      chatTyping.classList.toggle('show', theirsTyping);
+    }, (err) => { console.error('Typing listener failed:', err); });
+
     setTimeout(() => chatInput.focus(), 80);
   }
 
   function closeChatModal(){
     chatGen++;   // invalidates an open still waiting on ensureConvo
+    stopTypingNow();
     if (chatUnsub){ chatUnsub(); chatUnsub = null; }
+    if (typingUnsub){ typingUnsub(); typingUnsub = null; }
+    if (chatPresenceTimer){ clearInterval(chatPresenceTimer); chatPresenceTimer = null; }
     openChatUid = null;
+    activeMsgId = null;
+    chatMsgs = [];
     chatModal.classList.remove('show');
     document.body.style.overflow = '';
   }
@@ -7471,11 +7713,14 @@ Wed: OFF
   chatBack.addEventListener('click', closeChatModal);
   chatModal.addEventListener('click', (e) => { if (e.target === chatModal) closeChatModal(); });
 
+  chatInput.addEventListener('input', noteTyping);
+
   chatForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const text = chatInput.value.trim();
     if (!text || !openChatUid) return;
     chatInput.value = '';
+    stopTypingNow();
     chatSend.disabled = true;
     try{
       await sendMessage(openChatUid, text);
