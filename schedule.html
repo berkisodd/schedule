@@ -1082,7 +1082,22 @@
   .chat-head-name-row{ display:flex; align-items:center; gap:6px; min-width:0; }
   .chat-head-name{ font-weight:700; font-size:0.98rem; min-width:0;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .chat-enc-icon{ font-size:0.78rem; opacity:0.55; cursor:help; flex-shrink:0; }
+  .chat-enc-badge{
+    position:relative; display:inline-flex; align-items:center; justify-content:center;
+    width:18px; height:18px; border-radius:50%; flex-shrink:0; cursor:help;
+    color:var(--amber); background:var(--amber-dim);
+  }
+  .chat-enc-badge svg{ width:10px; height:10px; }
+  .chat-enc-badge::after{
+    content:''; position:absolute; inset:-3px; border-radius:50%;
+    border:1.5px solid var(--amber); opacity:0.5;
+    animation:encBadgePulse 2.6s ease-out infinite;
+  }
+  @keyframes encBadgePulse{
+    0%{ transform:scale(0.85); opacity:0.5; }
+    70%{ transform:scale(1.55); opacity:0; }
+    100%{ transform:scale(1.55); opacity:0; }
+  }
   .chat-head-sub{
     font-size:0.72rem; color:var(--text-dim); margin-top:1px;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
@@ -2815,7 +2830,12 @@
       <div class="chat-head-title">
         <div class="chat-head-name-row">
           <div class="chat-head-name" id="chatName">Chat</div>
-          <span class="chat-enc-icon" title="Sent over HTTPS, the same encryption your bank uses in transit. Not end-to-end: like most apps, messages are stored as readable text in the database.">🔒</span>
+          <span class="chat-enc-badge" title="Sent over HTTPS, the same encryption your bank uses in transit. Not end-to-end: like most apps, messages are stored as readable text in the database.">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2.2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </span>
         </div>
         <div class="chat-head-sub" id="chatHeadSub"></div>
       </div>
