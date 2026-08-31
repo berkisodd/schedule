@@ -2956,17 +2956,17 @@
   <div class="modal conn-help-modal">
     <button class="modal-close" id="closeProfileWelcome" aria-label="Close">✕</button>
     <div class="set-head">
-      <div class="set-title">Set up your profile</div>
-      <div class="set-sub">A couple of things worth knowing before you dive in.</div>
+      <div class="set-title">Your profile is private</div>
+      <div class="set-sub">Right now, other people only see your name and activity, nothing else.</div>
     </div>
     <ul class="conn-help-list">
-      <li>Pick a name and status so friends know who you are</li>
-      <li>Your profile is private by default. Turn it public in Settings if you want your bio and status visible to others</li>
-      <li>Your picture, theme, and everything else here can be changed any time in Settings</li>
+      <li>Making it public lets friends see your status and bio when they look you up</li>
+      <li>Your name, status, and picture can be set any time in Settings</li>
+      <li>Switch this again whenever you want, it's just one toggle</li>
     </ul>
     <div class="addpanel-actions" style="margin-top:18px; margin-bottom:18px;">
-      <button class="btn-ghost" id="skipProfileWelcome">Not now</button>
-      <button class="btn-primary" id="openProfileWelcomeSettings">Open Settings</button>
+      <button class="btn-ghost" id="keepProfilePrivate">Keep it private</button>
+      <button class="btn-primary" id="makeProfilePublic">Make it public</button>
     </div>
   </div>
 </div>
@@ -3404,14 +3404,19 @@
     avatar: 'larry', avatarUpdated: null, isPublic: false,
     hideStatus: false, lastActive: null, manualPresence: 'auto',
     matchEnabled: false, shareScheduleWithFriends: false,
-    sharedCalendarsIntroSeen: false
+    sharedCalendarsIntroSeen: false, profilePrivacyPromptSeen: false
   };
   let tickStarted = false;
   let dirty = false;
-  // Set once loadProfile finds no profiles/{uid} doc yet, meaning this
-  // account has never opened Settings and saved once. Drives the one-time
-  // welcome prompt below, no extra flag field needed.
-  let isNewProfile = false;
+  // Set once loadProfile sees no updatedAt on the profile doc, meaning
+  // this account has never actually saved Settings. Doc EXISTENCE alone
+  // isn't a safe signal here: touchPresence() and the shared calendars
+  // intro both create a bare profiles/{uid} doc via a merge write the
+  // first time either one fires, with no updatedAt field, well before
+  // anyone has ever opened Settings. Drives the one-time welcome prompt
+  // below, gated separately by profilePrivacyPromptSeen so dismissing it
+  // sticks even though this recomputes fresh on every load.
+  let neverSavedSettings = false;
 
   // ── Data model: week = { Mon:[], Tue:[], ... } ─────────────
   // DAYS is mutable: schools with a rotating block schedule (Day1, Day2,
@@ -3771,7 +3776,7 @@
     // isn't going to open.
     if (!introSeen){
       setTimeout(() => { openModal(); markIntroSeen(); }, 600);
-    } else if (isNewProfile){
+    } else if (neverSavedSettings){
       setTimeout(showProfileWelcome, 600);
     }
   }
@@ -4653,7 +4658,7 @@ Rules:
     // Chained rather than shown alongside the import walkthrough, so a
     // brand new signup sees one prompt at a time instead of two modals
     // stacked on top of each other.
-    if (isNewProfile) setTimeout(showProfileWelcome, 400);
+    if (neverSavedSettings) setTimeout(showProfileWelcome, 400);
   }
 
   // ══ Fake chatbot demo (auto-plays on step 2) ══════════════════
@@ -5775,11 +5780,13 @@ Wed: OFF
           manualPresence: ['auto','online','idle','offline'].includes(d.manualPresence) ? d.manualPresence : 'auto',
           matchEnabled: d.matchEnabled === true,
           shareScheduleWithFriends: d.shareScheduleWithFriends === true,
-          sharedCalendarsIntroSeen: d.sharedCalendarsIntroSeen === true
+          sharedCalendarsIntroSeen: d.sharedCalendarsIntroSeen === true,
+          profilePrivacyPromptSeen: d.profilePrivacyPromptSeen === true
         };
+        neverSavedSettings = !d.updatedAt;
       } else {
         profile.name = currentUser.displayName || '';
-        isNewProfile = true;
+        neverSavedSettings = true;
       }
     } catch (err){
       console.error('Could not load profile:', err);
@@ -6187,19 +6194,22 @@ Wed: OFF
     }
   });
 
-  // Shown once, only for an account with no profiles/{uid} doc yet (see
-  // isNewProfile in loadProfile) — the exact case of someone who signed
-  // up and never realized Settings has a name, status, and a public/
-  // private switch. Existing users already have a profile doc, so this
-  // never nags anyone who's already used the app.
+  // Shown once, for any account that has never actually saved Settings
+  // (see neverSavedSettings in loadProfile) — covers both a brand new
+  // signup and an existing account that's been using the app for a
+  // while but never opened Settings, which a bare presence-created
+  // profile doc would otherwise hide from the old doc-existence check.
+  // Dismissing either way (private or public) sets
+  // profilePrivacyPromptSeen so it never comes back, independent of
+  // whether they ever touch Settings for real afterward.
   const profileWelcomeModal = document.getElementById('profileWelcomeModal');
   const closeProfileWelcome = document.getElementById('closeProfileWelcome');
-  const skipProfileWelcome = document.getElementById('skipProfileWelcome');
-  const openProfileWelcomeSettings = document.getElementById('openProfileWelcomeSettings');
+  const keepProfilePrivate = document.getElementById('keepProfilePrivate');
+  const makeProfilePublic = document.getElementById('makeProfilePublic');
   let profileWelcomeShown = false;
 
   function showProfileWelcome(){
-    if (profileWelcomeShown || !isNewProfile) return;
+    if (profileWelcomeShown || !neverSavedSettings || profile.profilePrivacyPromptSeen) return;
     profileWelcomeShown = true;
     profileWelcomeModal.classList.add('show');
     document.body.style.overflow = 'hidden';
@@ -6208,12 +6218,38 @@ Wed: OFF
     profileWelcomeModal.classList.remove('show');
     document.body.style.overflow = '';
   }
-  closeProfileWelcome.addEventListener('click', closeProfileWelcomeModal);
-  skipProfileWelcome.addEventListener('click', closeProfileWelcomeModal);
-  profileWelcomeModal.addEventListener('click', (e) => { if (e.target === profileWelcomeModal) closeProfileWelcomeModal(); });
-  openProfileWelcomeSettings.addEventListener('click', () => {
+  async function markProfilePrivacyPromptSeen(){
+    profile.profilePrivacyPromptSeen = true;
+    if (!currentUser) return;
+    try{
+      await setDoc(doc(db, "profiles", currentUser.uid), { profilePrivacyPromptSeen: true }, { merge: true });
+    } catch (err){
+      console.error('Could not save profile privacy prompt flag:', err);
+    }
+  }
+  closeProfileWelcome.addEventListener('click', () => {
+    markProfilePrivacyPromptSeen();
     closeProfileWelcomeModal();
-    openSettingsModal();
+  });
+  profileWelcomeModal.addEventListener('click', (e) => {
+    if (e.target === profileWelcomeModal){
+      markProfilePrivacyPromptSeen();
+      closeProfileWelcomeModal();
+    }
+  });
+  keepProfilePrivate.addEventListener('click', () => {
+    markProfilePrivacyPromptSeen();
+    closeProfileWelcomeModal();
+  });
+  makeProfilePublic.addEventListener('click', async () => {
+    profile.isPublic = true;
+    await markProfilePrivacyPromptSeen();
+    try{
+      await setDoc(doc(db, "profiles", currentUser.uid), { isPublic: true }, { merge: true });
+    } catch (err){
+      console.error('Could not make profile public:', err);
+    }
+    closeProfileWelcomeModal();
   });
 
   // Firestore's getDocs retries a bad connection internally for a very
