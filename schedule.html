@@ -2952,6 +2952,25 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="profileWelcomeModal">
+  <div class="modal conn-help-modal">
+    <button class="modal-close" id="closeProfileWelcome" aria-label="Close">✕</button>
+    <div class="set-head">
+      <div class="set-title">Set up your profile</div>
+      <div class="set-sub">A couple of things worth knowing before you dive in.</div>
+    </div>
+    <ul class="conn-help-list">
+      <li>Pick a name and status so friends know who you are</li>
+      <li>Your profile is private by default. Turn it public in Settings if you want your bio and status visible to others</li>
+      <li>Your picture, theme, and everything else here can be changed any time in Settings</li>
+    </ul>
+    <div class="addpanel-actions" style="margin-top:18px; margin-bottom:18px;">
+      <button class="btn-ghost" id="skipProfileWelcome">Not now</button>
+      <button class="btn-primary" id="openProfileWelcomeSettings">Open Settings</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="shareModal">
   <div class="modal share-modal">
     <button class="modal-close" id="closeShare" aria-label="Close">✕</button>
@@ -3389,6 +3408,10 @@
   };
   let tickStarted = false;
   let dirty = false;
+  // Set once loadProfile finds no profiles/{uid} doc yet, meaning this
+  // account has never opened Settings and saved once. Drives the one-time
+  // welcome prompt below, no extra flag field needed.
+  let isNewProfile = false;
 
   // ── Data model: week = { Mon:[], Tue:[], ... } ─────────────
   // DAYS is mutable: schools with a rotating block schedule (Day1, Day2,
@@ -3739,9 +3762,17 @@
 
     hideLoading();
 
-    // First visit: auto-open the import walkthrough once.
+    // First visit: auto-open the import walkthrough once. A brand new
+    // profile also gets a one-time nudge toward Settings, chained after
+    // the import modal closes so the two don't stack on top of each
+    // other (see closeModal). If the import walkthrough was already
+    // seen (a returning device, say) but the profile is still new, show
+    // the Settings nudge directly instead of waiting on a modal that
+    // isn't going to open.
     if (!introSeen){
       setTimeout(() => { openModal(); markIntroSeen(); }, 600);
+    } else if (isNewProfile){
+      setTimeout(showProfileWelcome, 600);
     }
   }
 
@@ -4619,6 +4650,10 @@ Rules:
     importModal.classList.remove('show');
     document.body.style.overflow = '';
     stopChatDemo();
+    // Chained rather than shown alongside the import walkthrough, so a
+    // brand new signup sees one prompt at a time instead of two modals
+    // stacked on top of each other.
+    if (isNewProfile) setTimeout(showProfileWelcome, 400);
   }
 
   // ══ Fake chatbot demo (auto-plays on step 2) ══════════════════
@@ -4760,7 +4795,7 @@ Wed: OFF
       if (typeof closeChatModal === 'function') closeChatModal();
       else chatM.classList.remove('show');
     } else {
-      const order = ['sharedCalendarsIntro','connHelpModal','connInfoModal','profileModal','adminModal','notifModal','peopleModal','calendarsModal','settingsModal','shareModal'];
+      const order = ['profileWelcomeModal','sharedCalendarsIntro','connHelpModal','connInfoModal','profileModal','adminModal','notifModal','peopleModal','calendarsModal','settingsModal','shareModal'];
       for (const id of order){
         const m = document.getElementById(id);
         if (m && m.classList.contains('show')){ m.classList.remove('show'); break; }
@@ -4769,7 +4804,7 @@ Wed: OFF
     // Scroll-lock safety: if no modal is left open, always restore
     // scrolling, even if some open path forgot to. This is the rescue
     // hatch for a stranded overflow:hidden.
-    const all = ['chatModal','chatEncModal','sharedCalendarsIntro','connHelpModal','connInfoModal','profileModal','adminModal','notifModal','peopleModal','calendarsModal','settingsModal','shareModal'];
+    const all = ['chatModal','chatEncModal','profileWelcomeModal','sharedCalendarsIntro','connHelpModal','connInfoModal','profileModal','adminModal','notifModal','peopleModal','calendarsModal','settingsModal','shareModal'];
     const anyOpen = all.some(id => {
       const m = document.getElementById(id);
       return m && m.classList.contains('show');
@@ -5744,6 +5779,7 @@ Wed: OFF
         };
       } else {
         profile.name = currentUser.displayName || '';
+        isNewProfile = true;
       }
     } catch (err){
       console.error('Could not load profile:', err);
@@ -6149,6 +6185,35 @@ Wed: OFF
       markSharedCalendarsIntroSeen();
       closeSharedCalendarsIntroModal();
     }
+  });
+
+  // Shown once, only for an account with no profiles/{uid} doc yet (see
+  // isNewProfile in loadProfile) — the exact case of someone who signed
+  // up and never realized Settings has a name, status, and a public/
+  // private switch. Existing users already have a profile doc, so this
+  // never nags anyone who's already used the app.
+  const profileWelcomeModal = document.getElementById('profileWelcomeModal');
+  const closeProfileWelcome = document.getElementById('closeProfileWelcome');
+  const skipProfileWelcome = document.getElementById('skipProfileWelcome');
+  const openProfileWelcomeSettings = document.getElementById('openProfileWelcomeSettings');
+  let profileWelcomeShown = false;
+
+  function showProfileWelcome(){
+    if (profileWelcomeShown || !isNewProfile) return;
+    profileWelcomeShown = true;
+    profileWelcomeModal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeProfileWelcomeModal(){
+    profileWelcomeModal.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+  closeProfileWelcome.addEventListener('click', closeProfileWelcomeModal);
+  skipProfileWelcome.addEventListener('click', closeProfileWelcomeModal);
+  profileWelcomeModal.addEventListener('click', (e) => { if (e.target === profileWelcomeModal) closeProfileWelcomeModal(); });
+  openProfileWelcomeSettings.addEventListener('click', () => {
+    closeProfileWelcomeModal();
+    openSettingsModal();
   });
 
   // Firestore's getDocs retries a bad connection internally for a very
