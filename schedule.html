@@ -1084,9 +1084,11 @@
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .chat-enc-badge{
     position:relative; display:inline-flex; align-items:center; justify-content:center;
-    width:18px; height:18px; border-radius:50%; flex-shrink:0; cursor:help;
-    color:var(--amber); background:var(--amber-dim);
+    width:18px; height:18px; border-radius:50%; flex-shrink:0; cursor:pointer;
+    color:var(--amber); background:var(--amber-dim); border:none; padding:0;
+    font:inherit; -webkit-tap-highlight-color:transparent;
   }
+  .chat-enc-badge:hover{ background:var(--amber-line); }
   .chat-enc-badge svg{ width:10px; height:10px; }
   .chat-enc-badge::after{
     content:''; position:absolute; inset:-3px; border-radius:50%;
@@ -1429,6 +1431,7 @@
     color:var(--text-dim);
   }
   .conn-info-icon svg{ width:26px; height:26px; }
+  .conn-info-icon.amber{ background:var(--amber-dim); border-color:var(--amber-line); color:var(--amber); }
   .conn-info-sub{ color:var(--text-dim); font-size:0.85rem; padding:0 24px; }
   .conn-info-rows{ margin:22px 24px 0; border-top:1px solid var(--line); }
   .conn-info-row{
@@ -2830,12 +2833,12 @@
       <div class="chat-head-title">
         <div class="chat-head-name-row">
           <div class="chat-head-name" id="chatName">Chat</div>
-          <span class="chat-enc-badge" title="Sent over HTTPS, the same encryption your bank uses in transit. Not end-to-end: like most apps, messages are stored as readable text in the database.">
+          <button type="button" class="chat-enc-badge" id="chatEncBadge" aria-label="How your messages are protected">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="11" width="18" height="11" rx="2.2"/>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
             </svg>
-          </span>
+          </button>
         </div>
         <div class="chat-head-sub" id="chatHeadSub"></div>
       </div>
@@ -2907,6 +2910,26 @@
     </div>
     <div class="conn-info-hint">This is the round trip time to reach your data, not a raw network ping. Browsers can't measure that directly.</div>
     <button class="btn-primary" id="connInfoRetest" style="margin-bottom:18px;">Test again</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="chatEncModal">
+  <div class="modal conn-info-modal">
+    <button class="modal-close" id="closeChatEnc" aria-label="Close">✕</button>
+    <div class="conn-info-icon amber">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+    </div>
+    <div class="set-title">How your messages are protected</div>
+    <div class="conn-info-sub">A plain look at what's actually going on, no marketing spin.</div>
+    <ul class="conn-help-list" style="text-align:left; margin:20px 24px 0;">
+      <li><strong>In transit:</strong> sent over HTTPS, the same encryption your bank uses. Nobody on the network between your device and the server can read it along the way.</li>
+      <li><strong>At rest:</strong> stored encrypted on Google's servers, same as the rest of your data in this app.</li>
+      <li><strong>Not end to end:</strong> messages are kept as readable text in the database. That means this app's admins could technically read them by opening the database directly. Most apps work this way — it's not a bug, but it's not the same as "nobody but the two of you can ever see it."</li>
+    </ul>
+    <div class="conn-info-hint">If you want a conversation that truly nobody else could read, that needs real end to end encryption, which this app doesn't have yet.</div>
   </div>
 </div>
 
@@ -4725,9 +4748,15 @@ Wed: OFF
     if (e.key !== 'Escape') return;
     if (importModal.classList.contains('show')){ closeModal(); return; }
     // Close the topmost open modal, using each modal's own close path
-    // where one exists so listeners get cleaned up properly.
+    // where one exists so listeners get cleaned up properly. chatEncModal
+    // can be open on top of chatModal (opened from the lock badge inside
+    // an active chat), so it has to be checked first — otherwise one ESC
+    // would close both at once instead of peeling off the top layer.
+    const chatEncM = document.getElementById('chatEncModal');
     const chatM = document.getElementById('chatModal');
-    if (chatM && chatM.classList.contains('show')){
+    if (chatEncM && chatEncM.classList.contains('show')){
+      chatEncM.classList.remove('show');
+    } else if (chatM && chatM.classList.contains('show')){
       if (typeof closeChatModal === 'function') closeChatModal();
       else chatM.classList.remove('show');
     } else {
@@ -4740,7 +4769,7 @@ Wed: OFF
     // Scroll-lock safety: if no modal is left open, always restore
     // scrolling, even if some open path forgot to. This is the rescue
     // hatch for a stranded overflow:hidden.
-    const all = ['chatModal','sharedCalendarsIntro','connHelpModal','connInfoModal','profileModal','adminModal','notifModal','peopleModal','calendarsModal','settingsModal','shareModal'];
+    const all = ['chatModal','chatEncModal','sharedCalendarsIntro','connHelpModal','connInfoModal','profileModal','adminModal','notifModal','peopleModal','calendarsModal','settingsModal','shareModal'];
     const anyOpen = all.some(id => {
       const m = document.getElementById(id);
       return m && m.classList.contains('show');
@@ -7754,6 +7783,15 @@ Wed: OFF
   closeChat.addEventListener('click', closeChatModal);
   chatBack.addEventListener('click', closeChatModal);
   chatModal.addEventListener('click', (e) => { if (e.target === chatModal) closeChatModal(); });
+
+  // Tapping the lock badge explains what it actually means, since a
+  // hover-only title tooltip never shows up on a touch device anyway.
+  const chatEncBadge = document.getElementById('chatEncBadge');
+  const chatEncModal = document.getElementById('chatEncModal');
+  const closeChatEnc = document.getElementById('closeChatEnc');
+  chatEncBadge.addEventListener('click', () => chatEncModal.classList.add('show'));
+  closeChatEnc.addEventListener('click', () => chatEncModal.classList.remove('show'));
+  chatEncModal.addEventListener('click', (e) => { if (e.target === chatEncModal) chatEncModal.classList.remove('show'); });
 
   chatInput.addEventListener('input', noteTyping);
 
