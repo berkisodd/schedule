@@ -5804,6 +5804,29 @@ Wed: OFF
     renderTopbarAvatar();
     renderAvatarUpload();
     startPresence();
+    cleanupStaleSharedSchedule();
+  }
+
+  // Repair pass for anyone hit by the overwrite bug before it was fixed:
+  // their shareScheduleWithFriends flag got wiped, so the app shows
+  // sharing as off, but the sharedFriendSchedules copy of their week was
+  // never deleted and is still readable by any signed in account. Runs at
+  // most once per device (one read, plus a delete only if something stale
+  // is actually there), and never for someone who has sharing genuinely
+  // turned on.
+  const SHARED_CLEANUP_KEY = 's2_shared_cleanup_done';
+  async function cleanupStaleSharedSchedule(){
+    if (!currentUser || profile.shareScheduleWithFriends) return;
+    try{
+      if (localStorage.getItem(SHARED_CLEANUP_KEY) === currentUser.uid) return;
+    } catch(e){ /* storage blocked, just run it */ }
+    try{
+      const stale = await getDoc(doc(db, "sharedFriendSchedules", currentUser.uid));
+      if (stale.exists()) await deleteDoc(doc(db, "sharedFriendSchedules", currentUser.uid));
+      try{ localStorage.setItem(SHARED_CLEANUP_KEY, currentUser.uid); } catch(e){}
+    } catch (err){
+      console.error('Could not clean up a stale shared schedule:', err);
+    }
   }
 
   saveSettings.addEventListener('click', async () => {
@@ -5852,6 +5875,15 @@ Wed: OFF
         }
         avatarDirty = false;
       }
+      // merge:true matters here. This used to be a full overwrite, which
+      // silently wiped every profile field NOT listed below — including
+      // shareScheduleWithFriends, sharedCalendarsIntroSeen and
+      // profilePrivacyPromptSeen, none of which this form owns. Saving
+      // Settings for any reason turned calendar sharing "off" in the UI
+      // while leaving the shared copy behind, and made the Shared
+      // Calendars intro pop up all over again. Nothing here relies on the
+      // overwrite: every field this wants to clear is written explicitly
+      // as null or [].
       await setDoc(doc(db, "profiles", currentUser.uid), {
         name: profile.name,
         status: profile.status,
@@ -5866,7 +5898,7 @@ Wed: OFF
         sharedClasses: profile.matchEnabled ? buildSharedClasses() : [],
         lastActive: profile.hideStatus ? null : (profile.lastActive || new Date().toISOString()),
         updatedAt: new Date().toISOString()
-      });
+      }, { merge: true });
       try{ await updateProfile(currentUser, { displayName: profile.name }); } catch(e){}
       // my row in the People list just went stale
       invalidatePeople();
@@ -6348,8 +6380,15 @@ Wed: OFF
             getDoc(doc(db, "profiles", uid))
           ]);
           if (!schedSnap.exists()) return null;
-          const data = schedSnap.data();
           const prof = profSnap.exists() ? profSnap.data() : {};
+          // Require the opt-in flag, not just the presence of a shared
+          // copy. A stale sharedFriendSchedules doc (left behind by the
+          // overwrite bug above, or any future failure to clean up) would
+          // otherwise keep showing someone's schedule after they believe
+          // they turned sharing off. The profile doc is already being
+          // fetched here, so this check costs nothing extra.
+          if (prof.shareScheduleWithFriends !== true) return null;
+          const data = schedSnap.data();
           return {
             uid,
             name: prof.name || 'Friend',
