@@ -3603,23 +3603,36 @@
       if (localStorage.getItem(CLEANUP_KEY) === today) return;
     } catch(e){}
 
+    // Claim the day BEFORE doing the work, not after. This sweep reads
+    // every conversation in the app plus one query each, so if it threw
+    // partway (one unreadable conversation is enough) the flag never got
+    // set and the whole sweep re-ran on every single page load for the
+    // rest of the day, burning that many reads each time. A missed day is
+    // far cheaper than a retry loop, and the next run picks up whatever
+    // was left.
+    try{ localStorage.setItem(CLEANUP_KEY, today); } catch(e){}
+
     const cutoff = new Date(Date.now() - MSG_TTL_DAYS * 86400000).toISOString();
     let removed = 0;
     try{
       const convos = await getDocs(collection(db, "conversations"));
       for (const c of convos.docs){
-        const old = await getDocs(query(
-          collection(db, "conversations", c.id, "messages"),
-          where("createdAt", "<", cutoff),
-          limit(400)
-        ));
-        if (old.empty) continue;
-        const batch = writeBatch(db);
-        old.forEach(m => batch.delete(m.ref));
-        await batch.commit();
-        removed += old.size;
+        try{
+          const old = await getDocs(query(
+            collection(db, "conversations", c.id, "messages"),
+            where("createdAt", "<", cutoff),
+            limit(400)
+          ));
+          if (old.empty) continue;
+          const batch = writeBatch(db);
+          old.forEach(m => batch.delete(m.ref));
+          await batch.commit();
+          removed += old.size;
+        } catch (err){
+          // one bad conversation shouldn't abandon the rest of the sweep
+          console.error('Cleanup skipped a conversation:', err);
+        }
       }
-      try{ localStorage.setItem(CLEANUP_KEY, today); } catch(e){}
       if (removed) console.log(`Cleanup removed ${removed} messages older than ${MSG_TTL_DAYS} days.`);
     } catch (err){
       console.error('Cleanup failed:', err);
@@ -5345,17 +5358,23 @@ Wed: OFF
     touchPresence(false);
   }
 
+  function onPresenceVisibility(){
+    if (document.visibilityState === 'visible') noteInteraction();
+    updateMyPresenceUI();
+  }
+
   function startPresence(){
     if (presenceTimer) clearInterval(presenceTimer);
     // real user activity drives the heartbeat
     ['click','keydown','touchstart','scroll'].forEach(evt => {
       window.addEventListener(evt, noteInteraction, { passive:true });
     });
-    // coming back to the tab counts as activity
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') noteInteraction();
-      updateMyPresenceUI();
-    });
+    // coming back to the tab counts as activity. Named, not an inline
+    // arrow: the activity listeners above are deduplicated by the browser
+    // because they pass the same function reference every time, but a
+    // fresh arrow is a new object, so re-running startPresence stacked up
+    // another copy that fired on every tab switch.
+    document.addEventListener('visibilitychange', onPresenceVisibility);
     // slow keepalive so a page left open still reads as idle rather than offline
     presenceTimer = setInterval(() => {
       const quiet = Date.now() - lastInteractionAt;
@@ -5965,13 +5984,29 @@ Wed: OFF
   // The actual deletion, shared by the hold flow and the typed fallback.
   // Removes public/shared data, then the auth user. Throws on failure so
   // callers can react (e.g. requires-recent-login).
+  // Everything keyed by this uid has to go BEFORE deleteUser runs. The
+  // rules only let the owner write these paths, so once the auth account
+  // is gone nothing can ever remove them again, not even an admin, and
+  // they stay readable by any signed in account. That previously left an
+  // uploaded photo and a full copy of the schedule behind permanently.
   async function runAccountDelete(){
     if (shareId){
       try{ await deleteDoc(doc(db, "sharedSchedules", shareId)); } catch(e){ console.error(e); }
     }
+    // Friendship docs carry this uid on both sides; without this they
+    // linger as ghost entries pointing at an account that no longer exists.
+    try{
+      await loadFriendships();
+      await Promise.all(myFriendships.map(f =>
+        deleteDoc(doc(db, "friendships", f.id)).catch(e => console.error(e))
+      ));
+    } catch(e){ console.error(e); }
+    try{ await deleteDoc(doc(db, "avatars", currentUser.uid)); } catch(e){ console.error(e); }
+    try{ await deleteDoc(doc(db, "sharedFriendSchedules", currentUser.uid)); } catch(e){ console.error(e); }
     try{ await deleteDoc(doc(db, "profiles", currentUser.uid)); } catch(e){ console.error(e); }
     try{ await deleteDoc(doc(db, "schedules", currentUser.uid)); } catch(e){ console.error(e); }
     try{ await deleteDoc(doc(db, "users", currentUser.uid)); } catch(e){ console.error(e); }
+    clearCachedAvatar(currentUser.uid);
     dirty = false; // stop the unsaved changes warning
     await deleteUser(currentUser);
   }
