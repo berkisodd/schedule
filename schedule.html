@@ -3488,19 +3488,33 @@
   // positive if `toStr` is after `fromStr`. Used to auto-advance a
   // rotating cycle from a single reference point without modeling every
   // holiday, only weekends are assumed to not be school days.
+  // Closed form rather than stepping a day at a time. This runs inside
+  // tick(), once a second, and the old loop ran once per calendar day
+  // between the reference date and today. A reference date with a
+  // mistyped year (0202 instead of 2026 is one keystroke away in a date
+  // field) meant ~666,000 iterations every second, which is enough to
+  // make the whole app stutter on a phone. Any 7 consecutive days hold
+  // exactly 5 weekdays, so only the remainder needs counting: at most 6
+  // steps, whatever the range. Day difference is taken from the UTC of
+  // each local Y/M/D so a 23 or 25 hour DST day can't skew it, or leave
+  // the old loop's exact-equality exit condition unreachable.
   function countSchoolDaysBetween(fromStr, toStr){
     const from = new Date(fromStr + 'T00:00:00');
     const to = new Date(toStr + 'T00:00:00');
     if (isNaN(from) || isNaN(to)) return 0;
-    let count = 0;
-    const dir = to >= from ? 1 : -1;
-    const d = new Date(from);
-    while (d.getTime() !== to.getTime()){
-      d.setDate(d.getDate() + dir);
-      const dow = d.getDay();
-      if (dow !== 0 && dow !== 6) count += dir;
+    const a = Date.UTC(from.getFullYear(), from.getMonth(), from.getDate());
+    const b = Date.UTC(to.getFullYear(), to.getMonth(), to.getDate());
+    const totalDays = Math.round((b - a) / 86400000);
+    if (!totalDays) return 0;
+    const dir = totalDays > 0 ? 1 : -1;
+    const n = Math.abs(totalDays);
+    const startDow = from.getDay();
+    let count = Math.floor(n / 7) * 5;
+    for (let i = 1; i <= n % 7; i++){
+      const dow = (((startDow + dir * i) % 7) + 7) % 7;
+      if (dow !== 0 && dow !== 6) count++;
     }
-    return count;
+    return count * dir;
   }
 
   // Resolves which day key applies on an arbitrary date, for an

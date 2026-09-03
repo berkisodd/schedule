@@ -294,19 +294,30 @@
     return m ? ('Day ' + m[1]) : (key || '');
   }
   function ymd(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  // Closed form, matching schedule.html. The old version stepped one day
+  // at a time inside tick(), which runs every second, so a shared
+  // schedule whose reference date had a mistyped year burned hundreds of
+  // thousands of iterations per second on the viewer's device. Any 7
+  // consecutive days hold exactly 5 weekdays, so only the remainder needs
+  // counting. Day difference comes from the UTC of each local Y/M/D so a
+  // DST day can't skew it.
   function countSchoolDaysBetween(fromStr, toStr){
     const from = new Date(fromStr + 'T00:00:00');
     const to = new Date(toStr + 'T00:00:00');
     if (isNaN(from) || isNaN(to)) return 0;
-    let count = 0;
-    const dir = to >= from ? 1 : -1;
-    const d = new Date(from);
-    while (d.getTime() !== to.getTime()){
-      d.setDate(d.getDate() + dir);
-      const dow = d.getDay();
-      if (dow !== 0 && dow !== 6) count += dir;
+    const a = Date.UTC(from.getFullYear(), from.getMonth(), from.getDate());
+    const b = Date.UTC(to.getFullYear(), to.getMonth(), to.getDate());
+    const totalDays = Math.round((b - a) / 86400000);
+    if (!totalDays) return 0;
+    const dir = totalDays > 0 ? 1 : -1;
+    const n = Math.abs(totalDays);
+    const startDow = from.getDay();
+    let count = Math.floor(n / 7) * 5;
+    for (let i = 1; i <= n % 7; i++){
+      const dow = (((startDow + dir * i) % 7) + 7) % 7;
+      if (dow !== 0 && dow !== 6) count++;
     }
-    return count;
+    return count * dir;
   }
   function resolveTodayKey(){
     if (!rotation.enabled) return todayKey();
