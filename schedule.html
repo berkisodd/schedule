@@ -357,10 +357,36 @@
   .logout-btn{
     background:none; border:1px solid var(--line); color:var(--text-dim);
     font-family:'Inter',sans-serif; font-size:0.76rem; font-weight:500;
-    padding:7px 13px; border-radius:8px; cursor:pointer;
+    padding:7px 13px; border-radius:8px; cursor:pointer; flex-shrink:0;
+    white-space:nowrap;
     transition:border-color 0.18s ease, color 0.18s ease;
   }
   .logout-btn:hover{ border-color:var(--error); color:var(--error); }
+
+  /* Phone top bar. The right hand controls have a fixed width, so the
+     left side is the part that has to give: it shrinks and the status
+     label truncates instead of shoving "Log out" off the screen. Before
+     this the bar had a hard 392px floor, which made every phone narrower
+     than that scroll sideways with the button clipped at the edge. */
+  @media (max-width:700px){
+    .daytrack{ padding:12px 16px 12px; }
+    .daytrack-head{ align-items:center; gap:10px; }
+    /* the rail sits right underneath and the page is already today's,
+       so the label is only taking up room */
+    .daytrack-title{ display:none; }
+    .daytrack-title-wrap{ flex:1 1 auto; min-width:0; }
+    .conn-status{ min-width:0; }
+    .conn-label{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .daytrack-right{ flex:0 0 auto; gap:10px; }
+    .daytrack-now{ font-size:0.7rem; }
+  }
+  /* On the narrowest phones the clock duplicates the one in the system
+     status bar an inch above it, so it is the next thing to go. */
+  @media (max-width:360px){
+    .daytrack-now{ display:none; }
+    .daytrack-right{ gap:9px; }
+    .logout-btn{ padding:7px 10px; }
+  }
   .rail-outer{
     max-width:820px; margin:0 auto; height:2px;
     background:var(--line-soft); border-radius:99px; position:relative;
@@ -3971,6 +3997,29 @@
     });
     viewingLabel.textContent = '· ' + dayLabel(viewingDay);
     renderRotationOverride();
+    scrollActiveDayIntoView(dayTabsPainted);
+    dayTabsPainted = true;
+  }
+
+  // The day strip is wider than a phone, so on a weekend the highlighted
+  // tab used to sit off the right edge with nothing on screen showing
+  // which day you were looking at. Pull it into view, but only when it
+  // isn't already visible, so tapping a tab never yanks the strip around
+  // under your finger.
+  let dayTabsPainted = false;
+  function scrollActiveDayIntoView(smooth){
+    const el = dayTabs.querySelector('.daytab.active');
+    if (!el) return;
+    const max = dayTabs.scrollWidth - dayTabs.clientWidth;
+    if (max <= 1) return; // the whole week fits, nothing to scroll
+    const cr = dayTabs.getBoundingClientRect();
+    const er = el.getBoundingClientRect();
+    if (er.left >= cr.left - 1 && er.right <= cr.right + 1) return;
+    const delta = (er.left - cr.left) - (cr.width - er.width) / 2;
+    const left = Math.max(0, Math.min(max, dayTabs.scrollLeft + delta));
+    if (Math.abs(dayTabs.scrollLeft - left) < 1) return;
+    try { dayTabs.scrollTo({ left, behavior: smooth ? 'smooth' : 'auto' }); }
+    catch(e){ dayTabs.scrollLeft = left; }
   }
 
   // ── Rotating-day "today" override control ───────────────
@@ -4456,30 +4505,29 @@
     }
     if(!current) next = todays.find(p => toMinutes(p.start) > nowMin) || null;
 
-    const heroState = document.getElementById('heroState');
-    const heroSub = document.getElementById('heroSub');
-
     if(current){
-      const secsLeft = Math.max(Math.round((toMinutes(current.end) - nowMin) * 60), 0);
-      heroState.textContent = `${current.name} ends in`;
-      setHeroClock(secsToClock(secsLeft), true);
       const after = getNextAfter(todays, current);
-      heroSub.innerHTML = `Then: <strong>${after ? escapeHtml(after.name) : 'Done for today'}</strong>`;
+      const secsLeft = Math.max(Math.round((toMinutes(current.end) - nowMin) * 60), 0);
+      setHeroState(`${current.name} ends in`);
+      setHeroClock(secsToClock(secsLeft), true);
+      setHeroSub(`Then: <strong>${after ? escapeHtml(after.name) : 'Done for today'}</strong>`);
     } else if(next){
       const secsLeft = Math.max(Math.round((toMinutes(next.start) - nowMin) * 60), 0);
-      heroState.textContent = `${next.name} starts in`;
+      setHeroState(`${next.name} starts in`);
       setHeroClock(secsToClock(secsLeft), false);
-      heroSub.innerHTML = next.room ? `In <strong>${escapeHtml(next.room)}</strong>` : 'Get ready.';
+      setHeroSub(next.room ? `In <strong>${escapeHtml(next.room)}</strong>` : 'Get ready.');
     } else if(todays.length){
-      heroState.textContent = 'All done today';
+      const up = nextUpLine();
+      setHeroState('All done today');
       setHeroClock('--:--');
-      heroSub.textContent = 'No more periods today. Nice work.';
+      setHeroSub(up ? `Nice work. ${up}` : 'No more periods today. Nice work.');
     } else {
-      heroState.textContent = 'Nothing scheduled today';
+      const up = nextUpLine();
+      setHeroState('Nothing scheduled today');
       setHeroClock('--:--');
-      heroSub.textContent = todayKeyNow
-        ? `It's ${dayLabel(todayKeyNow)}. Add periods to this day to start the countdown.`
-        : 'No school today. Add periods to a school day to start the countdown.';
+      setHeroSub(up || (todayKeyNow
+        ? `It's ${escapeHtml(dayLabel(todayKeyNow))}. Add periods to this day to start the countdown.`
+        : 'No school today. Add periods to a school day to start the countdown.'));
     }
 
     // keep the "Now" highlight fresh in whichever view is open.
@@ -4511,6 +4559,37 @@
   function getNextAfter(list, period){
     const idx = list.findIndex(p => p.id === period.id);
     return list[idx+1] || null;
+  }
+
+  // The point of the app is knowing what's next, but once today ran out
+  // the hero just said "add periods to this day", which is the wrong
+  // advice on a Saturday. Walk forward up to a week for the first day
+  // that actually has something on it, so the weekend tells you when
+  // Monday starts. Rotation aware, since which key a date maps to is not
+  // always its weekday. Cheap enough to run inside tick(): at most seven
+  // resolves, each closed form.
+  function findNextPeriodAhead(){
+    const now = new Date();
+    for (let i = 1; i <= 7; i++){
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+      const key = resolveKeyForDate(rotation, d);
+      if (!key) continue;
+      const list = (week[key] || []).filter(p => toMinutes(p.start) !== null);
+      if (!list.length) continue;
+      const first = list.reduce((a,b) => toMinutes(b.start) < toMinutes(a.start) ? b : a);
+      return {
+        period: first,
+        when: i === 1 ? 'tomorrow' : DAY_FULL[JS_DAY_TO_KEY[d.getDay()]] || dayLabel(key)
+      };
+    }
+    return null;
+  }
+
+  // "Next up: Algebra II Honors, Monday at 8:15 AM"
+  function nextUpLine(){
+    const n = findNextPeriodAhead();
+    if (!n) return '';
+    return `Next up: <strong>${escapeHtml(n.period.name)}</strong>, ${n.when} at ${fmtTime(n.period.start)}`;
   }
   // ══ Dot matrix countdown ══════════════════════════════════════
   // Digits are drawn on a 5x7 grid of dots. Unlit dots stay faintly
@@ -4554,6 +4633,24 @@
     const w = Math.max(x - step, step);
     const h = rows*step - gap;
     return `<svg class="dotclock" viewBox="0 0 ${w.toFixed(2)} ${h.toFixed(2)}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${cells.join('')}</svg>`;
+  }
+
+  // tick() runs every second, and it used to rewrite the hero label and
+  // subtitle each time even when the words hadn't changed. Reparsing that
+  // markup once a second wipes any text the reader has selected and
+  // re-lays it out for nothing, so only write when it actually differs.
+  let lastHeroState = null, lastHeroSub = null;
+  function setHeroState(text){
+    if (text === lastHeroState) return;
+    lastHeroState = text;
+    const el = document.getElementById('heroState');
+    if (el) el.textContent = text;
+  }
+  function setHeroSub(html){
+    if (html === lastHeroSub) return;
+    lastHeroSub = html;
+    const el = document.getElementById('heroSub');
+    if (el) el.innerHTML = html;
   }
 
   function setHeroClock(text, live){
