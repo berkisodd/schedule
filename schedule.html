@@ -951,17 +951,155 @@
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     padding:40px 20px; min-height:180px; gap:16px;
   }
-  .spinner{
-    width:48px; height:48px; border:3px solid var(--line);
-    border-top-color:var(--amber); border-radius:50%;
-    animation:spinnerSpin 0.8s linear infinite;
-  }
-  @keyframes spinnerSpin{
-    to { transform:rotate(360deg); }
-  }
   .spinner-text{
     font-size:0.82rem; color:var(--text-dim);
     letter-spacing:-0.005em;
+  }
+
+  /* ── Eclipse loader ───────────────────────────────────────
+     A little celestial body passing an eclipse, used anywhere the app
+     is waiting on the server (People, Calendars, a chat). Sized purely
+     off --size/--spin so it drops into any box. Amber/text pull from
+     the active theme; the occulted disc stays a fixed dark graphite
+     since it's meant to read as a body in shadow, not page chrome. */
+  .eclipse{
+    --size: 84px; --spin: 3.4s;
+    --disc-lo: #101216; --disc-hi: #23272e;
+    --amber-soft: color-mix(in srgb, var(--amber) 55%, white);
+    --core: color-mix(in srgb, var(--amber) 15%, white);
+    --reticle: var(--text);
+    --r-in: calc(var(--size) * .15); --r-out: calc(var(--size) * .30);
+    position:relative; width:var(--size); height:var(--size); flex:none;
+    animation:eclipse-bob calc(var(--spin) / 4) cubic-bezier(.36,1.5,.5,1) infinite;
+  }
+  .eclipse::before{
+    content:""; position:absolute; inset:-20%; border-radius:50%;
+    background:radial-gradient(circle at 60% 62%, color-mix(in srgb, var(--amber) 22%, transparent) 0%, color-mix(in srgb, var(--amber) 6%, transparent) 38%, transparent 68%);
+    animation:eclipse-breathe calc(var(--spin) / 2) ease-in-out infinite;
+  }
+  .eclipse__disc{
+    position:absolute; inset:13%; border-radius:50%;
+    background:radial-gradient(circle at 34% 28%, var(--disc-hi), #171a1f 56%, var(--disc-lo));
+    animation:eclipse-wobble calc(var(--spin) / 4) cubic-bezier(.3,1.6,.5,1) infinite;
+  }
+  .eclipse__ticks{
+    position:absolute; inset:1%; border-radius:50%;
+    background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--amber-soft) 40%, transparent) 0 1deg, transparent 1deg 15deg);
+    -webkit-mask:radial-gradient(circle, transparent 0 45.5%, #000 46% 49.5%, transparent 50%);
+            mask:radial-gradient(circle, transparent 0 45.5%, #000 46% 49.5%, transparent 50%);
+    animation:eclipse-tick var(--spin) steps(12) infinite;
+  }
+  .eclipse__orbit{
+    position:absolute; inset:0;
+    animation:eclipse-orbit var(--spin) cubic-bezier(.6,-.32,.3,1.42) infinite;
+  }
+  .eclipse__arm{
+    position:absolute; top:50%; left:50%; width:0; height:0;
+    animation:eclipse-arm var(--spin) cubic-bezier(.34,1.56,.64,1) infinite;
+  }
+  .eclipse__orb{
+    position:absolute;
+    top:calc(var(--size) * -.23); left:calc(var(--size) * -.23);
+    width:calc(var(--size) * .46); height:calc(var(--size) * .46);
+    animation:eclipse-squash var(--spin) cubic-bezier(.34,1.56,.64,1) infinite;
+  }
+  .eclipse__glow{
+    position:absolute; inset:0; border-radius:50%;
+    background:
+      radial-gradient(circle, var(--core) 0 9%, transparent 15%),
+      radial-gradient(circle, transparent 13%, var(--amber-soft) 19%, transparent 26%),
+      radial-gradient(circle, transparent 24%, var(--amber) 33%, color-mix(in srgb, var(--amber) 55%, transparent) 42%, transparent 58%);
+    filter:blur(calc(var(--size) * .012));
+    animation:eclipse-flare var(--spin) ease-in-out infinite;
+  }
+  .eclipse__wave{
+    position:absolute; inset:30%; border-radius:50%;
+    border:1px solid color-mix(in srgb, var(--amber-soft) 60%, transparent);
+    opacity:0;
+    animation:eclipse-wave calc(var(--spin) / 4) cubic-bezier(.16,1.4,.3,1) infinite;
+  }
+  .eclipse__wave:nth-of-type(2){ animation-delay:calc(var(--spin) / -8); }
+  .eclipse__moons{
+    position:absolute; inset:0;
+    animation:eclipse-tick calc(var(--spin) * 1.9) linear infinite reverse;
+  }
+  .eclipse__spark{
+    position:absolute; top:50%; left:50%;
+    width:calc(var(--size) * .05); height:calc(var(--size) * .05);
+    margin:calc(var(--size) * -.025) 0 0 calc(var(--size) * -.025);
+    border-radius:50%;
+    background:radial-gradient(circle, var(--core) 0 20%, color-mix(in srgb, var(--amber) 55%, transparent) 45%, transparent 72%);
+    animation:eclipse-spark calc(var(--spin) / 2) cubic-bezier(.34,1.7,.5,1) infinite;
+  }
+  .eclipse__spark:nth-child(1){ --a:20deg;  --r1:calc(var(--size) * .42); --r2:calc(var(--size) * .33); }
+  .eclipse__spark:nth-child(2){ --a:145deg; --r1:calc(var(--size) * .38); --r2:calc(var(--size) * .46); animation-delay:calc(var(--spin) / -5); }
+  .eclipse__spark:nth-child(3){ --a:262deg; --r1:calc(var(--size) * .45); --r2:calc(var(--size) * .36); animation-delay:calc(var(--spin) / -3); }
+  .eclipse__shade{
+    position:absolute; inset:13%; border-radius:50%;
+    background:linear-gradient(138deg, rgba(7,8,10,.96) 0 32%, rgba(7,8,10,.74) 50%, rgba(7,8,10,0) 74%);
+    pointer-events:none;
+  }
+  .eclipse__reticle{
+    position:absolute; top:50%; left:50%;
+    width:calc(var(--size) * .11); height:calc(var(--size) * .11);
+    margin:calc(var(--size) * -.055) 0 0 calc(var(--size) * -.055);
+    animation:eclipse-lock var(--spin) cubic-bezier(.3,1.7,.5,1) infinite;
+  }
+  .eclipse__reticle::before, .eclipse__reticle::after{
+    content:""; position:absolute; background:var(--reticle);
+  }
+  .eclipse__reticle::before{ top:50%; left:0; width:100%; height:1px; }
+  .eclipse__reticle::after{ left:50%; top:0; height:100%; width:1px; }
+  @keyframes eclipse-orbit{
+    0%{ transform:rotate(45deg); } 25%{ transform:rotate(135deg); }
+    50%{ transform:rotate(225deg); } 75%{ transform:rotate(315deg); }
+    100%{ transform:rotate(405deg); }
+  }
+  @keyframes eclipse-arm{
+    0%,25%,50%,75%,100%{ transform:translateX(var(--r-in)); }
+    12.5%,37.5%,62.5%,87.5%{ transform:translateX(var(--r-out)); }
+  }
+  @keyframes eclipse-squash{
+    0%,25%,50%,75%,100%{ transform:scale(.84,1.14); }
+    12.5%,37.5%,62.5%,87.5%{ transform:scale(1.16,.86); }
+  }
+  @keyframes eclipse-flare{
+    0%,100%{ opacity:1; filter:blur(calc(var(--size) * .012)) brightness(1); }
+    40%{ opacity:.5; filter:blur(calc(var(--size) * .03)) brightness(.66); }
+    66%{ opacity:1; filter:blur(calc(var(--size) * .012)) brightness(1.18); }
+  }
+  @keyframes eclipse-wave{
+    0%{ transform:scale(.5); opacity:0; } 14%{ opacity:.6; }
+    100%{ transform:scale(2.2); opacity:0; }
+  }
+  @keyframes eclipse-spark{
+    0%,100%{ transform:rotate(var(--a)) translateX(var(--r1)); opacity:.5; }
+    50%{ transform:rotate(var(--a)) translateX(var(--r2)); opacity:1; }
+  }
+  @keyframes eclipse-lock{
+    0%,100%{ transform:translate(-8%,-14%) scale(1); opacity:.5; }
+    33%{ transform:translate(52%,26%) scale(1.22); opacity:.9; }
+    66%{ transform:translate(-46%,30%) scale(.9); opacity:.65; }
+  }
+  @keyframes eclipse-bob{
+    0%,100%{ transform:translateY(calc(var(--size) * -.012)); }
+    50%{ transform:translateY(calc(var(--size) * .012)); }
+  }
+  @keyframes eclipse-wobble{
+    0%,100%{ transform:scale(1,1); } 50%{ transform:scale(1.035,.965); }
+  }
+  @keyframes eclipse-tick{ to{ transform:rotate(360deg); } }
+  @keyframes eclipse-breathe{
+    0%,100%{ opacity:.75; transform:scale(1); } 50%{ opacity:1; transform:scale(1.07); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .eclipse, .eclipse::before, .eclipse__disc, .eclipse__ticks, .eclipse__orbit,
+    .eclipse__arm, .eclipse__orb, .eclipse__glow, .eclipse__wave,
+    .eclipse__moons, .eclipse__spark, .eclipse__reticle{ animation:none; }
+    .eclipse__arm{ transform:translateX(var(--r-out)); }
+    .eclipse__orbit{ transform:rotate(45deg); }
+    .eclipse__wave{ opacity:.25; }
+    .eclipse__spark{ transform:rotate(var(--a)) translateX(var(--r1)); opacity:.6; }
   }
   .people-count{
     display:flex; align-items:center; gap:8px; padding:2px 2px 8px;
@@ -4391,6 +4529,35 @@
     return d.innerHTML;
   }
 
+  // Shared "fetching from the server" state for any modal body (People,
+  // Calendars, a chat). One markup blob instead of three copies drifting
+  // apart, and one place to swap the animation later.
+  function loaderHtml(text){
+    return `<div class="people-loading">
+      <div class="eclipse" style="--size:84px; --spin:3.4s;" role="status" aria-label="Loading">
+        <div class="eclipse__disc"></div>
+        <div class="eclipse__ticks"></div>
+        <div class="eclipse__orbit">
+          <div class="eclipse__arm">
+            <div class="eclipse__orb">
+              <div class="eclipse__glow"></div>
+              <span class="eclipse__wave"></span>
+              <span class="eclipse__wave"></span>
+            </div>
+          </div>
+        </div>
+        <div class="eclipse__moons">
+          <span class="eclipse__spark"></span>
+          <span class="eclipse__spark"></span>
+          <span class="eclipse__spark"></span>
+        </div>
+        <div class="eclipse__shade"></div>
+        <div class="eclipse__reticle"></div>
+      </div>
+      <div class="spinner-text">${escapeHtml(text)}</div>
+    </div>`;
+  }
+
   // ── View switching (Day <-> Week dashboard) ─────────────
   function setView(view){
     currentView = view;
@@ -6450,7 +6617,7 @@ Wed: OFF
   // long time with no deadline, which looked like an infinite spinner.
   // Race it against a timeout and offer a retry instead.
   async function loadPeople(){
-    peopleList.innerHTML = '<div class="people-loading"><div class="spinner"></div><div class="spinner-text">Loading people...</div></div>';
+    peopleList.innerHTML = loaderHtml('Loading people...');
     // Wait for auth + profile to settle first. Firing getDocs while auth
     // is still attaching leaves the read pending with no error, which
     // looked like a permanent "Loading..." until you reopened the tab.
@@ -6526,7 +6693,7 @@ Wed: OFF
 
   async function loadFriendCalendars(){
     calContent.innerHTML = '';
-    calFriendRow.innerHTML = '<div class="people-loading"><div class="spinner"></div><div class="spinner-text">Loading calendars...</div></div>';
+    calFriendRow.innerHTML = loaderHtml('Loading calendars...');
     const ready = await waitForReady(8000);
     if (!ready){
       calFriendRow.innerHTML = '<div class="cal-empty">Still starting up. Give it a second.</div>';
@@ -8011,7 +8178,7 @@ Wed: OFF
     chatName.textContent = person.name || 'Chat';
     chatAv.innerHTML = avatarSvg(person.avatar);
     chatHeadSub.innerHTML = '';
-    chatScroll.innerHTML = '<div class="people-loading"><div class="spinner"></div><div class="spinner-text">Loading messages...</div></div>';
+    chatScroll.innerHTML = loaderHtml('Loading messages...');
     chatTyping.classList.remove('show');
     chatInput.value = '';
     activeMsgId = null;
