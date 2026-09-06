@@ -947,6 +947,22 @@
     text-align:center; padding:30px 10px; color:var(--text-dim);
     font-size:0.86rem;
   }
+  .people-loading{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:40px 20px; min-height:180px; gap:16px;
+  }
+  .spinner{
+    width:48px; height:48px; border:3px solid var(--line);
+    border-top-color:var(--amber); border-radius:50%;
+    animation:spinnerSpin 0.8s linear infinite;
+  }
+  @keyframes spinnerSpin{
+    to { transform:rotate(360deg); }
+  }
+  .spinner-text{
+    font-size:0.82rem; color:var(--text-dim);
+    letter-spacing:-0.005em;
+  }
   .people-count{
     display:flex; align-items:center; gap:8px; padding:2px 2px 8px;
     font-family:'JetBrains Mono', monospace; font-size:0.7rem;
@@ -6434,7 +6450,7 @@ Wed: OFF
   // long time with no deadline, which looked like an infinite spinner.
   // Race it against a timeout and offer a retry instead.
   async function loadPeople(){
-    peopleList.innerHTML = '<div class="people-empty">Loading people...</div>';
+    peopleList.innerHTML = '<div class="people-loading"><div class="spinner"></div><div class="spinner-text">Loading people...</div></div>';
     // Wait for auth + profile to settle first. Firing getDocs while auth
     // is still attaching leaves the read pending with no error, which
     // looked like a permanent "Loading..." until you reopened the tab.
@@ -6510,7 +6526,7 @@ Wed: OFF
 
   async function loadFriendCalendars(){
     calContent.innerHTML = '';
-    calFriendRow.innerHTML = '<div class="cal-empty">Loading calendars...</div>';
+    calFriendRow.innerHTML = '<div class="people-loading"><div class="spinner"></div><div class="spinner-text">Loading calendars...</div></div>';
     const ready = await waitForReady(8000);
     if (!ready){
       calFriendRow.innerHTML = '<div class="cal-empty">Still starting up. Give it a second.</div>';
@@ -7995,7 +8011,7 @@ Wed: OFF
     chatName.textContent = person.name || 'Chat';
     chatAv.innerHTML = avatarSvg(person.avatar);
     chatHeadSub.innerHTML = '';
-    chatScroll.innerHTML = '<div class="chat-empty">Loading...</div>';
+    chatScroll.innerHTML = '<div class="people-loading"><div class="spinner"></div><div class="spinner-text">Loading messages...</div></div>';
     chatTyping.classList.remove('show');
     chatInput.value = '';
     activeMsgId = null;
