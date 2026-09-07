@@ -959,32 +959,47 @@
   /* ── Eclipse loader ───────────────────────────────────────
      A little celestial body passing an eclipse, used anywhere the app
      is waiting on the server (People, Calendars, a chat). Sized purely
-     off --size/--spin so it drops into any box. Amber/text pull from
-     the active theme; the occulted disc stays a fixed dark graphite
-     since it's meant to read as a body in shadow, not page chrome. */
+     off --size/--spin so it drops into any box.
+     The amber ring is var(--amber) straight, so it follows whichever
+     accent is picked. Everything soft is done with plain `transparent`
+     stops and element-level opacity rather than color-mix(), which iOS
+     Safari only got in 16.2 and which would have failed to a blank
+     gradient on anything older. The occulted body is a fixed palette
+     per theme brightness: on a light panel a near-black disc read as a
+     hole punched in the page rather than a sphere. */
   .eclipse{
     --size: 84px; --spin: 3.4s;
-    --disc-lo: #101216; --disc-hi: #23272e;
-    --amber-soft: color-mix(in srgb, var(--amber) 55%, white);
-    --core: color-mix(in srgb, var(--amber) 15%, white);
+    --disc-hi:#23272e; --disc-mid:#171a1f; --disc-lo:#101216;
+    --shade:7,8,10;
+    --core:#ffe6cb; --halo:#e8a97a;
     --reticle: var(--text);
     --r-in: calc(var(--size) * .15); --r-out: calc(var(--size) * .30);
     position:relative; width:var(--size); height:var(--size); flex:none;
     animation:eclipse-bob calc(var(--spin) / 4) cubic-bezier(.36,1.5,.5,1) infinite;
   }
+  /* Light panels: a slate sphere with a softer shadow, and a warmer core
+     so the bright bits still register once the orb swings off the disc. */
+  html[data-theme="light"] .eclipse,
+  html[data-theme="paper"] .eclipse,
+  html[data-theme="rose"] .eclipse{
+    --disc-hi:#8d94a0; --disc-mid:#6b7280; --disc-lo:#515866;
+    --shade:64,70,80;
+    --core:#fff1de; --halo:#d98f4e;
+  }
   .eclipse::before{
     content:""; position:absolute; inset:-20%; border-radius:50%;
-    background:radial-gradient(circle at 60% 62%, color-mix(in srgb, var(--amber) 22%, transparent) 0%, color-mix(in srgb, var(--amber) 6%, transparent) 38%, transparent 68%);
+    background:radial-gradient(circle at 60% 62%, var(--amber) 0%, transparent 42%);
+    opacity:.22;
     animation:eclipse-breathe calc(var(--spin) / 2) ease-in-out infinite;
   }
   .eclipse__disc{
     position:absolute; inset:13%; border-radius:50%;
-    background:radial-gradient(circle at 34% 28%, var(--disc-hi), #171a1f 56%, var(--disc-lo));
+    background:radial-gradient(circle at 34% 28%, var(--disc-hi), var(--disc-mid) 56%, var(--disc-lo));
     animation:eclipse-wobble calc(var(--spin) / 4) cubic-bezier(.3,1.6,.5,1) infinite;
   }
   .eclipse__ticks{
-    position:absolute; inset:1%; border-radius:50%;
-    background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--amber-soft) 40%, transparent) 0 1deg, transparent 1deg 15deg);
+    position:absolute; inset:1%; border-radius:50%; opacity:.4;
+    background:repeating-conic-gradient(from 0deg, var(--halo) 0 1deg, transparent 1deg 15deg);
     -webkit-mask:radial-gradient(circle, transparent 0 45.5%, #000 46% 49.5%, transparent 50%);
             mask:radial-gradient(circle, transparent 0 45.5%, #000 46% 49.5%, transparent 50%);
     animation:eclipse-tick var(--spin) steps(12) infinite;
@@ -1007,14 +1022,14 @@
     position:absolute; inset:0; border-radius:50%;
     background:
       radial-gradient(circle, var(--core) 0 9%, transparent 15%),
-      radial-gradient(circle, transparent 13%, var(--amber-soft) 19%, transparent 26%),
-      radial-gradient(circle, transparent 24%, var(--amber) 33%, color-mix(in srgb, var(--amber) 55%, transparent) 42%, transparent 58%);
+      radial-gradient(circle, transparent 13%, var(--halo) 19%, transparent 26%),
+      radial-gradient(circle, transparent 24%, var(--amber) 33%, transparent 58%);
     filter:blur(calc(var(--size) * .012));
     animation:eclipse-flare var(--spin) ease-in-out infinite;
   }
   .eclipse__wave{
     position:absolute; inset:30%; border-radius:50%;
-    border:1px solid color-mix(in srgb, var(--amber-soft) 60%, transparent);
+    border:1px solid var(--halo);
     opacity:0;
     animation:eclipse-wave calc(var(--spin) / 4) cubic-bezier(.16,1.4,.3,1) infinite;
   }
@@ -1028,7 +1043,7 @@
     width:calc(var(--size) * .05); height:calc(var(--size) * .05);
     margin:calc(var(--size) * -.025) 0 0 calc(var(--size) * -.025);
     border-radius:50%;
-    background:radial-gradient(circle, var(--core) 0 20%, color-mix(in srgb, var(--amber) 55%, transparent) 45%, transparent 72%);
+    background:radial-gradient(circle, var(--core) 0 20%, var(--amber) 45%, transparent 72%);
     animation:eclipse-spark calc(var(--spin) / 2) cubic-bezier(.34,1.7,.5,1) infinite;
   }
   .eclipse__spark:nth-child(1){ --a:20deg;  --r1:calc(var(--size) * .42); --r2:calc(var(--size) * .33); }
@@ -1036,7 +1051,7 @@
   .eclipse__spark:nth-child(3){ --a:262deg; --r1:calc(var(--size) * .45); --r2:calc(var(--size) * .36); animation-delay:calc(var(--spin) / -3); }
   .eclipse__shade{
     position:absolute; inset:13%; border-radius:50%;
-    background:linear-gradient(138deg, rgba(7,8,10,.96) 0 32%, rgba(7,8,10,.74) 50%, rgba(7,8,10,0) 74%);
+    background:linear-gradient(138deg, rgba(var(--shade),.96) 0 32%, rgba(var(--shade),.74) 50%, rgba(var(--shade),0) 74%);
     pointer-events:none;
   }
   .eclipse__reticle{
@@ -4339,8 +4354,11 @@
   cancelAdd.addEventListener('click', () => {
     addPanel.classList.remove('show');
     clearForm();
+    // Only a new-period draft is ours to throw away. saveDraft never writes
+    // while editing, so cancelling an edit was discarding a half-typed new
+    // period someone had left behind rather than anything from this panel.
+    if (editingId === null) clearDraft();
     editingId = null;
-    clearDraft();
   });
 
   function clearForm(){
@@ -4370,11 +4388,24 @@
 
     if (editingId !== null){
       const p = week[viewingDay].find(x => x.id === editingId);
-      if (p){
-        p.name = name; p.start = start; p.end = end; p.room = room;
-        if (selectedColor) p.color = selectedColor; else delete p.color;
-        week[viewingDay].sort((a,b) => toMinutes(a.start) - toMinutes(b.start));
+      // The period can go out from under an open edit panel, since the
+      // rows behind it are still live and one of them can be deleted.
+      // Saying so beats closing the panel as though the edit had taken.
+      // Flip back to "new period" so the button matches what pressing it
+      // will now do, and the typed values become a one-tap way to re-add it.
+      if (!p){
+        editingId = null;
+        addPanelTitle.textContent = 'New period';
+        confirmAdd.textContent = 'Add period';
+        applyDaysSection.style.display = '';
+        applyDays = new Set([viewingDay]);
+        renderChips();
+        showAddMsg('That period was removed while you had it open. Press Add period to put it back.');
+        return;
       }
+      p.name = name; p.start = start; p.end = end; p.room = room;
+      if (selectedColor) p.color = selectedColor; else delete p.color;
+      week[viewingDay].sort((a,b) => toMinutes(a.start) - toMinutes(b.start));
       showAddMsg('');
       setDirty(true);
       clearForm();
@@ -4629,15 +4660,16 @@
         ${classesHtml}
         <button class="wg-day-add" data-day="${d}">+ Add</button>
       `;
-      // tapping a day's + Add jumps to that day in day-view with the add panel open
+      // tapping a day's + Add jumps to that day in day-view with the add panel open.
+      // Has to go through openAddPanel rather than just showing the panel: leaving
+      // an edit open and coming back through here used to reopen it still in "Save
+      // changes" mode, pointed at a period on the day you just left, so adding a
+      // class either did nothing at all or overwrote the one you were editing.
       col.querySelector('.wg-day-add').addEventListener('click', () => {
         viewingDay = d;
         setView('day');
         renderDayTabs();
-        applyDays = new Set([d]);
-        renderChips();
-        addPanel.classList.add('show');
-        document.getElementById('pName').focus();
+        openAddPanel();
       });
       weekGrid.appendChild(col);
     });
