@@ -951,6 +951,12 @@
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     padding:40px 20px; min-height:180px; gap:16px;
   }
+  /* the list is up but the friend buttons could not be refreshed */
+  .people-stale{
+    font-size:0.76rem; color:var(--text-dim);
+    background:var(--ink-2); border:1px solid var(--line);
+    border-radius:var(--radius); padding:7px 10px; margin-bottom:8px;
+  }
   .spinner-text{
     font-size:0.82rem; color:var(--text-dim);
     letter-spacing:-0.005em;
@@ -6321,8 +6327,10 @@ Wed: OFF
     }
     // Friendship docs carry this uid on both sides; without this they
     // linger as ghost entries pointing at an account that no longer exists.
+    // Forced: joining an older in-flight read could miss one added since,
+    // and once the auth user is gone nobody can delete it any more.
     try{
-      await loadFriendships();
+      await loadFriendships(true);
       await Promise.all(myFriendships.map(f =>
         deleteDoc(doc(db, "friendships", f.id)).catch(e => console.error(e))
       ));
@@ -6647,34 +6655,65 @@ Wed: OFF
 
   // Firestore's getDocs retries a bad connection internally for a very
   // long time with no deadline, which looked like an infinite spinner.
-  // Race it against a timeout and offer a retry instead.
-  async function loadPeople(){
-    peopleList.innerHTML = loaderHtml('Loading people...');
+  // Race it against a deadline and offer a retry instead.
+  //
+  // Each retry gets a longer leash than the one before. A connection that
+  // needs nine seconds can never finish inside a fixed eight second
+  // deadline, so "Try again" used to be unwinnable on exactly the slow
+  // links it exists for: you could press it all afternoon and every
+  // attempt would fail at the same eight second mark.
+  const LOAD_DEADLINES = [8000, 18000, 30000];
+  function deadlineFor(attempt){
+    return LOAD_DEADLINES[Math.min(attempt, LOAD_DEADLINES.length - 1)];
+  }
+
+  function showPeopleRetry(msg, attempt){
+    peopleList.innerHTML =
+      '<div class="people-empty">' + msg + '<br>' +
+      '<button class="btn-ghost" id="peopleRetry" style="margin-top:12px;">Try again</button></div>';
+    const r = document.getElementById('peopleRetry');
+    // Wrapped, not passed straight in: a listener is handed the click
+    // event, which would arrive as the attempt number.
+    if (r) r.addEventListener('click', () => loadPeople(attempt + 1));
+  }
+
+  async function loadPeople(attempt){
+    const n = Number.isInteger(attempt) ? attempt : 0;
+    const deadline = deadlineFor(n);
+    peopleList.innerHTML = loaderHtml(n ? 'Still trying, give it a moment' : 'Loading people...');
     // Wait for auth + profile to settle first. Firing getDocs while auth
     // is still attaching leaves the read pending with no error, which
     // looked like a permanent "Loading..." until you reopened the tab.
-    const ready = await waitForReady(8000);
+    const ready = await waitForReady(deadline);
     if (!ready){
-      peopleList.innerHTML =
-        '<div class="people-empty">Still starting up. Give it a second.<br>' +
-        '<button class="btn-ghost" id="peopleRetry" style="margin-top:12px;">Try again</button></div>';
-      const r0 = document.getElementById('peopleRetry');
-      if (r0) r0.addEventListener('click', loadPeople);
+      showPeopleRetry('Still starting up. Give it a second.', n);
       return;
     }
-    try{
-      await Promise.race([
-        Promise.all([fetchPeople(), loadFriendships()]),
-        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000))
-      ]);
-      renderPeople('');
-    } catch (err){
-      console.error('Could not load people:', err);
-      peopleList.innerHTML =
-        '<div class="people-empty">Couldn\'t load people. Bad connection, maybe.<br>' +
-        '<button class="btn-ghost" id="peopleRetry" style="margin-top:12px;">Try again</button></div>';
-      const r = document.getElementById('peopleRetry');
-      if (r) r.addEventListener('click', loadPeople);
+    // Settled rather than all: the friend list only decides which button
+    // each row gets. Losing it is no reason to throw away a people list
+    // that arrived fine and show an error over an empty modal.
+    const [peopleRes, friendRes] = await Promise.allSettled([
+      withTimeout(fetchPeople(), deadline),
+      withTimeout(loadFriendships(), deadline)
+    ]);
+
+    if (peopleRes.status === 'rejected' && !allPeople.length){
+      console.error('Could not load people:', peopleRes.reason);
+      showPeopleRetry("Couldn't load people. Bad connection, maybe.", n);
+      return;
+    }
+    renderPeople(peopleSearch.value || '');
+
+    // Friend state failed but the list is up. loadFriendships only
+    // reassigns after both reads resolve, so the buttons are showing the
+    // last known answer rather than a wrong one; say so instead of
+    // letting someone wonder why a request looks unanswered.
+    if (friendRes.status === 'rejected'){
+      console.error('Could not refresh friend status:', friendRes.reason);
+      const note = document.createElement('div');
+      note.className = 'people-stale';
+      note.textContent = 'Friend status may be out of date. Reopen to refresh.';
+      peopleList.prepend(note);
     }
   }
   function closePeopleModal(){
@@ -6723,16 +6762,26 @@ Wed: OFF
   closeCalendars.addEventListener('click', closeCalendarsModal);
   calendarsModal.addEventListener('click', (e) => { if (e.target === calendarsModal) closeCalendarsModal(); });
 
-  async function loadFriendCalendars(){
+  function showCalRetry(msg, attempt){
+    calFriendRow.innerHTML = '<div class="cal-empty">' + msg + '<br>' +
+      '<button class="btn-ghost" id="calRetry" style="margin-top:12px;">Try again</button></div>';
+    const r = document.getElementById('calRetry');
+    if (r) r.addEventListener('click', () => loadFriendCalendars(attempt + 1));
+  }
+
+  async function loadFriendCalendars(attempt){
+    const n = Number.isInteger(attempt) ? attempt : 0;
+    const deadline = deadlineFor(n);
     calContent.innerHTML = '';
-    calFriendRow.innerHTML = loaderHtml('Loading calendars...');
-    const ready = await waitForReady(8000);
+    calFriendRow.innerHTML = loaderHtml(n ? 'Still trying, give it a moment' : 'Loading calendars...');
+    const ready = await waitForReady(deadline);
     if (!ready){
-      calFriendRow.innerHTML = '<div class="cal-empty">Still starting up. Give it a second.</div>';
+      // used to dead-end here with no way back except closing the modal
+      showCalRetry('Still starting up. Give it a second.', n);
       return;
     }
     try{
-      await loadFriendships();
+      await withTimeout(loadFriendships(), deadline);
       const uids = Array.from(friendUids);
       const results = await Promise.all(uids.map(async uid => {
         try{
@@ -6768,10 +6817,7 @@ Wed: OFF
       renderCalendarsTab();
     } catch (err){
       console.error('Could not load friend calendars:', err);
-      calFriendRow.innerHTML = '<div class="cal-empty">Couldn\'t load calendars. Bad connection, maybe.<br>' +
-        '<button class="btn-ghost" id="calRetry" style="margin-top:12px;">Try again</button></div>';
-      const r = document.getElementById('calRetry');
-      if (r) r.addEventListener('click', loadFriendCalendars);
+      showCalRetry("Couldn't load calendars. Bad connection, maybe.", n);
     }
   }
 
@@ -7119,7 +7165,22 @@ Wed: OFF
 
   function pairId(a, b){ return [a, b].sort().join('__'); }
 
-  async function loadFriendships(){
+  // Opening People fires this alongside fetchPeople, and every failed
+  // retry used to start two more reads of its own: one slow connection
+  // cost a dozen friendship reads across a handful of "Try again" taps.
+  // Concurrent callers now share one read, the way fetchPeople does.
+  // Anything that just wrote a friendship passes force, so it can't join
+  // a read that started before its own write landed and get stale state.
+  let friendshipsFetch = null;
+  function loadFriendships(force){
+    if (!force && friendshipsFetch) return friendshipsFetch;
+    const run = loadFriendshipsNow();
+    friendshipsFetch = run;
+    run.then(() => {}, () => {}).then(() => { if (friendshipsFetch === run) friendshipsFetch = null; });
+    return run;
+  }
+
+  async function loadFriendshipsNow(){
     if (!currentUser) return;
     const me = currentUser.uid;
     // two cheap equality queries beat one compound index
@@ -7167,7 +7228,7 @@ Wed: OFF
       requestedBy: me,
       createdAt: new Date().toISOString()
     });
-    await loadFriendships();
+    await loadFriendships(true);
   }
 
   async function respondToRequest(uid, accept){
@@ -7182,13 +7243,13 @@ Wed: OFF
       // declining deletes the doc so the sender can try again later
       await deleteDoc(doc(db, "friendships", id));
     }
-    await loadFriendships();
+    await loadFriendships(true);
   }
 
   async function removeFriend(uid){
     if (!currentUser) return;
     await deleteDoc(doc(db, "friendships", pairId(currentUser.uid, uid)));
-    await loadFriendships();
+    await loadFriendships(true);
   }
 
   // ══ Classmate matching ════════════════════════════════════════
@@ -7460,29 +7521,35 @@ Wed: OFF
     });
   }
 
-  async function openNotifModal(){
+  function showNotifRetry(msg, attempt){
+    notifBody.innerHTML = '<div class="notif-empty">' + msg + '<br>' +
+      '<button class="btn-ghost" id="notifRetry" style="margin-top:12px;">Try again</button></div>';
+    const r = document.getElementById('notifRetry');
+    if (r) r.addEventListener('click', () => openNotifModal(attempt + 1));
+  }
+
+  async function openNotifModal(attempt){
+    const n = Number.isInteger(attempt) ? attempt : 0;
+    const deadline = deadlineFor(n);
     notifModal.classList.add('show');
     document.body.style.overflow = 'hidden';
-    notifBody.innerHTML = '<div class="notif-empty">Checking...</div>';
+    notifBody.innerHTML = '<div class="notif-empty">' + (n ? 'Still trying...' : 'Checking...') + '</div>';
 
-    const ready = await waitForReady(8000);
+    const ready = await waitForReady(deadline);
     if (!ready){
-      notifBody.innerHTML = '<div class="notif-empty">Still starting up. Give it a second and try again.</div>';
+      // this used to dead-end with nothing to press
+      showNotifRetry('Still starting up. Give it a second.', n);
       return;
     }
     try{
-      await Promise.race([
-        Promise.all([fetchPeople(), loadFriendships()]),
-        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000))
-      ]);
+      await withTimeout(Promise.all([fetchPeople(), loadFriendships()]), deadline);
       const matches = computeMatches();
       renderNotifs(matches);
       markAllSeen(matches);
       updateBell(matches);
     } catch (err){
       console.error('Could not load notifications:', err);
-      notifBody.innerHTML =
-        '<div class="notif-empty">Couldn\'t check right now. Bad connection, maybe.</div>';
+      showNotifRetry("Couldn't check right now. Bad connection, maybe.", n);
     }
   }
 
@@ -7491,7 +7558,7 @@ Wed: OFF
     document.body.style.overflow = '';
   }
 
-  openNotifs.addEventListener('click', openNotifModal);
+  openNotifs.addEventListener('click', () => openNotifModal(0));
   closeNotifs.addEventListener('click', closeNotifModal);
   notifModal.addEventListener('click', (e) => { if (e.target === notifModal) closeNotifModal(); });
 

@@ -592,14 +592,25 @@
   <div class="changelog" id="changelogWrap" hidden>
     <button class="changelog-head" id="changelogToggle">
       <span class="changelog-title">What's new</span>
-      <span class="changelog-version">v2.8.1</span>
+      <span class="changelog-version">v2.8.2</span>
       <span class="changelog-arrow" id="changelogArrow">▾</span>
     </button>
     <div class="changelog-body" id="changelogBody">
       <div class="cl-entry">
         <div class="cl-ver">
-          <span class="cl-num">2.8.1</span>
+          <span class="cl-num">2.8.2</span>
           <span class="cl-tag new">Latest</span>
+        </div>
+        <ul class="cl-list">
+          <li>People, Calendars and notifications now actually load on a slow connection. Try again used to retry with the same short deadline that had just failed, so on school wifi it could never succeed no matter how many times you pressed it</li>
+          <li>Each retry now waits longer than the one before</li>
+          <li>If your friend list is the only thing that fails, the people list still opens instead of showing an error over an empty box</li>
+          <li>Opening People no longer fires a fresh pile of friend lookups on every failed attempt</li>
+        </ul>
+      </div>
+      <div class="cl-entry">
+        <div class="cl-ver">
+          <span class="cl-num">2.8.1</span>
         </div>
         <ul class="cl-list">
           <li>Fixed adding a class from the week view wiping the class you had open for editing, or silently doing nothing at all</li>
