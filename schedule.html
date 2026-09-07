@@ -269,6 +269,132 @@
   .loading-screen.hide{ opacity:0; visibility:hidden; }
   .loading-inner{ display:flex; flex-direction:column; align-items:center; gap:18px; }
   @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  /* ── Goodbye ──────────────────────────────────────────────
+     Plays over the account deletion rather than after it, so it
+     covers the network time instead of being added on top. The
+     wording only claims the account is gone once the delete has
+     actually come back.
+     A schedule sheet whose rows clear, then folds shut like a book
+     and recedes. Real CSS 3D, no library, and only transform and
+     opacity are animated so the whole thing stays on the compositor. */
+  .goodbye{
+    /* The sheet is lit against the page rather than made of the same
+       panel tones, which on the dark themes left it invisible. */
+    --gb-hi:#26262b; --gb-lo:#17171a; --gb-row:#3c3c45; --gb-edge:#43434c;
+    position:fixed; inset:0; z-index:1200;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:36px;
+    background:var(--ink);
+    opacity:0; animation:gbFadeIn .28s ease forwards;
+  }
+  /* display:flex above is an author rule and beats the browser's own
+     [hidden]{display:none}, so without this the farewell sits over the
+     whole app from the moment the page loads. */
+  .goodbye[hidden]{ display:none; }
+  html[data-theme="light"] .goodbye,
+  html[data-theme="paper"] .goodbye,
+  html[data-theme="rose"] .goodbye{
+    --gb-hi:#ffffff; --gb-lo:#efece6; --gb-row:#d5d1c9; --gb-edge:#cfcbc3;
+  }
+  .goodbye::before{
+    content:''; position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse 56% 46% at 50% 41%, var(--amber) 0%, transparent 62%);
+    opacity:0; animation:gbGlow 3.2s ease-in-out forwards;
+  }
+  @keyframes gbFadeIn{ to{ opacity:1; } }
+  @keyframes gbGlow{ 0%{ opacity:0; } 30%{ opacity:.18; } 100%{ opacity:.04; } }
+
+  .gb-stage{ perspective:1100px; perspective-origin:50% 44%; }
+  /* Folding halves the sheet's width around its left edge, which would
+     leave it sitting off to one side. This slides it back as it closes
+     so the book stays centred. Separate element from the recede: two
+     animations on one element would just overwrite each other's transform. */
+  .gb-shift{
+    transform-style:preserve-3d;
+    animation:gbShift 1.1s cubic-bezier(.45,.02,.25,1) .75s forwards;
+  }
+  @keyframes gbShift{ to{ transform:translateX(24%); } }
+
+  .gb-card{
+    position:relative; width:min(272px, 62vw); aspect-ratio:3/2;
+    transform-style:preserve-3d;
+    animation:gbRecede 1.35s cubic-bezier(.5,.05,.72,.2) 1.7s forwards;
+  }
+  @keyframes gbRecede{
+    0%   { transform:rotateX(0) translateY(0) translateZ(0) scale(1); opacity:1; }
+    100% { transform:rotateX(26deg) translateY(-74px) translateZ(-640px) scale(.7); opacity:0; }
+  }
+
+  .gb-leaf{ position:absolute; top:0; height:100%; width:50%; transform-style:preserve-3d; }
+  .gb-leaf--l{ left:0; }
+  .gb-leaf--r{
+    left:50%; transform-origin:left center;
+    animation:gbFold 1.1s cubic-bezier(.45,.02,.25,1) .75s forwards;
+  }
+  @keyframes gbFold{ to{ transform:rotateY(-172deg); } }
+
+  .gb-face{
+    position:absolute; inset:0; overflow:hidden;
+    backface-visibility:hidden; -webkit-backface-visibility:hidden;
+    border:1px solid var(--gb-edge);
+    background:linear-gradient(152deg, var(--gb-hi), var(--gb-lo));
+  }
+  .gb-leaf--l .gb-face{ border-right:none; border-radius:var(--radius) 0 0 var(--radius); }
+  .gb-leaf--r .gb-face--front{ border-left:none; border-radius:0 var(--radius) var(--radius) 0; }
+  /* the underside of the page that swings over */
+  .gb-face--back{
+    transform:rotateY(180deg);
+    background:linear-gradient(152deg, var(--gb-lo), var(--gb-hi));
+    filter:brightness(.72);
+    border-radius:var(--radius) 0 0 var(--radius);
+  }
+  /* light catching the page as it turns, which is what sells the fold */
+  .gb-face--front::after{
+    content:''; position:absolute; inset:0; opacity:.16;
+    background:linear-gradient(104deg, transparent 34%, var(--amber) 50%, transparent 66%);
+    transform:translateX(-130%);
+    animation:gbSheen 1.2s ease-in-out .7s forwards;
+  }
+  @keyframes gbSheen{ to{ transform:translateX(130%); } }
+
+  /* One sheet drawn in both halves, each clipped to show its own side,
+     so the rows line up across the fold. */
+  .gb-sheet{
+    position:absolute; top:0; width:200%; height:100%;
+    padding:15px 17px; display:flex; flex-direction:column; gap:9px;
+  }
+  .gb-leaf--l .gb-sheet{ left:0; }
+  .gb-leaf--r .gb-sheet{ left:-100%; }
+  .gb-sheet i{
+    display:block; height:7px; border-radius:3px;
+    background:var(--gb-row); transform-origin:left center;
+    animation:gbClear .42s cubic-bezier(.4,0,.2,1) forwards;
+  }
+  /* clears bottom up, so the title line is the last thing to go */
+  .gb-sheet i:first-child{ background:var(--amber); opacity:.85; width:46%; animation-delay:.60s; }
+  .gb-sheet i:nth-child(2){ width:86%; animation-delay:.54s; }
+  .gb-sheet i:nth-child(3){ width:72%; animation-delay:.48s; }
+  .gb-sheet i:nth-child(4){ width:90%; animation-delay:.42s; }
+  .gb-sheet i:nth-child(5){ width:64%; animation-delay:.36s; }
+  .gb-sheet i:nth-child(6){ width:80%; animation-delay:.30s; }
+  @keyframes gbClear{ to{ transform:scaleX(0); opacity:0; } }
+
+  .gb-copy{
+    position:relative; text-align:center; max-width:320px; padding:0 24px;
+    opacity:0; animation:gbCopy .75s ease 1.6s forwards;
+  }
+  @keyframes gbCopy{ from{ opacity:0; transform:translateY(9px); } to{ opacity:1; transform:none; } }
+  .gb-title{ font-size:1.12rem; font-weight:600; letter-spacing:-0.01em; margin-bottom:7px; }
+  .gb-sub{ font-size:0.86rem; color:var(--text-dim); line-height:1.5; }
+
+  @media (prefers-reduced-motion: reduce){
+    .goodbye, .goodbye::before, .gb-shift, .gb-card, .gb-leaf--r,
+    .gb-sheet i, .gb-face--front::after, .gb-copy{ animation:none; }
+    .goodbye, .gb-copy{ opacity:1; }
+    .goodbye::before{ opacity:.1; }
+    .gb-stage{ display:none; }
+  }
   .loading-text{
     font-family:'JetBrains Mono', monospace; font-size:0.8rem;
     letter-spacing:0.08em; color:var(--text-dim);
@@ -3918,8 +4044,11 @@
     });
   }
 
+  // set while the goodbye animation is playing, so the sign-out that
+  // deleteUser triggers doesn't yank the page out from under it
+  let sayingGoodbye = false;
   onAuthStateChanged(auth, async (user) => {
-    if (!user) { window.location.href = "login.html"; return; }
+    if (!user) { if (!sayingGoodbye) window.location.href = "login.html"; return; }
     currentUser = user;
 
     // Admin check first, because admins need to get past maintenance
@@ -6344,6 +6473,44 @@ Wed: OFF
     dirty = false; // stop the unsaved changes warning
     await deleteUser(currentUser);
   }
+  // ── Goodbye ─────────────────────────────────────────────
+  // deleteUser makes onAuthStateChanged fire with no user, which bounces
+  // straight to login.html. Without this flag the farewell is cut off the
+  // instant the delete returns, which is why the old post-delete reveal
+  // never actually got to play.
+  const goodbyeOverlay = document.getElementById('goodbyeOverlay');
+  const gbTitle = document.getElementById('gbTitle');
+  const gbSub = document.getElementById('gbSub');
+  const GOODBYE_MS = 3200;   // fold plus a beat to read the last line
+  let goodbyeStarted = 0;
+
+  function showGoodbye(){
+    sayingGoodbye = true;
+    goodbyeStarted = Date.now();
+    gbTitle.textContent = 'Closing your account';
+    gbSub.textContent = 'Removing your schedule, profile and messages.';
+    goodbyeOverlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  // Only called once the delete has actually returned, so this is the
+  // first point at which it's true to say the account is gone.
+  function finishGoodbye(){
+    const first = (profile.name || '').trim().split(/\s+/)[0];
+    gbTitle.textContent = first ? 'Goodbye, ' + first + '.' : 'Goodbye.';
+    gbSub.textContent = 'Your account and everything in it are gone.';
+    // Wait out whatever is left of the animation, but never sit there
+    // padding a delete that already took longer than it.
+    const left = Math.max(0, GOODBYE_MS - (Date.now() - goodbyeStarted));
+    setTimeout(() => { window.location.href = 'login.html'; }, left);
+  }
+
+  function cancelGoodbye(){
+    sayingGoodbye = false;
+    goodbyeOverlay.hidden = true;
+    document.body.style.overflow = '';
+  }
+
   function deleteErrorText(err){
     if (err && err.code === 'auth/requires-recent-login'){
       return 'For safety, log out and log back in, then delete.';
@@ -6369,13 +6536,15 @@ Wed: OFF
     }
     if (!currentUser) return;
     confirmDelete.disabled = true;
-    setMsg.textContent = 'Deleting your account...';
+    setMsg.textContent = '';
     setMsg.className = 'set-msg';
+    showGoodbye();
     try{
       await runAccountDelete();
-      window.location.href = "login.html";
+      finishGoodbye();
     } catch (err){
       console.error('Delete failed:', err);
+      cancelGoodbye();
       confirmDelete.disabled = false;
       setMsg.textContent = deleteErrorText(err);
       setMsg.className = 'set-msg err';
@@ -6488,22 +6657,14 @@ Wed: OFF
     holdDeleteBtn.disabled = true;
     holdDeleteLabel.textContent = 'Deleting…';
     setHoldFrame(1);
+    showGoodbye();
     try{
       await runAccountDelete();
       holdDeleteLabel.textContent = 'Account deleted';
-      let left = false;
-      const leave = () => { if (!left){ left = true; window.location.href = 'login.html'; } };
-      if (holdAnim && lottieReady){
-        // play the "Deleted" reveal, then leave (with a safety timeout)
-        holdAnim.addEventListener('complete', leave);
-        holdAnim.playSegments([124, 291], true);
-        setTimeout(leave, 3000);
-      } else {
-        // no animation to show — leave promptly
-        setTimeout(leave, 500);
-      }
+      finishGoodbye();
     } catch(err){
       console.error('Delete failed:', err);
+      cancelGoodbye();
       deleting = false;
       holdDeleteBtn.disabled = false;
       holdDeleteLabel.textContent = 'Hold to delete account';
@@ -8941,6 +9102,32 @@ Wed: OFF
   <div class="av-uploading-card">
     <div class="av-uploading-anim" id="avUploadingAnim"></div>
     <div class="av-uploading-label">Uploading your picture…</div>
+  </div>
+</div>
+
+<!-- Shown while the account is being deleted. Both leaves carry the same
+     six rows so they stay aligned across the fold. -->
+<div class="goodbye" id="goodbyeOverlay" role="status" aria-live="polite" hidden>
+  <div class="gb-stage" aria-hidden="true">
+   <div class="gb-shift">
+    <div class="gb-card">
+      <div class="gb-leaf gb-leaf--l">
+        <div class="gb-face gb-face--front">
+          <div class="gb-sheet"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+      </div>
+      <div class="gb-leaf gb-leaf--r">
+        <div class="gb-face gb-face--front">
+          <div class="gb-sheet"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+        <div class="gb-face gb-face--back"></div>
+      </div>
+    </div>
+   </div>
+  </div>
+  <div class="gb-copy">
+    <div class="gb-title" id="gbTitle">Closing your account</div>
+    <div class="gb-sub" id="gbSub">Removing your schedule, profile and messages.</div>
   </div>
 </div>
 
