@@ -1,0 +1,916 @@
+{
+ "name": "The Fort Hamilton School - Events",
+ "source": "https://www.psis104.com/apps/events/ical/?id=0",
+ "fetchedAt": "2026-09-09T21:26:20Z",
+ "events": [
+  {
+   "date": "2025-09-15",
+   "title": "NIA Afterschool Program Begins for Grades 6-8",
+   "kind": "event",
+   "time": "14:30"
+  },
+  {
+   "date": "2025-09-17",
+   "title": "Meet the Teacher Night- In Person!",
+   "kind": "event",
+   "time": "16:30"
+  },
+  {
+   "date": "2025-09-23",
+   "title": "Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2025-09-24",
+   "title": "Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2025-09-25",
+   "title": "MOVIE NIGHT",
+   "kind": "event",
+   "time": "19:00"
+  },
+  {
+   "date": "2025-10-02",
+   "title": "Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2025-10-06",
+   "title": "PTA Swish Wish Fundraiser Starts",
+   "kind": "event",
+   "time": "12:00"
+  },
+  {
+   "date": "2025-10-13",
+   "title": "Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2025-10-14",
+   "title": "Picture Day Grades 2-6",
+   "kind": "event"
+  },
+  {
+   "date": "2025-10-15",
+   "title": "Middle School Application Opens",
+   "kind": "event"
+  },
+  {
+   "date": "2025-10-16",
+   "title": "Middle School Open House",
+   "kind": "event",
+   "time": "18:00"
+  },
+  {
+   "date": "2025-10-17",
+   "title": "Picture Day Grades K,1,7 & 8",
+   "kind": "event"
+  },
+  {
+   "date": "2025-10-20",
+   "title": "Diwali- Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2025-10-21",
+   "title": "Pumpkin Patch",
+   "kind": "event"
+  },
+  {
+   "date": "2025-10-22",
+   "title": "District 20 Middle School Fair",
+   "kind": "event",
+   "time": "17:00"
+  },
+  {
+   "date": "2025-10-23",
+   "title": "Pumpkin Stroll",
+   "kind": "event",
+   "time": "15:30"
+  },
+  {
+   "date": "2025-10-28",
+   "title": "Save for College Workshop 1st & 2nd Grades",
+   "kind": "event",
+   "time": "08:30"
+  },
+  {
+   "date": "2025-10-31",
+   "title": "K & 1 Halloween Parade, Grades 2-8 Pajama Day Fundraiser",
+   "kind": "event",
+   "time": "13:30"
+  },
+  {
+   "date": "2025-11-03",
+   "title": "Deadline to register to test for Mark Twain I.S. 239 (21K239) and District 21 Talent Tests",
+   "kind": "event"
+  },
+  {
+   "date": "2025-11-03",
+   "title": "Food and Coat Drives Start through November 21",
+   "kind": "event"
+  },
+  {
+   "date": "2025-11-04",
+   "title": "Election Day-No students attend school",
+   "kind": "closed"
+  },
+  {
+   "date": "2025-11-06",
+   "title": "PTA Swish Wish Fundraiser Ends",
+   "kind": "event"
+  },
+  {
+   "date": "2025-11-06",
+   "title": "Remote Afternoon and Evening Parent Teacher Conferences",
+   "kind": "event"
+  },
+  {
+   "date": "2025-11-07",
+   "title": "PTA Swish Wish Fundraiser Celebration",
+   "kind": "event"
+  },
+  {
+   "date": "2025-11-11",
+   "title": "Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2025-11-14",
+   "title": "Save for College Workshop with Ms. Kosta Grades 3 & 4",
+   "kind": "event",
+   "time": "14:30"
+  },
+  {
+   "date": "2025-11-27",
+   "title": "Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2025-11-28",
+   "title": "Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2025-12-02",
+   "title": "Holiday Toy Drive Begins",
+   "kind": "event"
+  },
+  {
+   "date": "2025-12-05",
+   "title": "PTA Chocolate Sales Main Bldg Lobby",
+   "kind": "event",
+   "time": "08:30"
+  },
+  {
+   "date": "2025-12-11",
+   "title": "PTA Holiday Boutique Main Bldg Students",
+   "kind": "event"
+  },
+  {
+   "date": "2025-12-12",
+   "title": "Middle School Application Closes",
+   "kind": "event"
+  },
+  {
+   "date": "2025-12-12",
+   "title": "PTA Holiday Boutique Annex Bldg Students",
+   "kind": "event"
+  },
+  {
+   "date": "2025-12-15",
+   "title": "Picture Retake Day",
+   "kind": "event"
+  },
+  {
+   "date": "2025-12-16",
+   "title": "Kindergarten Open House",
+   "kind": "event",
+   "time": "08:30"
+  },
+  {
+   "date": "2025-12-18",
+   "title": "Holiday Plate Making",
+   "kind": "event",
+   "time": "14:30"
+  },
+  {
+   "date": "2025-12-18",
+   "title": "Virtual PTA and Title 1 PAC Meetings",
+   "kind": "event",
+   "time": "18:30"
+  },
+  {
+   "date": "2025-12-22",
+   "title": "Ice Pops Sold during all lunch periods",
+   "kind": "event"
+  },
+  {
+   "date": "2025-12-24",
+   "title": "Winter Recess Schools Closed",
+   "kind": "closed",
+   "time": "10:00"
+  },
+  {
+   "date": "2025-12-25",
+   "title": "Winter Recess Schools Closed",
+   "kind": "closed",
+   "time": "10:00"
+  },
+  {
+   "date": "2025-12-26",
+   "title": "Winter Recess Schools Closed",
+   "kind": "closed",
+   "time": "10:00"
+  },
+  {
+   "date": "2025-12-27",
+   "title": "Winter Recess Schools Closed",
+   "kind": "closed",
+   "time": "10:00"
+  },
+  {
+   "date": "2025-12-28",
+   "title": "Winter Recess Schools Closed",
+   "kind": "closed",
+   "time": "10:00"
+  },
+  {
+   "date": "2025-12-29",
+   "title": "Winter Recess Schools Closed",
+   "kind": "closed",
+   "time": "10:00"
+  },
+  {
+   "date": "2025-12-30",
+   "title": "Winter Recess Schools Closed",
+   "kind": "closed",
+   "time": "10:00"
+  },
+  {
+   "date": "2025-12-31",
+   "title": "Winter Recess Schools Closed",
+   "kind": "closed",
+   "time": "10:00"
+  },
+  {
+   "date": "2026-01-01",
+   "title": "Winter Recess Schools Closed",
+   "kind": "closed",
+   "time": "10:00"
+  },
+  {
+   "date": "2026-01-02",
+   "title": "Winter Recess Schools Closed",
+   "kind": "closed",
+   "time": "10:00"
+  },
+  {
+   "date": "2026-01-19",
+   "title": "Rev. Dr. Martin Luther King Jr. Day- Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-02-16",
+   "title": "Midwinter Recess Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-02-17",
+   "title": "Midwinter Recess Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-02-18",
+   "title": "Midwinter Recess Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-02-19",
+   "title": "Midwinter Recess Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-02-20",
+   "title": "Midwinter Recess Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-02-23",
+   "title": "100 Days of School / Save for College Program Celebration",
+   "kind": "event",
+   "time": "14:30"
+  },
+  {
+   "date": "2026-03-03",
+   "title": "Summer Rising Application Opens",
+   "kind": "event"
+  },
+  {
+   "date": "2026-03-05",
+   "title": "Afternoon and Evening Remote Parent-Teacher Conferences 11:30 AM Student Dismissal",
+   "kind": "early"
+  },
+  {
+   "date": "2026-03-18",
+   "title": "Read Across America Celebration with 2nd Grade",
+   "kind": "event",
+   "time": "11:10"
+  },
+  {
+   "date": "2026-03-19",
+   "title": "Read Across America Celebration with Kindergarten",
+   "kind": "event",
+   "time": "10:20"
+  },
+  {
+   "date": "2026-03-20",
+   "title": "Eid al-Fitr- Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-03-23",
+   "title": "Save for College Scholarship Month / 100 Days of School Celebration",
+   "kind": "event",
+   "time": "14:40"
+  },
+  {
+   "date": "2026-03-27",
+   "title": "Summer Rising Application Closes",
+   "kind": "event"
+  },
+  {
+   "date": "2026-04-01",
+   "title": "Pretzel Sale $2 Each",
+   "kind": "event",
+   "time": "10:25"
+  },
+  {
+   "date": "2026-04-02",
+   "title": "Spring Recess- Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-04-03",
+   "title": "Spring Recess- Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-04-04",
+   "title": "Spring Recess- Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-04-05",
+   "title": "Spring Recess- Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-04-06",
+   "title": "Spring Recess- Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-04-07",
+   "title": "Spring Recess- Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-04-08",
+   "title": "Spring Recess- Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-04-09",
+   "title": "Spring Recess- Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-04-10",
+   "title": "Spring Recess- Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-04-14",
+   "title": "New York State CBT ELA Exam: Grades 4, 6, and 8",
+   "kind": "event"
+  },
+  {
+   "date": "2026-04-15",
+   "title": "Middle School Offers & Waitlist Offers Released",
+   "kind": "event",
+   "time": "15:00"
+  },
+  {
+   "date": "2026-04-15",
+   "title": "New York State CBT ELA Exam: Grades 4, 6, and 8",
+   "kind": "event"
+  },
+  {
+   "date": "2026-04-16",
+   "title": "New York State CBT ELA Exam: - Grades 3, 5, and 7",
+   "kind": "event"
+  },
+  {
+   "date": "2026-04-17",
+   "title": "New York State CBT ELA Exam: - Grades 3, 5, and 7",
+   "kind": "event"
+  },
+  {
+   "date": "2026-04-20",
+   "title": "2026 G&T Application opens for Grades 1-4",
+   "kind": "event"
+  },
+  {
+   "date": "2026-04-21",
+   "title": "Summer Rising Results Released",
+   "kind": "event"
+  },
+  {
+   "date": "2026-04-28",
+   "title": "New York State CBT MATH Exam: Grades 4, 6, and 8",
+   "kind": "event"
+  },
+  {
+   "date": "2026-04-29",
+   "title": "New York State CBT MATH Exam: - Grades 4, 6, and 8",
+   "kind": "event"
+  },
+  {
+   "date": "2026-04-30",
+   "title": "New York State CBT MATH Exam: Grades 4, 6, and 8",
+   "kind": "event"
+  },
+  {
+   "date": "2026-04-30",
+   "title": "New York State CBT MATH Exam:Grades 3, 5, and 7",
+   "kind": "event"
+  },
+  {
+   "date": "2026-04-30",
+   "title": "PTA Virtual Meeting",
+   "kind": "event",
+   "time": "18:30"
+  },
+  {
+   "date": "2026-05-01",
+   "title": "New York State CBT MATH Exam:Grades 3, 5, and 7",
+   "kind": "event"
+  },
+  {
+   "date": "2026-05-04",
+   "title": "Nerd Ice Pops Sale",
+   "kind": "event"
+  },
+  {
+   "date": "2026-05-07",
+   "title": "Family Fun Night",
+   "kind": "event",
+   "time": "16:45"
+  },
+  {
+   "date": "2026-05-07",
+   "title": "PTA Spring Boutique",
+   "kind": "event"
+  },
+  {
+   "date": "2026-05-11",
+   "title": "Junior Honor Society Ceremony 9AM",
+   "kind": "event",
+   "time": "09:00"
+  },
+  {
+   "date": "2026-05-12",
+   "title": "New York State CBT Science Exam: May 12 - Grades 5 & 8",
+   "kind": "event"
+  },
+  {
+   "date": "2026-05-13",
+   "title": "NYSESLAT Reading, Listening and Writing (K-8 ENL students)",
+   "kind": "event"
+  },
+  {
+   "date": "2026-05-14",
+   "title": "Alice in Wonderland Theater Performance",
+   "kind": "event",
+   "time": "18:00"
+  },
+  {
+   "date": "2026-05-14",
+   "title": "NYSESLAT Reading, Listening and Writing (K-8 ENL students)",
+   "kind": "event"
+  },
+  {
+   "date": "2026-05-15",
+   "title": "Alice in Wonderland Theater Performance",
+   "kind": "event",
+   "time": "18:00"
+  },
+  {
+   "date": "2026-05-15",
+   "title": "NYSESLAT Reading, Listening and Writing (K-8 ENL students)",
+   "kind": "event"
+  },
+  {
+   "date": "2026-05-20",
+   "title": "World Language Checkpoint A Spanish Speaking Exam (Select gr.8 students)",
+   "kind": "event"
+  },
+  {
+   "date": "2026-05-21",
+   "title": "Spring Concert",
+   "kind": "event",
+   "time": "18:00"
+  },
+  {
+   "date": "2026-05-21",
+   "title": "World Language Checkpoint A Spanish Speaking Exam (Select gr.8 students)",
+   "kind": "event"
+  },
+  {
+   "date": "2026-05-22",
+   "title": "8th Grade Spring Concert",
+   "kind": "event",
+   "time": "09:00"
+  },
+  {
+   "date": "2026-05-25",
+   "title": "Memorial Day-Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-05-27",
+   "title": "Eid al-Adha- Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-05-28",
+   "title": "PTA/Title 1 PAC Meetings / PTA 2026-27 SY Elections",
+   "kind": "event",
+   "time": "18:30"
+  },
+  {
+   "date": "2026-06-04",
+   "title": "8th Grade Prom",
+   "kind": "event"
+  },
+  {
+   "date": "2026-06-04",
+   "title": "Chancellor's Conference Day for Staff- No students attend school",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-06-05",
+   "title": "Clerical Day- No Students attend school",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-06-09",
+   "title": "Art Show",
+   "kind": "event",
+   "time": "17:00"
+  },
+  {
+   "date": "2026-06-10",
+   "title": "PTA/Title 1 PAC Meeting",
+   "kind": "event",
+   "time": "18:30"
+  },
+  {
+   "date": "2026-06-11",
+   "title": "PTA Carnival",
+   "kind": "event",
+   "time": "15:30"
+  },
+  {
+   "date": "2026-06-12",
+   "title": "NIA Junior High ONLY Program Ends",
+   "kind": "event"
+  },
+  {
+   "date": "2026-06-13",
+   "title": "Relay for Life",
+   "kind": "event",
+   "time": "13:00"
+  },
+  {
+   "date": "2026-06-15",
+   "title": "Ice Pop Sale $1",
+   "kind": "event",
+   "time": "10:45"
+  },
+  {
+   "date": "2026-06-17",
+   "title": "Algebra 1 Regents (Select gr 8 students)",
+   "kind": "event"
+  },
+  {
+   "date": "2026-06-18",
+   "title": "Life Science Biology Regents (Select gr. 8 students)",
+   "kind": "event"
+  },
+  {
+   "date": "2026-06-19",
+   "title": "Juneteenth- Schools Closed",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-06-22",
+   "title": "World Language Checkpoint A Spanish CBT Exam (Select gr.8 students)",
+   "kind": "event"
+  },
+  {
+   "date": "2026-06-23",
+   "title": "8th Grade Graduation",
+   "kind": "event"
+  },
+  {
+   "date": "2026-06-24",
+   "title": "Kindergarten Stepping Up Ceremony",
+   "kind": "event"
+  },
+  {
+   "date": "2026-06-26",
+   "title": "Last Day of School for Students",
+   "kind": "event"
+  },
+  {
+   "date": "2026-09-03",
+   "title": "No Classes for Students - Clerical Day",
+   "kind": "closed",
+   "time": "13:00"
+  },
+  {
+   "date": "2026-09-09",
+   "title": "Chalk the Walk",
+   "kind": "event",
+   "time": "15:30"
+  },
+  {
+   "date": "2026-09-09",
+   "title": "Kindergarten Zoom Pajama Party",
+   "kind": "event",
+   "time": "19:00"
+  },
+  {
+   "date": "2026-09-10",
+   "title": "First Day of 2026-27 School year",
+   "kind": "event"
+  },
+  {
+   "date": "2026-09-10",
+   "title": "NIA Afterschool for Grades K-5 Begins",
+   "kind": "event",
+   "time": "14:30"
+  },
+  {
+   "date": "2026-09-10",
+   "title": "PTA Welcome Table",
+   "kind": "event",
+   "time": "08:00"
+  },
+  {
+   "date": "2026-09-14",
+   "title": "NIA Afterschool for Grades 6-8 Begins",
+   "kind": "event",
+   "time": "14:30"
+  },
+  {
+   "date": "2026-09-15",
+   "title": "First Day of Adult Education Classes",
+   "kind": "event",
+   "time": "17:30"
+  },
+  {
+   "date": "2026-09-21",
+   "title": "No School - Yom Kippur",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-09-30",
+   "title": "Back to School In-Person PTA Meeting",
+   "kind": "event",
+   "time": "18:30"
+  },
+  {
+   "date": "2026-10-02",
+   "title": "Family Fun Movie Night",
+   "kind": "event",
+   "time": "18:30"
+  },
+  {
+   "date": "2026-10-12",
+   "title": "No School - Italian Heritage/Indigenous Peoples' Day",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-10-13",
+   "title": "Picture Day Grades 2-7",
+   "kind": "event",
+   "time": "08:00"
+  },
+  {
+   "date": "2026-10-16",
+   "title": "Picture Day 8th Grade",
+   "kind": "event",
+   "time": "08:00"
+  },
+  {
+   "date": "2026-10-16",
+   "title": "Picture Day K-1",
+   "kind": "event",
+   "time": "08:00"
+  },
+  {
+   "date": "2026-10-23",
+   "title": "Pumpkin Patch",
+   "kind": "event"
+  },
+  {
+   "date": "2026-10-28",
+   "title": "Pumpkin Stroll",
+   "kind": "event",
+   "time": "15:30"
+  },
+  {
+   "date": "2026-11-06",
+   "title": "Swish Wish",
+   "kind": "event",
+   "time": "09:00"
+  },
+  {
+   "date": "2026-11-09",
+   "title": "Scholastic Book Fair",
+   "kind": "event",
+   "time": "08:00"
+  },
+  {
+   "date": "2026-11-10",
+   "title": "Scholastic Book Fair",
+   "kind": "event",
+   "time": "08:00"
+  },
+  {
+   "date": "2026-11-11",
+   "title": "No School - Veterans Day",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-11-26",
+   "title": "No School - Thanksgiving Recess",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-11-27",
+   "title": "No School - Thanksgiving Recess",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-12-24",
+   "title": "No School - Winter Recess",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-12-25",
+   "title": "No School - Winter Recess",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-12-28",
+   "title": "No School - Winter Recess",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-12-29",
+   "title": "No School - Winter Recess",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-12-30",
+   "title": "No School - Winter Recess",
+   "kind": "closed"
+  },
+  {
+   "date": "2026-12-31",
+   "title": "No School - Winter Recess",
+   "kind": "closed"
+  },
+  {
+   "date": "2027-01-01",
+   "title": "No School - Winter Recess",
+   "kind": "closed"
+  },
+  {
+   "date": "2027-01-18",
+   "title": "No School - Martin Luther King Jr. Day",
+   "kind": "closed"
+  },
+  {
+   "date": "2027-02-15",
+   "title": "No School - Midwinter Recess",
+   "kind": "closed"
+  },
+  {
+   "date": "2027-02-16",
+   "title": "No School - Midwinter Recess",
+   "kind": "closed"
+  },
+  {
+   "date": "2027-02-17",
+   "title": "No School - Midwinter Recess",
+   "kind": "closed"
+  },
+  {
+   "date": "2027-02-18",
+   "title": "No School - Midwinter Recess",
+   "kind": "closed"
+  },
+  {
+   "date": "2027-02-19",
+   "title": "No School - Midwinter Recess",
+   "kind": "closed"
+  },
+  {
+   "date": "2027-03-09",
+   "title": "No School - Eid al-Fitr",
+   "kind": "closed"
+  },
+  {
+   "date": "2027-03-26",
+   "title": "No School - Good Friday",
+   "kind": "closed"
+  },
+  {
+   "date": "2027-04-22",
+   "title": "No School - Spring Recess",
+   "kind": "closed"
+  },
+  {
+   "date": "2027-04-23",
+   "title": "No School - Spring Recess",
+   "kind": "closed"
+  },
+  {
+   "date": "2027-04-24",
+   "title": "No School - Spring Recess",
+   "kind": "closed"
+  },
+  {
+   "date": "2027-04-25",
+   "title": "No School - Spring Recess",
+   "kind": "closed"
+  },
+  {
+   "date": "2027-04-26",
+   "title": "No School - Spring Recess",
+   "kind": "closed"
+  },
+  {
+   "date": "2027-04-27",
+   "title": "No School - Spring Recess",
+   "kind": "closed"
+  },
+  {
+   "date": "2027-04-28",
+   "title": "No School - Spring Recess",
+   "kind": "closed"
+  },
+  {
+   "date": "2027-04-29",
+   "title": "No School - Spring Recess",
+   "kind": "closed"
+  },
+  {
+   "date": "2027-04-30",
+   "title": "No School - Spring Recess",
+   "kind": "closed"
+  },
+  {
+   "date": "2027-05-17",
+   "title": "No School - Eid al-Adha",
+   "kind": "closed"
+  },
+  {
+   "date": "2027-05-31",
+   "title": "No School - Memorial Day",
+   "kind": "closed"
+  },
+  {
+   "date": "2027-06-08",
+   "title": "No Classes for Students - Clerical Day",
+   "kind": "closed"
+  },
+  {
+   "date": "2027-06-10",
+   "title": "No School for Students - Anniversary Day",
+   "kind": "closed"
+  },
+  {
+   "date": "2027-06-28",
+   "title": "Last Day of School for Students",
+   "kind": "event"
+  }
+ ]
+}
