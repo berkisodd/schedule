@@ -1065,6 +1065,39 @@
   }
   .cal-empty{ text-align:center; color:var(--text-dim); font-size:0.86rem; padding:26px 10px; }
 
+  /* school calendar, sitting above the friend row in Calendars */
+  .school-cal{
+    border:1px solid var(--line); border-radius:var(--radius);
+    background:var(--ink-2); padding:11px 12px; margin-bottom:12px;
+  }
+  .school-cal[hidden]{ display:none; }
+  .school-cal-head{
+    display:flex; align-items:baseline; gap:8px; margin-bottom:8px;
+  }
+  .school-cal-title{
+    font-family:'JetBrains Mono', monospace; font-size:0.66rem;
+    letter-spacing:0.09em; text-transform:uppercase; color:var(--text-dim);
+  }
+  .school-cal-when{ font-size:0.74rem; color:var(--slate); margin-left:auto; }
+  .school-ev{
+    display:flex; align-items:flex-start; gap:9px; padding:5px 0;
+    border-top:1px solid var(--line-soft); font-size:0.84rem;
+  }
+  .school-ev:first-of-type{ border-top:none; }
+  .school-ev-date{
+    flex:0 0 54px; font-family:'JetBrains Mono', monospace;
+    font-size:0.7rem; color:var(--text-dim); padding-top:2px;
+  }
+  .school-ev-name{ flex:1 1 auto; line-height:1.35; }
+  .school-ev-tag{
+    flex:0 0 auto; font-size:0.64rem; letter-spacing:0.05em;
+    text-transform:uppercase; padding:2px 6px; border-radius:5px;
+    border:1px solid var(--line); color:var(--text-dim); margin-top:1px;
+  }
+  .school-ev.closed .school-ev-name{ color:var(--text); font-weight:600; }
+  .school-ev.closed .school-ev-tag{ border-color:var(--amber-line); color:var(--amber); }
+  .school-ev.early .school-ev-tag{ border-color:var(--amber-line); color:var(--amber); }
+
   .cal-datebar{ display:flex; align-items:center; justify-content:center; gap:14px; }
   .cal-date-nav{
     width:30px; height:30px; border-radius:50%; border:1px solid var(--line);
@@ -3195,9 +3228,10 @@
     <button class="modal-close" id="closeCalendars" aria-label="Close">✕</button>
     <div class="set-head">
       <div class="set-title">Calendars</div>
-      <div class="set-sub">See friends' schedules alongside your own.</div>
+      <div class="set-sub">The school calendar, and friends' schedules alongside your own.</div>
     </div>
     <div class="calendars-body" id="calendarsBody">
+      <div class="school-cal" id="schoolCal" hidden></div>
       <div class="cal-friend-row" id="calFriendRow"></div>
       <div class="cal-datebar">
         <button class="cal-date-nav" id="calPrevDay" aria-label="Previous day">‹</button>
@@ -3962,6 +3996,53 @@
     return resolveKeyForDate(rotation, new Date());
   }
 
+  // ══ School calendar ═══════════════════════════════════════════
+  // Built from the school's published iCal feed by a scheduled job, see
+  // tools/build-school-calendar.mjs. The feed sends no CORS header, so a
+  // browser cannot read it directly however it is asked; this file is
+  // same-origin and comes off the service worker cache with no signal.
+  //
+  // It is the school's own publication, so it is shown as it arrives. A
+  // closure is surfaced as a heading rather than by hiding the day's
+  // periods: if the feed is ever wrong, the schedule underneath is still
+  // right there.
+  let schoolCal = null;
+  const schoolByDate = new Map();   // 'YYYY-MM-DD' -> [event, ...]
+
+  async function loadSchoolCalendar(){
+    try{
+      const res = await fetch('./school-calendar.json', { cache: 'no-cache' });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data || !Array.isArray(data.events)) return;
+      schoolByDate.clear();
+      data.events.forEach(e => {
+        if (!e || !e.date || !e.title) return;
+        if (!schoolByDate.has(e.date)) schoolByDate.set(e.date, []);
+        schoolByDate.get(e.date).push(e);
+      });
+      schoolCal = data;
+      lastHeroState = null;   // let the hero repaint now that today is known
+      lastHeroSub = null;
+    } catch (err){
+      // working without it beats not working
+      console.error('Could not load the school calendar:', err);
+    }
+  }
+
+  function schoolEventsOn(dateStr){ return schoolByDate.get(dateStr) || []; }
+  function schoolClosedOn(dateStr){
+    return schoolEventsOn(dateStr).find(e => e.kind === 'closed') || null;
+  }
+  // the next N dated entries from today, for the Calendars panel
+  function schoolUpcoming(limit){
+    if (!schoolCal) return [];
+    const today = ymd(new Date());
+    return schoolCal.events
+      .filter(e => e.date >= today)
+      .slice(0, limit || 20);
+  }
+
   // ══ Announcements ═════════════════════════════════════════════
   // One active announcement at a time, dismissible per device. Expired
   // ones are filtered on read so nothing has to sweep them.
@@ -4170,6 +4251,7 @@
     setTimeout(refreshMatchBadge, 1200);
     setTimeout(listenForUnread, 400);
     setTimeout(loadAnnouncement, 900);
+    setTimeout(loadSchoolCalendar, 600);
     if (isAdmin) setTimeout(runDailyCleanup, 4000);
   });
 
@@ -4726,7 +4808,9 @@
       periodsList.appendChild(emptyState);
       return;
     }
-    const isToday = viewingDay === resolveTodayKey();
+    // "Now" would contradict the heading on a day the school has called
+    // off, so the day still lists but nothing in it is running.
+    const isToday = viewingDay === resolveTodayKey() && !schoolClosedOn(ymd(new Date()));
     const nowMin = new Date().getHours()*60 + new Date().getMinutes();
 
     list.forEach((p, i) => {
@@ -4944,7 +5028,16 @@
     }
     if(!current) next = todays.find(p => toMinutes(p.start) > nowMin) || null;
 
-    if(current){
+    // A closure outranks whatever the saved week says about this weekday.
+    // The periods themselves stay listed below, so a wrong feed costs you a
+    // heading rather than your schedule.
+    const closedToday = schoolClosedOn(ymd(new Date()));
+    if (closedToday){
+      const up = nextUpLine();
+      setHeroState('No school today');
+      setHeroClock('--:--');
+      setHeroSub(escapeHtml(closedToday.title) + (up ? '<br>' + up : ''));
+    } else if(current){
       const after = getNextAfter(todays, current);
       const secsLeft = Math.max(Math.round((toMinutes(current.end) - nowMin) * 60), 0);
       setHeroState(`${current.name} ends in`);
@@ -5013,6 +5106,9 @@
       const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
       const key = resolveKeyForDate(rotation, d);
       if (!key) continue;
+      // a day the school has called off is not the next school day, however
+      // full that weekday looks in the saved week
+      if (schoolClosedOn(ymd(d))) continue;
       const list = (week[key] || []).filter(p => toMinutes(p.start) !== null);
       if (!list.length) continue;
       const first = list.reduce((a,b) => toMinutes(b.start) < toMinutes(a.start) ? b : a);
@@ -7156,6 +7252,7 @@ Wed: OFF
     calendarsModal.classList.add('show');
     document.body.style.overflow = 'hidden';
     maybeShowSharedCalendarsIntro();
+    renderSchoolCalendar();
     if (!calFriendsLoaded) loadFriendCalendars();
   }
   function closeCalendarsModal(){
@@ -7223,6 +7320,62 @@ Wed: OFF
       console.error('Could not load friend calendars:', err);
       showCalRetry("Couldn't load calendars. Bad connection, maybe.", n);
     }
+  }
+
+  // The school's own events, above the friend row. Rendered from the
+  // committed feed, so it shows with or without a connection.
+  function renderSchoolCalendar(){
+    const box = document.getElementById('schoolCal');
+    if (!box) return;
+    const rows = schoolUpcoming(8);
+    if (!schoolCal || !rows.length){ box.hidden = true; return; }
+
+    box.innerHTML = '';
+    const head = document.createElement('div');
+    head.className = 'school-cal-head';
+    const title = document.createElement('div');
+    title.className = 'school-cal-title';
+    title.textContent = 'School calendar';
+    const when = document.createElement('div');
+    when.className = 'school-cal-when';
+    when.textContent = 'Next ' + rows.length;
+    head.append(title, when);
+    box.appendChild(head);
+
+    const today = ymd(new Date());
+    rows.forEach(e => {
+      const row = document.createElement('div');
+      row.className = 'school-ev' + (e.kind === 'closed' ? ' closed' : e.kind === 'early' ? ' early' : '');
+
+      const d = document.createElement('div');
+      d.className = 'school-ev-date';
+      d.textContent = e.date === today ? 'Today' : shortDate(e.date);
+
+      const n = document.createElement('div');
+      n.className = 'school-ev-name';
+      n.textContent = e.title;          // feed text, never markup
+
+      row.append(d, n);
+      if (e.kind === 'closed' || e.kind === 'early'){
+        const tag = document.createElement('div');
+        tag.className = 'school-ev-tag';
+        tag.textContent = e.kind === 'closed' ? 'No school' : 'Early out';
+        row.appendChild(tag);
+      } else if (e.time){
+        const tag = document.createElement('div');
+        tag.className = 'school-ev-tag';
+        tag.textContent = fmtTime(e.time);
+        row.appendChild(tag);
+      }
+      box.appendChild(row);
+    });
+    box.hidden = false;
+  }
+
+  // "Sep 21" from "2026-09-21"
+  function shortDate(dateStr){
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }
 
   function renderCalendarsTab(){

@@ -1,13 +1,14 @@
 // Schedule 2.0 service worker
 // Bump CACHE_VERSION whenever you deploy, so people get the new files
 // instead of a stale cached copy.
-const CACHE_VERSION = 'schedule-v4.37';
+const CACHE_VERSION = 'schedule-v4.38';
 
 const SHELL = [
   './',
   './login.html',
   './schedule.html',
   './share.html',
+  './school-calendar.json',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',

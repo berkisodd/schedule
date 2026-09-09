@@ -1,0 +1,51 @@
+# Keeps school-calendar.json in step with the school's published feed.
+#
+# The feed sends no CORS header, so the app cannot fetch it from a browser.
+# This job does it instead and commits the parsed result next to the app,
+# where it is same-origin and cached by the service worker.
+name: Sync school calendar
+
+on:
+  schedule:
+    # 07:15 UTC, a little after the hour so it is not competing with the
+    # top-of-hour rush on GitHub's shared runners
+    - cron: '15 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: school-calendar
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Fetch and parse the feed
+        run: node tools/build-school-calendar.mjs
+
+      - name: Commit if it changed
+        run: |
+          if git diff --quiet -- school-calendar.json; then
+            echo "calendar unchanged"
+            exit 0
+          fi
+          # fetchedAt moves every run, so only commit when a date or title did
+          if [ -z "$(git diff -U0 -- school-calendar.json | grep -E '^[+-]' | grep -vE '^(\+\+\+|---)' | grep -v '"fetchedAt"')" ]; then
+            echo "only the timestamp moved, leaving it alone"
+            git checkout -- school-calendar.json
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add school-calendar.json
+          git commit -m "Update school calendar from the school's feed"
+          git push
