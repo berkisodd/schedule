@@ -1,7 +1,7 @@
 {
  "name": "The Fort Hamilton School - Events",
  "source": "https://www.psis104.com/apps/events/ical/?id=0",
- "fetchedAt": "2026-09-09T21:26:20Z",
+ "fetchedAt": "2026-09-10T00:41:56Z",
  "events": [
   {
    "date": "2025-09-15",
@@ -676,12 +676,6 @@
    "title": "NIA Afterschool for Grades 6-8 Begins",
    "kind": "event",
    "time": "14:30"
-  },
-  {
-   "date": "2026-09-15",
-   "title": "First Day of Adult Education Classes",
-   "kind": "event",
-   "time": "17:30"
   },
   {
    "date": "2026-09-21",
