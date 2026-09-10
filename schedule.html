@@ -1097,6 +1097,10 @@
   .school-ev.closed .school-ev-name{ color:var(--text); font-weight:600; }
   .school-ev.closed .school-ev-tag{ border-color:var(--amber-line); color:var(--amber); }
   .school-ev.early .school-ev-tag{ border-color:var(--amber-line); color:var(--amber); }
+  .school-cal-note{
+    margin-top:9px; padding-top:8px; border-top:1px solid var(--line-soft);
+    font-size:0.72rem; line-height:1.45; color:var(--slate);
+  }
 
   .cal-datebar{ display:flex; align-items:center; justify-content:center; gap:14px; }
   .cal-date-nav{
@@ -7369,7 +7373,20 @@ Wed: OFF
       }
       box.appendChild(row);
     });
+
+    const note = document.createElement('div');
+    note.className = 'school-cal-note';
+    note.textContent = 'Pulled from ' + schoolCalHost() +
+      '. Some of it might be wrong. That is the school\'s to fix, not ours.';
+    box.appendChild(note);
     box.hidden = false;
+  }
+
+  // the host the calendar was published from, so the credit cannot drift
+  // out of step with where the data actually came from
+  function schoolCalHost(){
+    try{ return new URL(schoolCal.source).hostname.replace(/^www\./, ''); }
+    catch(e){ return 'the school website'; }
   }
 
   // "Sep 21" from "2026-09-21"

@@ -117,6 +117,21 @@ function occurrences(startDate, rrule, exdates){
 // "No Classes for Students" when there is no school. It also runs a PTA
 // Holiday Boutique and a Holiday Toy Drive on ordinary school days, so
 // matching the word "holiday" would cancel school that is actually running.
+// The school runs adult education out of the same building and puts it on
+// the same public calendar. It is the one thing on the feed with no bearing
+// on a K-8 pupil's day, so it is dropped rather than shown.
+//
+// Deliberately short. Everything else on this feed is a K-8 school's own
+// calendar and applies: the Regents sittings are marked "select gr 8", the
+// state exams name grades 3 to 8, staff conference and clerical days are the
+// days students get off. Parent evenings and PTA fundraisers stay too, since
+// a student having a reason to know about the carnival, the book fair or the
+// 11:30 dismissal is the point. Filtering aggressively here would hide real
+// events from the people the app is for.
+const NOT_FOR_STUDENTS = [
+  /\badult education\b/i
+];
+
 const CLOSED = /\bno school\b|\bschools? closed\b|\bno students attend\b|\bno classes for students\b/i;
 // "…11:30 AM Student Dismissal" is a short day, not a closure.
 const EARLY = /\bdismissal\b|\bearly dismissal\b/i;
@@ -139,12 +154,14 @@ async function main(){
   if (!events.length) throw new Error('no VEVENTs in the feed');
 
   const rows = [];
+  const skipped = [];
   for (const e of events){
     if (!e.DTSTART || !e.SUMMARY) continue;
     const start = localDate(e.DTSTART.value);
     if (!start) continue;
     const title = unescapeText(e.SUMMARY.value);
     if (!title) continue;
+    if (NOT_FOR_STUDENTS.some(re => re.test(title))){ skipped.push(title); continue; }
 
     const exdates = new Set();
     (e.EXDATE || []).forEach(p => {
@@ -187,6 +204,9 @@ async function main(){
   writeFileSync(OUT, JSON.stringify(payload, null, 1) + '\n');
   const closed = unique.filter(r => r.kind === 'closed').length;
   console.log(`${unique.length} dates (${closed} no-school), ${payload.events[0].date} to ${payload.events[unique.length-1].date}`);
+  if (skipped.length){
+    console.log(`skipped ${skipped.length} not for students: ${[...new Set(skipped)].join('; ')}`);
+  }
 }
 
 main().catch(err => { console.error(err.message); process.exit(1); });
