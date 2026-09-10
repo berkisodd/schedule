@@ -5528,6 +5528,11 @@ Wed: OFF
     setTimeout(() => { exportCode.textContent = 'Export current week'; exportCode.classList.remove('done'); }, 1800);
   });
 
+  // How many times the last parse had to move to the afternoon. Kept
+  // beside the parser rather than hung on the returned week, which is the
+  // object that gets written to the schedules doc.
+  let lastImportRepairs = 0;
+
   // Parse SCHEDULE2.0 code back into the week model
   function parseCode(raw){
     const text = raw.trim();
@@ -5550,6 +5555,7 @@ Wed: OFF
     }
     const parsed = emptyWeek();
     let matchedAnyDay = false;
+    let timesRepaired = 0;
 
     for (const line of lines){
       const colon = line.indexOf(':');
@@ -5565,7 +5571,14 @@ Wed: OFF
       // Split into classes by finding each "HH:MM-HH:MM ..." segment.
       // This is more robust than splitting on commas, since class names
       // themselves can contain commas (e.g. "Reading, Writing (A1)").
-      const classRegex = /(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})\s*([^]*?)(?=(?:,\s*)?\d{1,2}:\d{2}\s*[-–]\s*\d{1,2}:\d{2}|$)/g;
+      // An am/pm on either end is optional and captured: the format asks for
+      // a 24 hour clock, but chatbots write "12:55-1:40 PM" all the time, and
+      // reading that as 01:40 put the afternoon at the top of the morning.
+      const AMPM = '(?:\\s*([AaPp])\\.?[Mm]\\.?)?';
+      const T = '(\\d{1,2}:\\d{2})' + AMPM;
+      const classRegex = new RegExp(
+        T + '\\s*[-–—]\\s*' + T + '\\s*([^]*?)(?=(?:,\\s*)?\\d{1,2}:\\d{2}' + AMPM + '\\s*[-–—]\\s*\\d{1,2}:\\d{2}|$)',
+        'g');
       let m, foundAny = false, guard = 0;
       while ((m = classRegex.exec(rest)) !== null){
         // Safety: never allow a zero-width match or runaway loop to freeze the page.
@@ -5573,7 +5586,7 @@ Wed: OFF
         if (++guard > 200) break;
         if (m[0].length === 0) continue;
         foundAny = true;
-        let [, start, end, remainder] = m;
+        let [, start, startAP, end, endAP, remainder] = m;
         remainder = remainder.replace(/,\s*$/, '').trim();
 
         // pull room out of trailing parentheses if present
@@ -5584,27 +5597,90 @@ Wed: OFF
           remainder = remainder.slice(0, roomMatch.index).trim();
         }
         const name = remainder || 'Untitled';
-        parsed[dayKey].push({
+        // an am/pm on one end usually governs both ("12:55-1:40 PM")
+        const ap = startAP || endAP;
+        const entry = {
           id: freshId(),
           name,
-          start: normalizeTime(start),
-          end: normalizeTime(end),
+          start: normalizeTime(start, ap),
+          end: normalizeTime(end, endAP || startAP),
           room
-        });
+        };
+        // Someone who wrote the meridiem said what they meant, including
+        // "12:30 AM". Repair guesses, so it must not overrule them.
+        if (ap) entry.exactTime = true;
+        parsed[dayKey].push(entry);
       }
       if (!foundAny) throw new Error(`Could not read any class times in: "${rest}"`);
+      timesRepaired += repairDayTimes(parsed[dayKey]);
       parsed[dayKey].sort((a,b) => toMinutes(a.start) - toMinutes(b.start));
     }
 
     if (!matchedAnyDay) throw new Error(isRotating ? `No valid day lines (${DAYS.join(', ')}) found.` : 'No valid day lines (Mon, Tue, ...) found.');
+    lastImportRepairs = timesRepaired;
     return parsed;
   }
 
-  function normalizeTime(t){
+  function normalizeTime(t, meridiem){
     let [h,m] = t.split(':').map(Number);
     if (isNaN(h) || isNaN(m)) return '00:00';
+    const ap = (meridiem || '').toLowerCase();
+    if (ap === 'p' && h < 12) h += 12;        // 1 PM is 13
+    else if (ap === 'a' && h === 12) h = 0;   // 12 AM is 00
     h = Math.max(0, Math.min(23, h));
     m = Math.max(0, Math.min(59, m));
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  }
+
+  // A chatbot handed the 24 hour format an afternoon written as "1:40" with
+  // no am/pm, which read as 01:40 and sorted the last period of the day to
+  // the top of the morning. Nothing in a single time says which was meant,
+  // but a school day runs forwards, so the order the periods were written in
+  // does: a start that goes backwards, or an end before its own start, is an
+  // afternoon that lost its PM. Rolls those on by twelve hours and returns
+  // how many it touched.
+  //
+  // Only ever moves a time that is before noon, so anything already written
+  // in 24 hour form is left exactly as it came in.
+  function repairDayTimes(list){
+    if (!list || !list.length) return 0;
+    const NOON = 12 * 60, DAY = 24 * 60;
+    let fixed = 0, prevStart = -1;
+
+    list.forEach(p => {
+      let s = toMinutes(p.start), e = toMinutes(p.end);
+      if (s === null || e === null) return;
+      if (p.exactTime){ prevStart = s; return; }
+
+      // a period that starts before the one written above it
+      if (s < prevStart && s < NOON && s + NOON < DAY){
+        s += NOON; p.start = fromMinutes(s); fixed++;
+      }
+      // ...and an end that lands before its own start
+      if (e <= s && e < NOON && e + NOON < DAY){
+        e += NOON; p.end = fromMinutes(e); fixed++;
+      }
+      prevStart = s;
+    });
+
+    // Backstop for a day whose very first period is the ambiguous one, where
+    // there is nothing before it to compare against. Nobody has a class at
+    // half past one in the morning.
+    const TOO_EARLY = 5 * 60;
+    list.forEach(p => {
+      let s = toMinutes(p.start), e = toMinutes(p.end);
+      if (p.exactTime || s === null || e === null || s >= TOO_EARLY) return;
+      p.start = fromMinutes(s + NOON); fixed++;
+      if (e < NOON){ p.end = fromMinutes(e + NOON); fixed++; }
+    });
+
+    // scratch flag, not part of a period and not for the schedules doc
+    list.forEach(p => { delete p.exactTime; });
+    return fixed;
+  }
+
+  function fromMinutes(mins){
+    const h = Math.floor(mins / 60), m = mins % 60;
     return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
   }
 
@@ -5640,7 +5716,13 @@ Wed: OFF
       hideLoading();
       closeModal();
       // surface a confirmation on the main screen via the save message
-      flashSave(`Imported ${total} ${total===1?'class':'classes'}. Hit Save to keep it.`, 'var(--good)', 4000);
+      // say so rather than quietly moving someone's times for them
+      const moved = lastImportRepairs;
+      const note = moved
+        ? ` Moved ${moved} ${moved===1?'time':'times'} to the afternoon, check them.`
+        : '';
+      flashSave(`Imported ${total} ${total===1?'class':'classes'}.${note} Hit Save to keep it.`,
+        moved ? 'var(--amber)' : 'var(--good)', moved ? 7000 : 4000);
     }, 300);
   });
 
