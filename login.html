@@ -592,14 +592,24 @@
   <div class="changelog" id="changelogWrap" hidden>
     <button class="changelog-head" id="changelogToggle">
       <span class="changelog-title">What's new</span>
-      <span class="changelog-version">v2.10.1</span>
+      <span class="changelog-version">v2.10.2</span>
       <span class="changelog-arrow" id="changelogArrow">▾</span>
     </button>
     <div class="changelog-body" id="changelogBody">
       <div class="cl-entry">
         <div class="cl-ver">
-          <span class="cl-num">2.10.1</span>
+          <span class="cl-num">2.10.2</span>
           <span class="cl-tag new">Latest</span>
+        </div>
+        <ul class="cl-list">
+          <li>Fixed importing a schedule putting your last period at the top of the morning. A chatbot writing "1:40" for the afternoon was read as twenty to two in the morning, which sorted it above everything else</li>
+          <li>Import now understands AM and PM, which used to fail outright, and works out the afternoon from the order your periods were written in when the code leaves it off</li>
+          <li>It tells you when it had to move a time, so you can check it</li>
+        </ul>
+      </div>
+      <div class="cl-entry">
+        <div class="cl-ver">
+          <span class="cl-num">2.10.1</span>
         </div>
         <ul class="cl-list">
           <li>The school calendar now credits where it came from, and says plainly that some of it might be wrong and that is not ours to fix</li>
