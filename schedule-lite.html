@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Schedule Lite</title>
+<style>
+  [hidden]{ display:none !important; }
+
+  :root{
+    --ink:#0A0A0B; --panel:#141416; --line:#232326; --line-soft:#1B1B1E;
+    --text:#F4F4F5; --text-dim:#8A8A91;
+    --amber:#D97435; --amber-dim:#D9743518; --amber-line:#D9743540;
+    --error:#D9564E; --good:#4FA97F; --on-amber:#0A0A0B;
+    --radius:10px; --radius-lg:14px;
+  }
+  html[data-theme="light"]{
+    --ink:#FAFAF9; --panel:#FFFFFF; --line:#E4E4E2; --line-soft:#EFEFED;
+    --text:#131316; --text-dim:#71717A;
+    --amber:#C05F1E; --amber-dim:#C05F1E12; --amber-line:#C05F1E38;
+    --error:#BE4A42; --good:#2F8560; --on-amber:#FFFFFF;
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; padding:0 16px 48px; background:var(--ink); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:560px; margin:0 auto; }
+
+  header{ padding:20px 0 12px; }
+  h1{ font-size:22px; margin:0 0 14px; font-weight:700; }
+  h1 .accent{ color:var(--amber); }
+
+  nav{ display:flex; gap:6px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius-lg); padding:4px; }
+  .navBtn{
+    flex:1; padding:9px 0; border:none; background:transparent; color:var(--text-dim);
+    font-size:14px; font-weight:600; border-radius:calc(var(--radius-lg) - 4px); cursor:pointer;
+  }
+  .navBtn.active{ background:var(--amber-dim); color:var(--amber); }
+
+  .banner{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    background:var(--amber-dim); border:1px solid var(--amber-line); color:var(--text);
+    border-radius:var(--radius); padding:10px 12px; margin:14px auto 0; max-width:560px; font-size:13px;
+  }
+  .banner span:first-child{ flex:1; min-width:200px; }
+  .banner button{
+    border:1px solid var(--amber-line); background:transparent; color:var(--amber);
+    border-radius:8px; padding:6px 10px; font-size:12px; font-weight:600; cursor:pointer;
+  }
+  .banner .close{ border:none; color:var(--text-dim); font-size:16px; padding:0 4px; }
+
+  .view{ padding-top:16px; }
+
+  .daytabs{ display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; }
+  .daytab{
+    flex:0 0 auto; padding:8px 14px; border-radius:999px; border:1px solid var(--line);
+    background:var(--panel); color:var(--text-dim); font-size:13px; font-weight:600; cursor:pointer;
+  }
+  .daytab.today{ border-color:var(--amber-line); }
+  .daytab.active{ background:var(--amber); border-color:var(--amber); color:var(--on-amber); }
+
+  .nownext{
+    margin-top:12px; padding:10px 12px; border-radius:var(--radius); background:var(--panel);
+    border:1px solid var(--line); font-size:14px;
+  }
+  .nownext .dim{ color:var(--text-dim); }
+
+  .periodlist{ margin-top:12px; display:flex; flex-direction:column; gap:8px; }
+  .period{
+    display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--line);
+    border-radius:var(--radius); padding:10px 12px; cursor:pointer;
+  }
+  .period.now{ border-color:var(--amber-line); background:var(--amber-dim); }
+  .ptime{ font-size:12px; color:var(--text-dim); width:118px; flex:0 0 auto; line-height:1.3; }
+  .pinfo{ flex:1; min-width:0; }
+  .pname{ font-size:14px; font-weight:600; overflow-wrap:break-word; }
+  .proom{ font-size:12px; color:var(--text-dim); }
+  .pdel{
+    flex:0 0 auto; border:none; background:transparent; color:var(--text-dim); font-size:18px;
+    line-height:1; padding:4px 6px; cursor:pointer; border-radius:6px;
+  }
+  .pdel:hover{ color:var(--error); }
+  .empty{ color:var(--text-dim); font-size:14px; padding:8px 2px; }
+
+  .addbox{ margin-top:14px; }
+  .ghostbtn{
+    width:100%; padding:11px; border-radius:var(--radius); border:1px dashed var(--line);
+    background:transparent; color:var(--text-dim); font-size:14px; font-weight:600; cursor:pointer;
+  }
+  .addform{
+    margin-top:8px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:12px; display:flex; flex-direction:column; gap:8px;
+  }
+  .addform input{
+    width:100%; padding:9px 10px; border-radius:8px; border:1px solid var(--line); background:var(--ink);
+    color:var(--text); font-size:14px;
+  }
+  .row2{ display:flex; gap:8px; }
+  .row2 > *{ flex:1; }
+  .primarybtn{
+    padding:10px; border:none; border-radius:8px; background:var(--amber); color:var(--on-amber);
+    font-size:14px; font-weight:700; cursor:pointer;
+  }
+  .msg{ font-size:13px; min-height:16px; }
+  .msg.err{ color:var(--error); }
+  .msg.ok{ color:var(--good); }
+
+  .dangerlink{
+    display:block; margin:16px auto 0; background:none; border:none; color:var(--error);
+    font-size:13px; cursor:pointer; padding:6px;
+  }
+  .dangerbtn{
+    width:100%; padding:11px; border-radius:var(--radius); border:1px solid var(--error);
+    background:transparent; color:var(--error); font-size:14px; font-weight:600; cursor:pointer; margin-top:6px;
+  }
+
+  .hint{ font-size:13px; color:var(--text-dim); line-height:1.5; }
+  textarea{
+    width:100%; padding:10px; border-radius:var(--radius); border:1px solid var(--line); background:var(--panel);
+    color:var(--text); font-size:13px; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    resize:vertical; margin:8px 0;
+  }
+  .lastcode{ margin-top:22px; padding-top:16px; border-top:1px solid var(--line); }
+  .lastcode h3{ font-size:14px; margin:0 0 4px; }
+
+  .settingrow{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:12px; margin-bottom:8px; font-size:14px;
+  }
+  .settingrow select{
+    padding:7px 8px; border-radius:8px; border:1px solid var(--line); background:var(--ink); color:var(--text);
+    font-size:13px;
+  }
+  #storageStatus.err{ color:var(--error); }
+  .version{ text-align:center; margin-top:18px; }
+
+  .toast{
+    position:fixed; left:50%; bottom:20px; transform:translate(-50%,12px); background:var(--panel);
+    border:1px solid var(--line); color:var(--text); padding:8px 14px; border-radius:999px; font-size:13px;
+    opacity:0; transition:opacity .18s, transform .18s; pointer-events:none; z-index:50;
+  }
+  .toast.show{ opacity:1; transform:translate(-50%,0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="warningBanner" class="banner" hidden>
+    <span id="warningText"></span>
+    <button id="warningCopyBtn" type="button">Copy backup code</button>
+    <button class="close" id="warningClose" type="button" aria-label="Dismiss">×</button>
+  </div>
+
+  <header>
+    <h1>Schedule <span class="accent">Lite</span></h1>
+    <nav>
+      <button class="navBtn active" data-view="schedule" type="button">Schedule</button>
+      <button class="navBtn" data-view="import" type="button">Import</button>
+      <button class="navBtn" data-view="settings" type="button">Settings</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="view-schedule" class="view">
+      <div class="daytabs" id="dayTabs"></div>
+      <div class="nownext" id="nowNext" hidden></div>
+      <div class="periodlist" id="periodList"></div>
+
+      <div class="addbox">
+        <button class="ghostbtn" id="addToggle" type="button">+ Add period</button>
+        <div class="addform" id="addForm" hidden>
+          <input id="pName" type="text" placeholder="Class name" maxlength="80">
+          <div class="row2">
+            <input id="pStart" type="time">
+            <input id="pEnd" type="time">
+          </div>
+          <input id="pRoom" type="text" placeholder="Room (optional)" maxlength="40">
+          <div class="row2">
+            <button class="primarybtn" id="pSave" type="button">Add</button>
+            <button class="ghostbtn" id="pCancel" type="button">Cancel</button>
+          </div>
+          <div class="msg" id="pMsg"></div>
+        </div>
+      </div>
+
+      <button class="dangerlink" id="clearDayBtn" type="button">Clear this day</button>
+    </section>
+
+    <section id="view-import" class="view" hidden>
+      <p class="hint">Paste a SCHEDULE2.0 code block — exported from the full app, or written out by hand (or a chatbot) as lines like below.</p>
+      <textarea id="codeInput" rows="8" placeholder="SCHEDULE2.0&#10;Mon: 8:00-8:50 Math (Rm 101), 8:55-9:45 English&#10;Tue: OFF"></textarea>
+      <div class="row2">
+        <button class="primarybtn" id="importBtn" type="button">Import</button>
+        <button class="ghostbtn" id="exportBtn" type="button">Export current</button>
+      </div>
+      <div class="msg" id="importMsg"></div>
+
+      <div class="lastcode">
+        <h3>Last saved code</h3>
+        <p class="hint">A backup copy of the last code you imported successfully. Grab it any time in case something goes wrong.</p>
+        <textarea id="lastCodeBox" rows="5" readonly placeholder="Nothing imported yet."></textarea>
+        <button class="ghostbtn" id="copyLastCode" type="button">Copy</button>
+      </div>
+    </section>
+
+    <section id="view-settings" class="view" hidden>
+      <div class="settingrow">
+        <span>Theme</span>
+        <select id="themeSelect">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+          <option value="auto">Match system</option>
+        </select>
+      </div>
+      <div class="settingrow">
+        <span>Time format</span>
+        <select id="timeFormatSelect">
+          <option value="12">12-hour</option>
+          <option value="24">24-hour</option>
+        </select>
+      </div>
+      <div class="settingrow">
+        <span>Storage</span>
+        <span id="storageStatus" class="hint">—</span>
+      </div>
+      <button class="dangerbtn" id="clearAllBtn" type="button">Clear all data</button>
+      <p class="hint version">Schedule Lite — bare-bones, offline, local-only.<br>Runs entirely in your browser; nothing is sent anywhere.</p>
+    </section>
+  </main>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  var DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  var DAY_FULL = { Mon:'Monday', Tue:'Tuesday', Wed:'Wednesday', Thu:'Thursday', Fri:'Friday', Sat:'Saturday', Sun:'Sunday' };
+  var JS_DAY_TO_KEY = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  var LS_WEEK = 'scheduleLite.week';
+  var LS_LASTCODE = 'scheduleLite.lastCode';
+  var LS_SETTINGS = 'scheduleLite.settings';
+
+  function emptyWeek(){ var w = {}; DAYS.forEach(function(d){ w[d] = []; }); return w; }
+  function todayKey(){ return JS_DAY_TO_KEY[new Date().getDay()]; }
+  function freshId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+  function toMinutes(hhmm){
+    if(!hhmm) return null;
+    var parts = hhmm.split(':').map(Number);
+    if(isNaN(parts[0]) || isNaN(parts[1])) return null;
+    return parts[0]*60 + parts[1];
+  }
+  function fromMinutes(mins){
+    var h = Math.floor(mins/60), m = mins%60;
+    return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+  }
+
+  // ---- import parsing (kept compatible with the full app's SCHEDULE2.0 format) ----
+
+  function normalizeTime(t, meridiem){
+    var parts = t.split(':').map(Number), h = parts[0], m = parts[1];
+    if (isNaN(h) || isNaN(m)) return '00:00';
+    var ap = (meridiem || '').toLowerCase();
+    if (ap === 'p' && h < 12) h += 12;
+    else if (ap === 'a' && h === 12) h = 0;
+    h = Math.max(0, Math.min(23, h));
+    m = Math.max(0, Math.min(59, m));
+    return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+  }
+
+  // A bare 12-hour afternoon time with no am/pm ("1:40") reads as 01:40 and
+  // would sort at the top of the morning. A school day runs forwards, so a
+  // start earlier than the period above it (or an end before its own start)
+  // is an afternoon that lost its PM — roll it forward twelve hours.
+  function repairDayTimes(list){
+    if (!list || !list.length) return 0;
+    var NOON = 12*60, DAY = 24*60;
+    var fixed = 0, prevStart = -1;
+
+    list.forEach(function(p){
+      var s = toMinutes(p.start), e = toMinutes(p.end);
+      if (s === null || e === null) return;
+      if (p.exactTime){ prevStart = s; return; }
+      if (s < prevStart && s < NOON && s + NOON < DAY){ s += NOON; p.start = fromMinutes(s); fixed++; }
+      if (e <= s && e < NOON && e + NOON < DAY){ e += NOON; p.end = fromMinutes(e); fixed++; }
+      prevStart = s;
+    });
+
+    var TOO_EARLY = 5*60;
+    list.forEach(function(p){
+      var s = toMinutes(p.start), e = toMinutes(p.end);
+      if (p.exactTime || s === null || e === null || s >= TOO_EARLY) return;
+      p.start = fromMinutes(s + NOON); fixed++;
+      if (e < NOON){ p.end = fromMinutes(e + NOON); fixed++; }
+    });
+
+    list.forEach(function(p){ delete p.exactTime; });
+    return fixed;
+  }
+
+  function parseCode(raw){
+    var text = raw.trim();
+    if (!text) throw new Error('Paste some code first.');
+    var lines = text.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+    if (lines[0] && lines[0].toUpperCase().indexOf('SCHEDULE2.0') === 0) lines.shift();
+    if (!lines.length) throw new Error('No day lines found.');
+
+    var dayMap = { mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat', sun:'Sun' };
+    var parsed = emptyWeek();
+    var matchedAnyDay = false, timesRepaired = 0;
+
+    lines.forEach(function(line){
+      var colon = line.indexOf(':');
+      if (colon === -1) return;
+      var rawToken = line.slice(0, colon).trim().toLowerCase().replace(/\s+/g, '');
+      var dayKey = dayMap[rawToken.slice(0,3)];
+      if (!dayKey) return;
+      matchedAnyDay = true;
+
+      var rest = line.slice(colon + 1).trim();
+      if (!rest || rest.toUpperCase() === 'OFF') return;
+
+      var AMPM = '(?:\\s*([AaPp])\\.?[Mm]\\.?)?';
+      var T = '(\\d{1,2}:\\d{2})' + AMPM;
+      var classRegex = new RegExp(
+        T + '\\s*[-–—]\\s*' + T + '\\s*([^]*?)(?=(?:,\\s*)?\\d{1,2}:\\d{2}' + AMPM + '\\s*[-–—]\\s*\\d{1,2}:\\d{2}|$)',
+        'g');
+      var m, foundAny = false, guard = 0;
+      while ((m = classRegex.exec(rest)) !== null){
+        if (m.index === classRegex.lastIndex) classRegex.lastIndex++;
+        if (++guard > 200) break;
+        if (m[0].length === 0) continue;
+        foundAny = true;
+        var start = m[1], startAP = m[2], end = m[3], endAP = m[4], remainder = m[5];
+        remainder = remainder.replace(/,\s*$/, '').trim();
+
+        var room = '';
+        var roomMatch = remainder.match(/\(([^)]*)\)\s*$/);
+        if (roomMatch){
+          room = roomMatch[1].trim();
+          remainder = remainder.slice(0, roomMatch.index).trim();
+        }
+        var name = remainder || 'Untitled';
+        var ap = startAP || endAP;
+        var entry = {
+          id: freshId(),
+          name: name,
+          start: normalizeTime(start, ap),
+          end: normalizeTime(end, endAP || startAP),
+          room: room
+        };
+        if (ap) entry.exactTime = true;
+        parsed[dayKey].push(entry);
+      }
+      if (!foundAny) throw new Error('Could not read any class times in: "' + rest + '"');
+      timesRepaired += repairDayTimes(parsed[dayKey]);
+      parsed[dayKey].sort(function(a,b){ return toMinutes(a.start) - toMinutes(b.start); });
+    });
+
+    if (!matchedAnyDay) throw new Error('No valid day lines (Mon, Tue, ...) found.');
+    return { week: parsed, repairs: timesRepaired };
+  }
+
+  function weekToCode(){
+    var out = 'SCHEDULE2.0\n';
+    DAYS.forEach(function(d){
+      var list = week[d];
+      if (!list.length){ out += d + ': OFF\n'; return; }
+      var parts = list.slice()
+        .sort(function(a,b){ return toMinutes(a.start) - toMinutes(b.start); })
+        .map(function(p){ return p.start + '-' + p.end + ' ' + p.name + (p.room ? ' (' + p.room + ')' : ''); });
+      out += d + ': ' + parts.join(', ') + '\n';
+    });
+    return out.trim();
+  }
+
+  // ---- storage ----
+
+  var storageOk = true;
+  function setStorageOk(ok){
+    storageOk = ok;
+    var el = document.getElementById('storageStatus');
+    el.textContent = ok ? 'Saving normally.' : 'Not saving — your browser is blocking local storage.';
+    el.classList.toggle('err', !ok);
+  }
+  function saveWeek(){
+    try{ localStorage.setItem(LS_WEEK, JSON.stringify(week)); setStorageOk(true); toast('Saved'); }
+    catch(e){ setStorageOk(false); toast('Not saved — storage blocked'); }
+  }
+  function loadWeek(){
+    try{
+      var raw = localStorage.getItem(LS_WEEK);
+      if (raw) return JSON.parse(raw);
+    } catch(e){}
+    return emptyWeek();
+  }
+  function saveLastCode(code){ try{ localStorage.setItem(LS_LASTCODE, code); } catch(e){} }
+  function loadLastCode(){ try{ return localStorage.getItem(LS_LASTCODE) || ''; } catch(e){ return ''; } }
+  function saveSettings(){ try{ localStorage.setItem(LS_SETTINGS, JSON.stringify(settings)); } catch(e){} }
+  function loadSettings(){
+    var defaults = { theme:'dark', timeFormat:'12' };
+    try{
+      var raw = localStorage.getItem(LS_SETTINGS);
+      if (raw) return Object.assign(defaults, JSON.parse(raw));
+    } catch(e){}
+    return defaults;
+  }
+
+  async function copyToClipboard(text){
+    try{
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch(e){}
+    try{
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch(e){ return false; }
+  }
+
+  var toastTimer = null;
+  function toast(msg){
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 1400);
+  }
+
+  // ---- private/incognito heuristic (best effort — no browser exposes this directly) ----
+
+  async function detectPrivateMode(){
+    try{
+      if (navigator.storage && navigator.storage.estimate){
+        var est = await navigator.storage.estimate();
+        if (typeof est.quota === 'number' && est.quota > 0 && est.quota < 120 * 1024 * 1024) return true;
+      }
+    } catch(e){}
+    try{
+      var k = '__sl_probe__';
+      localStorage.setItem(k, '1');
+      localStorage.removeItem(k);
+    } catch(e){ return true; }
+    return false;
+  }
+  function showPrivacyWarning(){
+    document.getElementById('warningText').textContent =
+      'This looks like a private/incognito window. Your schedule may not be saved once you close this tab — copy a backup code just in case.';
+    document.getElementById('warningBanner').hidden = false;
+  }
+
+  // ---- state ----
+
+  var settings = loadSettings();
+  var week = loadWeek();
+  var viewingDay = todayKey();
+  var editingId = null;
+
+  function formatTime(hhmm){
+    if (!hhmm) return '';
+    var parts = hhmm.split(':').map(Number), h = parts[0], m = parts[1];
+    if (settings.timeFormat === '24') return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+    var ap = h < 12 ? 'AM' : 'PM';
+    var h12 = h % 12; if (h12 === 0) h12 = 12;
+    return h12 + ':' + String(m).padStart(2,'0') + ' ' + ap;
+  }
+
+  function applyTheme(){
+    var t = settings.theme;
+    if (t === 'auto') t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', t);
+  }
+
+  // ---- rendering ----
+
+  function renderDayTabs(){
+    var today = todayKey();
+    document.getElementById('dayTabs').innerHTML = DAYS.map(function(d){
+      var cls = 'daytab' + (d === viewingDay ? ' active' : '') + (d === today ? ' today' : '');
+      return '<button type="button" class="' + cls + '" data-day="' + d + '">' + d + '</button>';
+    }).join('');
+  }
+
+  function renderNowNext(){
+    var el = document.getElementById('nowNext');
+    if (viewingDay !== todayKey()){ el.hidden = true; return; }
+    var list = week[viewingDay].slice().sort(function(a,b){ return toMinutes(a.start) - toMinutes(b.start); });
+    var nowMin = new Date().getHours()*60 + new Date().getMinutes();
+    var current = null, next = null;
+    list.forEach(function(p){
+      var s = toMinutes(p.start), e = toMinutes(p.end);
+      if (nowMin >= s && nowMin < e) current = p;
+      if (s > nowMin && (!next || s < toMinutes(next.start))) next = p;
+    });
+    el.hidden = false;
+    if (current){
+      el.innerHTML = '<strong>Now:</strong> ' + escapeHtml(current.name) +
+        (current.room ? ' · ' + escapeHtml(current.room) : '') +
+        ' <span class="dim">until ' + formatTime(current.end) + '</span>';
+    } else if (next){
+      el.innerHTML = '<strong>Next:</strong> ' + escapeHtml(next.name) +
+        ' <span class="dim">at ' + formatTime(next.start) + '</span>';
+    } else {
+      el.innerHTML = '<span class="dim">Nothing left today.</span>';
+    }
+  }
+
+  function renderPeriods(){
+    var list = week[viewingDay].slice().sort(function(a,b){ return toMinutes(a.start) - toMinutes(b.start); });
+    var el = document.getElementById('periodList');
+    if (!list.length){
+      el.innerHTML = '<p class="empty">No periods on ' + DAY_FULL[viewingDay] + '.</p>';
+      return;
+    }
+    var isToday = viewingDay === todayKey();
+    var nowMin = new Date().getHours()*60 + new Date().getMinutes();
+    el.innerHTML = list.map(function(p){
+      var s = toMinutes(p.start), e = toMinutes(p.end);
+      var isNow = isToday && nowMin >= s && nowMin < e;
+      return '<div class="period' + (isNow ? ' now' : '') + '" data-id="' + p.id + '">' +
+        '<div class="ptime">' + formatTime(p.start) + ' – ' + formatTime(p.end) + '</div>' +
+        '<div class="pinfo"><div class="pname">' + escapeHtml(p.name) + '</div>' +
+        (p.room ? '<div class="proom">' + escapeHtml(p.room) + '</div>' : '') + '</div>' +
+        '<button type="button" class="pdel" data-id="' + p.id + '" aria-label="Delete period">×</button>' +
+        '</div>';
+    }).join('');
+  }
+
+  function refreshSchedule(){ renderDayTabs(); renderPeriods(); renderNowNext(); }
+
+  // ---- add / edit period form ----
+
+  function clearForm(){
+    document.getElementById('pName').value = '';
+    document.getElementById('pStart').value = '';
+    document.getElementById('pEnd').value = '';
+    document.getElementById('pRoom').value = '';
+    document.getElementById('pMsg').textContent = '';
+    document.getElementById('pSave').textContent = 'Add';
+  }
+  function openForm(){
+    document.getElementById('addForm').hidden = false;
+    document.getElementById('addToggle').hidden = true;
+  }
+  function closeForm(){
+    document.getElementById('addForm').hidden = true;
+    document.getElementById('addToggle').hidden = false;
+    editingId = null;
+    clearForm();
+  }
+
+  document.getElementById('addToggle').addEventListener('click', function(){
+    editingId = null; clearForm(); openForm();
+  });
+  document.getElementById('pCancel').addEventListener('click', closeForm);
+
+  document.getElementById('pSave').addEventListener('click', function(){
+    var name = document.getElementById('pName').value.trim();
+    var start = document.getElementById('pStart').value;
+    var end = document.getElementById('pEnd').value;
+    var room = document.getElementById('pRoom').value.trim();
+    var msg = document.getElementById('pMsg');
+    msg.className = 'msg';
+
+    if (!name || !start || !end){ msg.textContent = 'Add a name, start, and end time.'; msg.classList.add('err'); return; }
+    if (toMinutes(end) <= toMinutes(start)){ msg.textContent = 'End time must be after start.'; msg.classList.add('err'); return; }
+
+    if (editingId){
+      var p = week[viewingDay].find(function(x){ return x.id === editingId; });
+      if (p){ p.name = name; p.start = start; p.end = end; p.room = room; }
+    } else {
+      week[viewingDay].push({ id: freshId(), name: name, start: start, end: end, room: room });
+    }
+    week[viewingDay].sort(function(a,b){ return toMinutes(a.start) - toMinutes(b.start); });
+    saveWeek();
+    renderPeriods(); renderNowNext();
+    closeForm();
+  });
+
+  document.getElementById('periodList').addEventListener('click', function(e){
+    var delBtn = e.target.closest('.pdel');
+    if (delBtn){
+      week[viewingDay] = week[viewingDay].filter(function(p){ return p.id !== delBtn.dataset.id; });
+      saveWeek(); renderPeriods(); renderNowNext();
+      return;
+    }
+    var row = e.target.closest('.period');
+    if (row){
+      var p = week[viewingDay].find(function(x){ return x.id === row.dataset.id; });
+      if (!p) return;
+      editingId = p.id;
+      document.getElementById('pName').value = p.name;
+      document.getElementById('pStart').value = p.start;
+      document.getElementById('pEnd').value = p.end;
+      document.getElementById('pRoom').value = p.room || '';
+      document.getElementById('pSave').textContent = 'Save';
+      openForm();
+    }
+  });
+
+  document.getElementById('dayTabs').addEventListener('click', function(e){
+    var btn = e.target.closest('.daytab');
+    if (!btn) return;
+    viewingDay = btn.dataset.day;
+    closeForm();
+    refreshSchedule();
+  });
+
+  document.getElementById('clearDayBtn').addEventListener('click', function(){
+    if (!week[viewingDay].length) return;
+    if (!confirm('Clear all periods on ' + DAY_FULL[viewingDay] + '?')) return;
+    week[viewingDay] = [];
+    saveWeek(); renderPeriods(); renderNowNext();
+  });
+
+  // ---- import / export ----
+
+  document.getElementById('importBtn').addEventListener('click', function(){
+    var raw = document.getElementById('codeInput').value;
+    var msg = document.getElementById('importMsg');
+    msg.className = 'msg';
+    var result;
+    try{ result = parseCode(raw); }
+    catch(err){ msg.textContent = err.message; msg.classList.add('err'); return; }
+
+    var total = DAYS.reduce(function(n,d){ return n + result.week[d].length; }, 0);
+    if (total === 0){ msg.textContent = 'That code had no classes in it.'; msg.classList.add('err'); return; }
+
+    week = result.week;
+    saveWeek();
+    saveLastCode(raw.trim());
+    document.getElementById('lastCodeBox').value = raw.trim();
+    viewingDay = todayKey();
+    refreshSchedule();
+
+    msg.textContent = result.repairs > 0
+      ? 'Imported. Moved ' + result.repairs + ' time' + (result.repairs === 1 ? '' : 's') + ' to the afternoon — check them.'
+      : 'Imported successfully.';
+    msg.classList.add('ok');
+  });
+
+  document.getElementById('exportBtn').addEventListener('click', async function(){
+    var code = weekToCode();
+    document.getElementById('codeInput').value = code;
+    var ok = await copyToClipboard(code);
+    var msg = document.getElementById('importMsg');
+    msg.className = 'msg ok';
+    msg.textContent = ok ? 'Current schedule copied to clipboard.' : 'Current schedule filled in above — copy it manually.';
+  });
+
+  document.getElementById('copyLastCode').addEventListener('click', async function(){
+    var code = document.getElementById('lastCodeBox').value;
+    if (!code) return;
+    var ok = await copyToClipboard(code);
+    var btn = document.getElementById('copyLastCode');
+    btn.textContent = ok ? 'Copied ✓' : 'Copy failed';
+    setTimeout(function(){ btn.textContent = 'Copy'; }, 1500);
+  });
+
+  // ---- nav ----
+
+  document.querySelectorAll('.navBtn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.navBtn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      document.querySelectorAll('.view').forEach(function(v){ v.hidden = true; });
+      document.getElementById('view-' + btn.dataset.view).hidden = false;
+    });
+  });
+
+  // ---- settings ----
+
+  document.getElementById('themeSelect').addEventListener('change', function(e){
+    settings.theme = e.target.value;
+    applyTheme();
+    saveSettings();
+  });
+  document.getElementById('timeFormatSelect').addEventListener('change', function(e){
+    settings.timeFormat = e.target.value;
+    saveSettings();
+    renderPeriods(); renderNowNext();
+  });
+  document.getElementById('clearAllBtn').addEventListener('click', function(){
+    if (!confirm('Clear your entire schedule? This cannot be undone.')) return;
+    week = emptyWeek();
+    saveWeek();
+    refreshSchedule();
+  });
+
+  // ---- privacy banner ----
+
+  document.getElementById('warningCopyBtn').addEventListener('click', async function(){
+    var code = weekToCode();
+    var ok = await copyToClipboard(code);
+    var btn = document.getElementById('warningCopyBtn');
+    btn.textContent = ok ? 'Copied ✓' : 'Copy failed';
+    setTimeout(function(){ btn.textContent = 'Copy backup code'; }, 1500);
+  });
+  document.getElementById('warningClose').addEventListener('click', function(){
+    document.getElementById('warningBanner').hidden = true;
+  });
+
+  // ---- init ----
+
+  applyTheme();
+  document.getElementById('themeSelect').value = settings.theme;
+  document.getElementById('timeFormatSelect').value = settings.timeFormat;
+  document.getElementById('lastCodeBox').value = loadLastCode();
+
+  refreshSchedule();
+  setStorageOk(storageOk);
+
+  var totalPeriods = DAYS.reduce(function(n,d){ return n + week[d].length; }, 0);
+  if (totalPeriods === 0) document.querySelector('.navBtn[data-view="import"]').click();
+
+  detectPrivateMode().then(function(isPrivate){ if (isPrivate) showPrivacyWarning(); });
+
+  setInterval(function(){ renderPeriods(); renderNowNext(); }, 30000);
+
+})();
+</script>
+</body>
+</html>
