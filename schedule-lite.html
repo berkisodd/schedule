@@ -136,6 +136,55 @@
   .empty-title{ font-weight:700; font-size:0.92rem; margin-bottom:4px; }
   .empty-sub{ color:var(--text-dim); font-size:0.82rem; }
 
+  /* ── Day / Week toggle ────────────────────────────────── */
+  .viewToggle{ display:flex; gap:8px; margin-bottom:14px; }
+  .vt-btn{
+    flex:1; padding:8px 0; border-radius:var(--radius); border:1px solid var(--line);
+    background:transparent; color:var(--text-dim); font-family:'Inter',sans-serif;
+    font-weight:600; font-size:0.8rem; cursor:pointer; transition:all 0.18s ease;
+  }
+  .vt-btn:hover{ border-color:var(--slate); }
+  .vt-btn.active{ background:var(--text); border-color:var(--text); color:var(--ink); }
+
+  /* ── Week-at-a-glance grid (same idiom as the full app's week view,
+     just fewer columns since this page is a fixed ~560px column) ── */
+  .weekgrid{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; margin-top:14px; }
+  @media (max-width:400px){ .weekgrid{ grid-template-columns:1fr; } }
+  .wg-day{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius-lg);
+    padding:12px; display:flex; flex-direction:column; min-height:96px;
+    transition:border-color 0.18s ease;
+  }
+  .wg-day.today{ border-color:var(--amber-line); }
+  .wg-day-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid var(--line);
+  }
+  .wg-day-name{ font-weight:700; font-size:0.84rem; }
+  .wg-day.today .wg-day-name{ color:var(--amber); }
+  .wg-day-count{ font-family:'JetBrains Mono',monospace; font-size:0.62rem; color:var(--text-dim); }
+  .wg-classes{ display:flex; flex-direction:column; gap:6px; flex:1; }
+  .wg-class{
+    background:transparent; border:1px solid var(--line-soft); border-radius:7px;
+    padding:6px 9px; position:relative;
+  }
+  .wg-class::before{
+    content:''; position:absolute; left:0; top:5px; bottom:5px; width:2px; border-radius:2px; background:transparent;
+  }
+  .wg-class.now{ border-color:var(--amber-line); }
+  .wg-class.now::before{ background:var(--amber); }
+  .wg-class-time{ font-family:'JetBrains Mono',monospace; font-size:0.6rem; color:var(--text-dim); font-variant-numeric:tabular-nums; }
+  .wg-class.now .wg-class-time{ color:var(--amber); }
+  .wg-class-name{ font-size:0.74rem; font-weight:600; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .wg-class-room{ font-size:0.64rem; color:var(--text-dim); margin-top:1px; }
+  .wg-empty{ color:var(--slate); font-size:0.7rem; text-align:center; margin:auto 0; font-family:'JetBrains Mono',monospace; }
+  .wg-day-add{
+    margin-top:6px; background:none; border:1px dashed var(--line); color:var(--text-dim);
+    border-radius:7px; padding:5px; cursor:pointer; font-size:0.7rem; font-family:'Inter',sans-serif; font-weight:600;
+    transition:border-color 0.2s ease, color 0.2s ease;
+  }
+  .wg-day-add:hover{ border-color:var(--amber); color:var(--amber); }
+
   /* ── Add / edit panel ─────────────────────────────────── */
   .addbox{ margin-top:14px; }
   .btn-ghost, .btn-primary, .btn-danger-outline{
@@ -249,41 +298,50 @@
 
   <main>
     <section id="view-schedule" class="view">
-      <div class="daytabs" id="dayTabs"></div>
+      <div class="viewToggle">
+        <button type="button" class="vt-btn" data-mode="day">Day</button>
+        <button type="button" class="vt-btn" data-mode="week">Week</button>
+      </div>
       <div class="nownext" id="nowNext" hidden></div>
-      <div class="periods" id="periodList"></div>
 
-      <div class="addbox">
-        <button class="btn-ghost" id="addToggle" type="button">+ Add period</button>
-        <div class="addpanel" id="addForm" hidden>
-          <div class="addpanel-title">New period</div>
-          <div class="field">
-            <label for="pName">Class name</label>
-            <input id="pName" type="text" placeholder="e.g. English" maxlength="80">
-          </div>
-          <div class="row2">
+      <div id="dayView">
+        <div class="daytabs" id="dayTabs"></div>
+        <div class="periods" id="periodList"></div>
+
+        <div class="addbox">
+          <button class="btn-ghost" id="addToggle" type="button">+ Add period</button>
+          <div class="addpanel" id="addForm" hidden>
+            <div class="addpanel-title">New period</div>
             <div class="field">
-              <label for="pStart">Start</label>
-              <input id="pStart" type="time">
+              <label for="pName">Class name</label>
+              <input id="pName" type="text" placeholder="e.g. English" maxlength="80">
+            </div>
+            <div class="row2">
+              <div class="field">
+                <label for="pStart">Start</label>
+                <input id="pStart" type="time">
+              </div>
+              <div class="field">
+                <label for="pEnd">End</label>
+                <input id="pEnd" type="time">
+              </div>
             </div>
             <div class="field">
-              <label for="pEnd">End</label>
-              <input id="pEnd" type="time">
+              <label for="pRoom">Room (optional)</label>
+              <input id="pRoom" type="text" placeholder="e.g. Rm 204" maxlength="40">
             </div>
-          </div>
-          <div class="field">
-            <label for="pRoom">Room (optional)</label>
-            <input id="pRoom" type="text" placeholder="e.g. Rm 204" maxlength="40">
-          </div>
-          <div class="addpanel-msg" id="pMsg"></div>
-          <div class="addpanel-actions">
-            <button class="btn-primary" id="pSave" type="button">Add period</button>
-            <button class="btn-ghost" id="pCancel" type="button">Cancel</button>
+            <div class="addpanel-msg" id="pMsg"></div>
+            <div class="addpanel-actions">
+              <button class="btn-primary" id="pSave" type="button">Add period</button>
+              <button class="btn-ghost" id="pCancel" type="button">Cancel</button>
+            </div>
           </div>
         </div>
+
+        <button class="btn-danger-outline" id="clearDayBtn" type="button">Clear this day</button>
       </div>
 
-      <button class="btn-danger-outline" id="clearDayBtn" type="button">Clear this day</button>
+      <div class="weekgrid" id="weekGrid" hidden></div>
     </section>
 
     <section id="view-import" class="view" hidden>
@@ -574,6 +632,7 @@
   var week = loadWeek();
   var viewingDay = todayKey();
   var editingId = null;
+  var currentView = 'week';
 
   function formatTime(hhmm){
     if (!hhmm) return '';
@@ -605,8 +664,8 @@
 
   function renderNowNext(){
     var el = document.getElementById('nowNext');
-    if (viewingDay !== todayKey()){ el.hidden = true; return; }
-    var list = week[viewingDay].slice().sort(function(a,b){ return toMinutes(a.start) - toMinutes(b.start); });
+    var tk = todayKey();
+    var list = week[tk].slice().sort(function(a,b){ return toMinutes(a.start) - toMinutes(b.start); });
     var nowMin = new Date().getHours()*60 + new Date().getMinutes();
     var current = null, next = null;
     list.forEach(function(p){
@@ -655,7 +714,61 @@
     }).join('');
   }
 
-  function refreshSchedule(){ renderDayTabs(); renderPeriods(); renderNowNext(); }
+  function renderWeekGrid(){
+    var tk = todayKey();
+    var nowMin = new Date().getHours()*60 + new Date().getMinutes();
+    document.getElementById('weekGrid').innerHTML = DAYS.map(function(d){
+      var list = week[d].slice().sort(function(a,b){ return toMinutes(a.start) - toMinutes(b.start); });
+      var isToday = d === tk;
+      var classesHtml;
+      if (!list.length){
+        classesHtml = '<div class="wg-empty">Free</div>';
+      } else {
+        classesHtml = '<div class="wg-classes">' + list.map(function(p){
+          var isNow = isToday && nowMin >= toMinutes(p.start) && nowMin < toMinutes(p.end);
+          return '<div class="wg-class' + (isNow ? ' now' : '') + '">' +
+            '<div class="wg-class-time">' + formatTime(p.start) + ' – ' + formatTime(p.end) + '</div>' +
+            '<div class="wg-class-name">' + escapeHtml(p.name) + '</div>' +
+            (p.room ? '<div class="wg-class-room">' + escapeHtml(p.room) + '</div>' : '') +
+            '</div>';
+        }).join('') + '</div>';
+      }
+      return '<div class="wg-day' + (isToday ? ' today' : '') + '">' +
+        '<div class="wg-day-head"><span class="wg-day-name">' + d + '</span>' +
+        '<span class="wg-day-count">' + (list.length || '') + '</span></div>' +
+        classesHtml +
+        '<button type="button" class="wg-day-add" data-day="' + d + '">+ Add</button>' +
+        '</div>';
+    }).join('');
+  }
+
+  function refreshSchedule(){ renderDayTabs(); renderPeriods(); renderNowNext(); renderWeekGrid(); }
+
+  function setView(mode){
+    currentView = mode;
+    document.getElementById('dayView').hidden = mode !== 'day';
+    document.getElementById('weekGrid').hidden = mode !== 'week';
+    document.querySelectorAll('.vt-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.mode === mode);
+    });
+  }
+
+  document.querySelector('.viewToggle').addEventListener('click', function(e){
+    var btn = e.target.closest('.vt-btn');
+    if (!btn) return;
+    setView(btn.dataset.mode);
+  });
+
+  document.getElementById('weekGrid').addEventListener('click', function(e){
+    var btn = e.target.closest('.wg-day-add');
+    if (!btn) return;
+    viewingDay = btn.dataset.day;
+    editingId = null;
+    setView('day');
+    refreshSchedule();
+    clearForm();
+    openForm();
+  });
 
   // ---- add / edit period form ----
 
@@ -854,6 +967,7 @@
   document.getElementById('lastCodeBox').value = loadLastCode();
 
   refreshSchedule();
+  setView(currentView);
   setStorageOk(storageOk);
 
   var totalPeriods = DAYS.reduce(function(n,d){ return n + week[d].length; }, 0);
@@ -861,7 +975,7 @@
 
   detectPrivateMode().then(function(isPrivate){ if (isPrivate) showPrivacyWarning(); });
 
-  setInterval(function(){ renderPeriods(); renderNowNext(); }, 30000);
+  setInterval(function(){ renderPeriods(); renderNowNext(); renderWeekGrid(); }, 30000);
 
 })();
 </script>
