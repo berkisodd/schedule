@@ -1,14 +1,8 @@
 {
  "name": "The Fort Hamilton School - Events",
  "source": "https://www.psis104.com/apps/events/ical/?id=0",
- "fetchedAt": "2026-09-15T12:39:17Z",
+ "fetchedAt": "2026-09-17T12:35:04Z",
  "events": [
-  {
-   "date": "2025-09-17",
-   "title": "Meet the Teacher Night- In Person!",
-   "kind": "event",
-   "time": "16:30"
-  },
   {
    "date": "2025-09-23",
    "title": "Schools Closed",
@@ -670,6 +664,12 @@
    "title": "NIA Afterschool for Grades 6-8 Begins",
    "kind": "event",
    "time": "14:30"
+  },
+  {
+   "date": "2026-09-16",
+   "title": "SLT Meeting 3:00 PM",
+   "kind": "event",
+   "time": "15:00"
   },
   {
    "date": "2026-09-21",
