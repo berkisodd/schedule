@@ -1,7 +1,7 @@
 {
  "name": "The Fort Hamilton School - Events",
  "source": "https://www.psis104.com/apps/events/ical/?id=0",
- "fetchedAt": "2026-09-17T12:35:04Z",
+ "fetchedAt": "2026-09-18T12:13:16Z",
  "events": [
   {
    "date": "2025-09-23",
@@ -687,6 +687,12 @@
    "title": "Family Fun Movie Night",
    "kind": "event",
    "time": "18:30"
+  },
+  {
+   "date": "2026-10-07",
+   "title": "SLT Meeting",
+   "kind": "event",
+   "time": "15:00"
   },
   {
    "date": "2026-10-12",
