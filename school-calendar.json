@@ -1,7 +1,7 @@
 {
  "name": "The Fort Hamilton School - Events",
  "source": "https://www.psis104.com/apps/events/ical/?id=0",
- "fetchedAt": "2026-09-18T12:13:16Z",
+ "fetchedAt": "2026-09-19T11:55:49Z",
  "events": [
   {
    "date": "2025-09-23",
@@ -729,6 +729,12 @@
    "time": "15:30"
   },
   {
+   "date": "2026-11-05",
+   "title": "Parent Teacher Conferences",
+   "kind": "event",
+   "time": "11:30"
+  },
+  {
    "date": "2026-11-06",
    "title": "Swish Wish",
    "kind": "event",
@@ -825,6 +831,12 @@
    "date": "2027-02-19",
    "title": "No School - Midwinter Recess",
    "kind": "closed"
+  },
+  {
+   "date": "2027-03-03",
+   "title": "Parent Teacher Conferences",
+   "kind": "event",
+   "time": "11:30"
   },
   {
    "date": "2027-03-09",
