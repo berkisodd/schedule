@@ -1,7 +1,7 @@
 {
  "name": "The Fort Hamilton School - Events",
  "source": "https://www.psis104.com/apps/events/ical/?id=0",
- "fetchedAt": "2026-09-19T11:55:49Z",
+ "fetchedAt": "2026-09-23T12:44:25Z",
  "events": [
   {
    "date": "2025-09-23",
@@ -706,6 +706,11 @@
    "time": "08:00"
   },
   {
+   "date": "2026-10-14",
+   "title": "Middle School Application Opens",
+   "kind": "event"
+  },
+  {
    "date": "2026-10-16",
    "title": "Picture Day 8th Grade",
    "kind": "event",
@@ -716,6 +721,30 @@
    "title": "Picture Day K-1",
    "kind": "event",
    "time": "08:00"
+  },
+  {
+   "date": "2026-10-20",
+   "title": "Middle School Admissions Virtual Event",
+   "kind": "event",
+   "time": "17:00"
+  },
+  {
+   "date": "2026-10-20",
+   "title": "Middle School Open House",
+   "kind": "event",
+   "time": "17:30"
+  },
+  {
+   "date": "2026-10-21",
+   "title": "Middle School Admissions Virtual Event",
+   "kind": "event",
+   "time": "17:00"
+  },
+  {
+   "date": "2026-10-22",
+   "title": "Middle School Admissions Virtual Event",
+   "kind": "event",
+   "time": "13:00"
   },
   {
    "date": "2026-10-23",
