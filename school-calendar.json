@@ -1,18 +1,8 @@
 {
  "name": "The Fort Hamilton School - Events",
  "source": "https://www.psis104.com/apps/events/ical/?id=0",
- "fetchedAt": "2026-09-23T12:44:25Z",
+ "fetchedAt": "2026-09-24T12:42:43Z",
  "events": [
-  {
-   "date": "2025-09-23",
-   "title": "Schools Closed",
-   "kind": "closed"
-  },
-  {
-   "date": "2025-09-24",
-   "title": "Schools Closed",
-   "kind": "closed"
-  },
   {
    "date": "2025-09-25",
    "title": "MOVIE NIGHT",
@@ -684,9 +674,9 @@
   },
   {
    "date": "2026-10-02",
-   "title": "Family Fun Movie Night",
+   "title": "Family Movie Night",
    "kind": "event",
-   "time": "18:30"
+   "time": "18:00"
   },
   {
    "date": "2026-10-07",
@@ -941,6 +931,12 @@
    "date": "2027-06-10",
    "title": "No School for Students - Anniversary Day",
    "kind": "closed"
+  },
+  {
+   "date": "2027-06-24",
+   "title": "8th Grade Graduation",
+   "kind": "event",
+   "time": "09:00"
   },
   {
    "date": "2027-06-28",
