@@ -1,7 +1,7 @@
 {
  "name": "The Fort Hamilton School - Events",
  "source": "https://www.psis104.com/apps/events/ical/?id=0",
- "fetchedAt": "2026-09-25T12:45:08Z",
+ "fetchedAt": "2026-10-01T14:26:37Z",
  "events": [
   {
    "date": "2025-10-02",
@@ -928,6 +928,12 @@
   },
   {
    "date": "2027-06-24",
+   "title": "Kindergarten Stepping Up",
+   "kind": "event",
+   "time": "09:00"
+  },
+  {
+   "date": "2027-06-25",
    "title": "8th Grade Graduation",
    "kind": "event",
    "time": "09:00"
