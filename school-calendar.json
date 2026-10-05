@@ -1,7 +1,7 @@
 {
  "name": "The Fort Hamilton School - Events",
  "source": "https://www.psis104.com/apps/events/ical/?id=0",
- "fetchedAt": "2026-10-02T13:49:57Z",
+ "fetchedAt": "2026-10-05T15:58:36Z",
  "events": [
   {
    "date": "2025-10-06",
@@ -690,6 +690,12 @@
    "kind": "event"
   },
   {
+   "date": "2026-10-15",
+   "title": "PTA Virtual Meeting",
+   "kind": "event",
+   "time": "18:30"
+  },
+  {
    "date": "2026-10-16",
    "title": "Picture Day 8th Grade",
    "kind": "event",
@@ -766,6 +772,12 @@
    "kind": "closed"
   },
   {
+   "date": "2026-11-18",
+   "title": "PTA Virtual Meeting",
+   "kind": "event",
+   "time": "18:30"
+  },
+  {
    "date": "2026-11-26",
    "title": "No School - Thanksgiving Recess",
    "kind": "closed"
@@ -774,6 +786,12 @@
    "date": "2026-11-27",
    "title": "No School - Thanksgiving Recess",
    "kind": "closed"
+  },
+  {
+   "date": "2026-12-17",
+   "title": "PTA Virtual Meeting",
+   "kind": "event",
+   "time": "18:30"
   },
   {
    "date": "2026-12-24",
