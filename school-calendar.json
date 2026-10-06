@@ -1,14 +1,8 @@
 {
  "name": "The Fort Hamilton School - Events",
  "source": "https://www.psis104.com/apps/events/ical/?id=0",
- "fetchedAt": "2026-10-05T15:58:36Z",
+ "fetchedAt": "2026-10-06T14:09:40Z",
  "events": [
-  {
-   "date": "2025-10-06",
-   "title": "PTA Swish Wish Fundraiser Starts",
-   "kind": "event",
-   "time": "12:00"
-  },
   {
    "date": "2025-10-13",
    "title": "Schools Closed",
@@ -834,6 +828,18 @@
    "kind": "closed"
   },
   {
+   "date": "2027-01-21",
+   "title": "PTA Virtual Meeting",
+   "kind": "event",
+   "time": "18:30"
+  },
+  {
+   "date": "2027-02-11",
+   "title": "PTA Virtual Meeting",
+   "kind": "event",
+   "time": "18:30"
+  },
+  {
    "date": "2027-02-15",
    "title": "No School - Midwinter Recess",
    "kind": "closed"
@@ -870,9 +876,21 @@
    "kind": "closed"
   },
   {
+   "date": "2027-03-17",
+   "title": "PTA Virtual Meeting",
+   "kind": "event",
+   "time": "12:00"
+  },
+  {
    "date": "2027-03-26",
    "title": "No School - Good Friday",
    "kind": "closed"
+  },
+  {
+   "date": "2027-04-15",
+   "title": "PTA Virtual Event",
+   "kind": "event",
+   "time": "18:30"
   },
   {
    "date": "2027-04-22",
@@ -925,6 +943,12 @@
    "kind": "closed"
   },
   {
+   "date": "2027-05-20",
+   "title": "PTA Virtual Meeting",
+   "kind": "event",
+   "time": "18:30"
+  },
+  {
    "date": "2027-05-31",
    "title": "No School - Memorial Day",
    "kind": "closed"
@@ -938,6 +962,12 @@
    "date": "2027-06-10",
    "title": "No School for Students - Anniversary Day",
    "kind": "closed"
+  },
+  {
+   "date": "2027-06-17",
+   "title": "PTA Virtual Meeting",
+   "kind": "event",
+   "time": "18:30"
   },
   {
    "date": "2027-06-24",
