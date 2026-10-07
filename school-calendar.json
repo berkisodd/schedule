@@ -1,7 +1,7 @@
 {
  "name": "The Fort Hamilton School - Events",
  "source": "https://www.psis104.com/apps/events/ical/?id=0",
- "fetchedAt": "2026-10-06T14:09:40Z",
+ "fetchedAt": "2026-10-07T14:28:30Z",
  "events": [
   {
    "date": "2025-10-13",
@@ -735,6 +735,11 @@
    "title": "Pumpkin Stroll",
    "kind": "event",
    "time": "15:30"
+  },
+  {
+   "date": "2026-11-03",
+   "title": "Remote Day Learning",
+   "kind": "event"
   },
   {
    "date": "2026-11-05",
