@@ -1,7 +1,7 @@
 {
  "name": "The Fort Hamilton School - Events",
  "source": "https://www.psis104.com/apps/events/ical/?id=0",
- "fetchedAt": "2026-10-07T14:28:30Z",
+ "fetchedAt": "2026-10-09T14:21:07Z",
  "events": [
   {
    "date": "2025-10-13",
@@ -715,6 +715,12 @@
   },
   {
    "date": "2026-10-21",
+   "title": "District 20 Middle School Fair",
+   "kind": "event",
+   "time": "17:00"
+  },
+  {
+   "date": "2026-10-21",
    "title": "Middle School Admissions Virtual Event",
    "kind": "event",
    "time": "17:00"
@@ -740,6 +746,12 @@
    "date": "2026-11-03",
    "title": "Remote Day Learning",
    "kind": "event"
+  },
+  {
+   "date": "2026-11-03",
+   "title": "Virtual Middle School Information Session with Ms. Walter",
+   "kind": "event",
+   "time": "09:00"
   },
   {
    "date": "2026-11-05",
