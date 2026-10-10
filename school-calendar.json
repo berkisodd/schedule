@@ -1,7 +1,7 @@
 {
  "name": "The Fort Hamilton School - Events",
  "source": "https://www.psis104.com/apps/events/ical/?id=0",
- "fetchedAt": "2026-10-09T14:21:07Z",
+ "fetchedAt": "2026-10-10T13:38:09Z",
  "events": [
   {
    "date": "2025-10-13",
@@ -666,6 +666,11 @@
    "title": "SLT Meeting",
    "kind": "event",
    "time": "15:00"
+  },
+  {
+   "date": "2026-10-08",
+   "title": "Playing It Forward Fundraiser Starts",
+   "kind": "event"
   },
   {
    "date": "2026-10-12",
