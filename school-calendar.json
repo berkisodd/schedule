@@ -1,13 +1,8 @@
 {
  "name": "The Fort Hamilton School - Events",
  "source": "https://www.psis104.com/apps/events/ical/?id=0",
- "fetchedAt": "2026-10-17T11:35:03Z",
+ "fetchedAt": "2026-10-20T12:42:15Z",
  "events": [
-  {
-   "date": "2025-10-20",
-   "title": "Diwali- Schools Closed",
-   "kind": "closed"
-  },
   {
    "date": "2025-10-21",
    "title": "Pumpkin Patch",
