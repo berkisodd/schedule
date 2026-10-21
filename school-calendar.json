@@ -1,13 +1,8 @@
 {
  "name": "The Fort Hamilton School - Events",
  "source": "https://www.psis104.com/apps/events/ical/?id=0",
- "fetchedAt": "2026-10-20T12:42:15Z",
+ "fetchedAt": "2026-10-21T12:54:53Z",
  "events": [
-  {
-   "date": "2025-10-21",
-   "title": "Pumpkin Patch",
-   "kind": "event"
-  },
   {
    "date": "2025-10-22",
    "title": "District 20 Middle School Fair",
@@ -698,6 +693,12 @@
    "title": "Middle School Admissions Virtual Event",
    "kind": "event",
    "time": "17:00"
+  },
+  {
+   "date": "2026-10-22",
+   "title": "Math Olympiad Grades 6-8",
+   "kind": "event",
+   "time": "08:30"
   },
   {
    "date": "2026-10-22",
