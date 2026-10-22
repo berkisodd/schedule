@@ -1,14 +1,8 @@
 {
  "name": "The Fort Hamilton School - Events",
  "source": "https://www.psis104.com/apps/events/ical/?id=0",
- "fetchedAt": "2026-10-21T12:54:53Z",
+ "fetchedAt": "2026-10-22T12:57:05Z",
  "events": [
-  {
-   "date": "2025-10-22",
-   "title": "District 20 Middle School Fair",
-   "kind": "event",
-   "time": "17:00"
-  },
   {
    "date": "2025-10-23",
    "title": "Pumpkin Stroll",
