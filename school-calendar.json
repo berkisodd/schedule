@@ -1,7 +1,7 @@
 {
  "name": "The Fort Hamilton School - Events",
  "source": "https://www.psis104.com/apps/events/ical/?id=0",
- "fetchedAt": "2026-10-28T13:59:47Z",
+ "fetchedAt": "2026-10-29T14:14:58Z",
  "events": [
   {
    "date": "2025-10-31",
@@ -781,6 +781,11 @@
    "date": "2026-11-27",
    "title": "No School - Thanksgiving Recess",
    "kind": "closed"
+  },
+  {
+   "date": "2026-12-11",
+   "title": "Middle School Application Closes",
+   "kind": "event"
   },
   {
    "date": "2026-12-16",
