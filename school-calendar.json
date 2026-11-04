@@ -1,13 +1,8 @@
 {
  "name": "The Fort Hamilton School - Events",
  "source": "https://www.psis104.com/apps/events/ical/?id=0",
- "fetchedAt": "2026-11-03T15:04:09Z",
+ "fetchedAt": "2026-11-04T15:23:22Z",
  "events": [
-  {
-   "date": "2025-11-04",
-   "title": "Election Day-No students attend school",
-   "kind": "closed"
-  },
   {
    "date": "2025-11-06",
    "title": "PTA Swish Wish Fundraiser Ends",
