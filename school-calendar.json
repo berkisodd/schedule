@@ -1,18 +1,8 @@
 {
  "name": "The Fort Hamilton School - Events",
  "source": "https://www.psis104.com/apps/events/ical/?id=0",
- "fetchedAt": "2026-11-04T15:23:22Z",
+ "fetchedAt": "2026-11-06T14:59:23Z",
  "events": [
-  {
-   "date": "2025-11-06",
-   "title": "PTA Swish Wish Fundraiser Ends",
-   "kind": "event"
-  },
-  {
-   "date": "2025-11-06",
-   "title": "Remote Afternoon and Evening Parent Teacher Conferences",
-   "kind": "event"
-  },
   {
    "date": "2025-11-07",
    "title": "PTA Swish Wish Fundraiser Celebration",
@@ -703,7 +693,7 @@
   },
   {
    "date": "2026-11-06",
-   "title": "Swish Wish",
+   "title": "RESCHEDULED!! 11/12 Swish Wish",
    "kind": "event",
    "time": "09:00"
   },
@@ -723,6 +713,12 @@
    "date": "2026-11-11",
    "title": "No School - Veterans Day",
    "kind": "closed"
+  },
+  {
+   "date": "2026-11-12",
+   "title": "Play it Forward Rescheduled Event",
+   "kind": "event",
+   "time": "09:00"
   },
   {
    "date": "2026-11-18",
