@@ -1,13 +1,8 @@
 {
  "name": "The Fort Hamilton School - Events",
  "source": "https://www.psis104.com/apps/events/ical/?id=0",
- "fetchedAt": "2026-11-06T14:59:23Z",
+ "fetchedAt": "2026-11-07T13:57:56Z",
  "events": [
-  {
-   "date": "2025-11-07",
-   "title": "PTA Swish Wish Fundraiser Celebration",
-   "kind": "event"
-  },
   {
    "date": "2025-11-11",
    "title": "Schools Closed",
@@ -693,9 +688,14 @@
   },
   {
    "date": "2026-11-06",
-   "title": "RESCHEDULED!! 11/12 Swish Wish",
+   "title": "RESCHEDULED!! 11/12 Play it Forward Fundraiser",
    "kind": "event",
    "time": "09:00"
+  },
+  {
+   "date": "2026-11-09",
+   "title": "Food & Coat Drives Begin until 11/20",
+   "kind": "event"
   },
   {
    "date": "2026-11-09",
@@ -744,6 +744,11 @@
   },
   {
    "date": "2026-11-20",
+   "title": "Food & Coat Drives End",
+   "kind": "event"
+  },
+  {
+   "date": "2026-11-20",
    "title": "Vision Screening Grades K-1",
    "kind": "event"
   },
@@ -756,6 +761,11 @@
    "date": "2026-11-27",
    "title": "No School - Thanksgiving Recess",
    "kind": "closed"
+  },
+  {
+   "date": "2026-12-09",
+   "title": "Kindergarten Application Opens",
+   "kind": "event"
   },
   {
    "date": "2026-12-11",
@@ -819,6 +829,11 @@
    "title": "PTA Virtual Meeting",
    "kind": "event",
    "time": "18:30"
+  },
+  {
+   "date": "2027-01-22",
+   "title": "Kindergarten Application Closes",
+   "kind": "event"
   },
   {
    "date": "2027-02-11",
