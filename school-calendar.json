@@ -1,7 +1,7 @@
 {
  "name": "The Fort Hamilton School - Events",
  "source": "https://www.psis104.com/apps/events/ical/?id=0",
- "fetchedAt": "2026-11-12T15:57:18Z",
+ "fetchedAt": "2026-11-13T15:21:34Z",
  "events": [
   {
    "date": "2025-11-14",
@@ -716,12 +716,6 @@
    "time": "09:00"
   },
   {
-   "date": "2026-11-12",
-   "title": "RESCHEDULED!! Play it Forward Fundraiser",
-   "kind": "event",
-   "time": "09:00"
-  },
-  {
    "date": "2026-11-18",
    "title": "PTA Virtual Meeting",
    "kind": "event",
@@ -747,6 +741,12 @@
    "date": "2026-11-20",
    "title": "Food & Coat Drives End",
    "kind": "event"
+  },
+  {
+   "date": "2026-11-20",
+   "title": "RESCHEDULED!! Play it Forward Fundraiser",
+   "kind": "event",
+   "time": "09:00"
   },
   {
    "date": "2026-11-20",
