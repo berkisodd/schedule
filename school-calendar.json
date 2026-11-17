@@ -1,7 +1,7 @@
 {
  "name": "The Fort Hamilton School - Events",
  "source": "https://www.psis104.com/apps/events/ical/?id=0",
- "fetchedAt": "2026-11-16T16:58:29Z",
+ "fetchedAt": "2026-11-17T16:51:31Z",
  "events": [
   {
    "date": "2025-11-27",
@@ -777,6 +777,12 @@
    "title": "Student Picture Retake Day",
    "kind": "event",
    "time": "08:30"
+  },
+  {
+   "date": "2026-12-16",
+   "title": "Wreath Making Workshop",
+   "kind": "event",
+   "time": "14:45"
   },
   {
    "date": "2026-12-17",
