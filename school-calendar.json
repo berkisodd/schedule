@@ -1,7 +1,7 @@
 {
  "name": "The Fort Hamilton School - Events",
  "source": "https://www.psis104.com/apps/events/ical/?id=0",
- "fetchedAt": "2026-11-17T16:51:31Z",
+ "fetchedAt": "2026-11-18T16:25:12Z",
  "events": [
   {
    "date": "2025-11-27",
@@ -683,7 +683,7 @@
   },
   {
    "date": "2026-11-09",
-   "title": "Food & Coat Drives Begin until 11/20",
+   "title": "Food & Coat Drives Begin",
    "kind": "event"
   },
   {
@@ -733,7 +733,7 @@
   },
   {
    "date": "2026-11-20",
-   "title": "Food & Coat Drives End",
+   "title": "$1 Ice pop sales begin during all lunch periods on Fridays",
    "kind": "event"
   },
   {
@@ -748,6 +748,11 @@
    "kind": "event"
   },
   {
+   "date": "2026-11-24",
+   "title": "Food Drive Ends",
+   "kind": "event"
+  },
+  {
    "date": "2026-11-26",
    "title": "No School - Thanksgiving Recess",
    "kind": "closed"
@@ -756,6 +761,11 @@
    "date": "2026-11-27",
    "title": "No School - Thanksgiving Recess",
    "kind": "closed"
+  },
+  {
+   "date": "2026-11-30",
+   "title": "Coat Drive Ends",
+   "kind": "event"
   },
   {
    "date": "2026-12-01",
